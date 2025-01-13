@@ -38,4 +38,7 @@ storage.rules
 *.pid
 *.pid.lock
 
-
+# Archivos de configuración de entorno
+.env
+.env.local
+.env.*.local

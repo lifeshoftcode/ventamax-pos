@@ -1,8 +1,8 @@
-import { nanoid } from 'nanoid';
-import { Timestamp, doc, getDoc, increment, setDoc, updateDoc } from "firebase/firestore";
-import { db } from "../firebaseconfig";
-import { fbAddMultipleFilesAndGetURLs, fbUploadFileAndGetURL } from '../img/fbUploadFileAndGetURL';
+import { Timestamp, doc, getDoc, increment, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { db, storage } from "../firebaseconfig";
+import { fbUploadFiles } from '../img/fbUploadFileAndGetURL';
 import { isImageFile, isPDFFile } from '../../utils/file/isValidFile';
+import { deleteObject, ref } from "firebase/storage";
 
 const saveCurrentPurchaseVersion = async (user, currentPurchase) => {
     const purchaseId = currentPurchase.id;
@@ -25,19 +25,19 @@ const updateProductsStockFromReplenishments = async (user, newPurchase, previous
             console.log("previousReplenishment for existing product:", previousReplenishment);
             let stockChange = newReplenishment.newStock - previousReplenishment.newStock;
             console.log(`Producto ${productId} (${newReplenishment.productName}): stock anterior ${previousReplenishment.newStock}, stock nuevo ${newReplenishment.newStock}. Cambio: ${stockChange}`);
-            await updateProductStock(user, productId, stockChange);
+            // await updateProductStock(user, productId, stockChange);
         } else {
             console.log(`Producto nuevo: ${productId} (${newReplenishment.productName}). Stock establecido a ${newReplenishment.newStock}`);
-            await updateProductStock(user, productId, newReplenishment.newStock);
+            // await updateProductStock(user, productId, newReplenishment.newStock);
         }
     }
-    
+
     // Procesar los productos eliminados en la nueva compra
     for (const [productId, previousReplenishment] of previousReplenishmentsMap) {
         if (!newReplenishmentsMap.has(productId)) {
             // Si un producto anterior ya no está en la nueva compra, reduce el stock
             let stockChange = -previousReplenishment.newStock;
-            await updateProductStock(user, productId, stockChange);
+            // await updateProductStock(user, productId, stockChange);
         }
     }
 };
@@ -51,53 +51,107 @@ const updateProductStock = async (user, productId, stockChange) => {
     await updateDoc(productsRef, { "product.stock": increment(stockChange) });
 };
 
-export const fbUpdatePurchase = async (user, purchase, files, setLoading) => {
-    try {
-        setLoading({ isOpen: true, message: "Iniciando proceso de actualización de Compra" });
-
-        const purchaseId = purchase.id;
-        // Referencia al documento de la compra existente
-        const purchaseRef = doc(db, "businesses", user.businessID, "purchases", purchaseId);
-
-        const purchaseSnap = await getDoc(purchaseRef);
-        if (purchaseSnap.exists()) {
-            const currentPurchase = purchaseSnap.data().data;
-            // Guardar la versión actual de la compra
-            await saveCurrentPurchaseVersion(user, currentPurchase);
-
-            // Actualizar el stock de los productos
-            await updateProductsStockFromReplenishments(user, purchase, currentPurchase);
-
-            let fileToUpload = [];
-            if (files && files.length > 0) {
-                setLoading({ isOpen: true, message: "Subiendo imagen del recibo actualizada al servidor..." });
-                const uploadedFiles = await fbAddMultipleFilesAndGetURLs(user, "purchaseReceipts", files);
-                fileToUpload = [...(currentPurchase.fileList || []), ...uploadedFiles];
+const updateLocalAttachmentsWithRemoteURLs = (localAttachments, uploadedFiles) => {
+    return localAttachments.map(attachment => {
+        if (attachment.location === 'local') {
+            const uploadedFile = uploadedFiles.find(uf => uf.name === attachment.name);
+            if (uploadedFile) {
+                return {
+                    ...attachment,
+                    location: 'remote',
+                    url: uploadedFile.url,
+                    size: uploadedFile.size,
+                    mimeType: uploadedFile.mimeType
+                };
             }
-
-            const providerRef = doc(db, "businesses", user.businessID, 'providers', purchase.provider.id);
-            const data = {
-                ...purchase,
-                provider: providerRef,
-                dates: {
-                    ...purchase.dates,
-                    createdAt: Timestamp.fromMillis(purchase.dates.createdAt),
-                    deliveryDate: Timestamp.fromMillis(purchase.dates.deliveryDate),
-                    paymentDate: Timestamp.fromMillis(purchase.dates.paymentDate),
-                    updatedAt: Timestamp.fromDate(new Date())
-                },
-                fileList: fileToUpload
-            };
-
-            // Actualiza el documento en Firestore
-            await updateDoc(purchaseRef, { data });
-
-            setLoading({ isOpen: false, message: "" });
-            return data;
         }
+        return attachment;
+    });
+};
+
+export const findRemovedAttachments = (oldAttachments, newAttachments) => {
+    return oldAttachments.filter(oldAtt =>
+        oldAtt.url &&
+        !newAttachments.some(newAtt => newAtt.url === oldAtt.url)
+    );
+};
+
+export const deleteRemovedFiles = async (removedAttachments) => {
+    const deletePromises = removedAttachments.map(async (attachment) => {
+        try {
+            if (attachment.url) {
+                const fileRef = ref(storage, attachment.url);
+                await deleteObject(fileRef);
+                console.log(`Deleted file: ${attachment.url}`);
+            }
+        } catch (error) {
+            console.error(`Error deleting file ${attachment.url}:`, error);
+        }
+    });
+    await Promise.all(deletePromises);
+};
+
+export const fbUpdatePurchase = async ({ user, purchase, localFiles = [], setLoading = () => { } }) => {
+    try {
+        setLoading(true);
+        console.log("Updating purchase:", purchase);
+        const purchaseRef = doc(db, "businesses", user.businessID, "purchases", purchase.id);
+
+        // Get previous version of purchase
+        const previousPurchaseDoc = await getDoc(purchaseRef);
+        const previousPurchase = previousPurchaseDoc.data();
+
+        // Find and delete removed attachments
+        if (previousPurchase?.attachmentUrls) {
+            const removedAttachments = findRemovedAttachments(
+                previousPurchase.attachmentUrls,
+                purchase.attachmentUrls || []
+            );
+            if (removedAttachments.length > 0) {
+                await deleteRemovedFiles(removedAttachments);
+            }
+        }
+
+        let uploadedFiles = [];
+        if (localFiles && localFiles.length > 0) {
+            const files = localFiles.map(({ file }) => file);
+            uploadedFiles = await fbUploadFiles(user, "purchaseAndOrderFiles", files, {
+                customMetadata: {
+                    type: "purchase_attachment",
+                },
+            });
+        }
+
+        const existingAttachments = purchase.attachmentUrls || [];
+        const updatedAttachments = updateLocalAttachmentsWithRemoteURLs(
+            existingAttachments,
+            uploadedFiles
+        );
+
+        // Safely convert dates to timestamps
+        const safeTimestamp = (date) => {
+            if (!date) return serverTimestamp();
+            const milliseconds = typeof date === 'number' ? date : new Date(date).getTime();
+            if (isNaN(milliseconds)) return serverTimestamp();
+            return Timestamp.fromMillis(milliseconds);
+        };
+
+        const updatedData = {
+            ...purchase,
+            createdAt: purchase.createdAt || serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            deliveryAt: safeTimestamp(purchase.deliveryAt),
+            paymentAt: safeTimestamp(purchase.paymentAt),
+            completedAt: purchase.completedAt ? safeTimestamp(purchase.completedAt) : null,
+            attachmentUrls: updatedAttachments
+        };
+
+        await updateDoc(purchaseRef,  updatedData );
+        setLoading(false);
+        return updatedData;
     } catch (error) {
-        setLoading({ isOpen: false, message: "" });
-        console.error("Error updating purchase: ", error);
+        setLoading(false);
+        console.error("Error updating purchase:", error);
         throw error;
     }
 };

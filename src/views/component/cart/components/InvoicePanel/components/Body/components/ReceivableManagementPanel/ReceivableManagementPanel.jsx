@@ -1,23 +1,21 @@
-
 import React, { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components'
-import * as antd from 'antd'
+import { DatePicker, Input, InputNumber, Select, Form } from 'antd'
 import { useDispatch, useSelector } from 'react-redux'
 import { SelectCartData, toggleReceivableStatus } from '../../../../../../../../../features/cart/cartSlice'
 import { calculateInvoiceChange } from '../../../../../../../../../utils/invoice';
 import { useFormatPrice } from '../../../../../../../../../hooks/useFormatPrice';
 import { selectAR, setAR } from '../../../../../../../../../features/accountsReceivable/accountsReceivableSlice';
 import { AnimatePresence, motion } from 'framer-motion';
-import { calculateAmountPerInstallment, calculateRemainingBalance } from '../../../../../../../../../utils/accountsReceivable/accountsReceivable';
+import { calculateAmountPerInstallment } from '../../../../../../../../../utils/accountsReceivable/accountsReceivable';
 import usePaymentDates from './usePaymentDates';
-import { fromMillisToDayjs } from '../../../../../../../../../utils/date/convertMillisecondsToDayjs';
 import { setNumPrecision } from '../../../../../../../../../utils/pricing';
 import { getMaxInstallments } from '../../../../../../../../../utils/accountsReceivable/getMaxInstallments';
 import { fbGetPendingBalance } from '../../../../../../../../../firebase/accountsReceivable/fbGetPendingBalance';
 import { selectClient } from '../../../../../../../../../features/clientCart/clientCartSlice';
 import { selectUser } from '../../../../../../../../../features/auth/userSlice';
+import DateUtils from '../../../../../../../../../utils/date/dateUtils';
 
-const { DatePicker, Input, InputNumber, Select, Button, Form } = antd;
 const { Option } = Select;
 const { TextArea } = Input;
 
@@ -153,7 +151,7 @@ export const ReceivableManagementPanel = ({ form, creditLimit, activeAccountsRec
                             <DatePicker
                                 format={'DD/MM/YYYY'}
                                 style={{ width: '100%' }}
-                                value={fromMillisToDayjs(paymentDate)}
+                                value={DateUtils.convertMillisToDayjs(paymentDate)}
                                 onChange={(date) => setPaymentDate(date.valueOf())}
                             />
                         </FormItem>
@@ -224,7 +222,7 @@ const Label = styled.span
     margin-bottom: 5px;
 `;
 
-const FormItem = styled(antd.Form.Item)`
+const FormItem = styled(Form.Item)`
   margin-bottom: 15px;
 `;
 

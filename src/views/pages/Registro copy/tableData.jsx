@@ -1,21 +1,15 @@
-
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useFormatPrice } from "../../../hooks/useFormatPrice";
-import { getTimeElapsed } from "../../../hooks/useFormatTime";
-import { Receipt } from "../checkout/Receipt";
 import { faPrint, faReceipt } from "@fortawesome/free-solid-svg-icons";
 import { useReactToPrint } from "react-to-print";
 import { useEffect, useRef, useState } from "react";
-import { icons } from "../../../constants/icons/icons";
 import * as ant from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import { addInvoice } from "../../../features/invoice/invoiceFormSlice";
-import { convertDate } from "../../../utils/date/convertTimeStampToDate";
+import DateUtils from "../../../utils/date/dateUtils";
 import { selectUser } from "../../../features/auth/userSlice";
 import { fbCashCountStatus } from "../../../firebase/cashCount/fbCashCountStatus";
 import { Tag } from "../../templates/system/Tag/Tag";
 import { openInvoicePreviewModal } from "../../../features/invoice/invoicePreviewSlice";
-import { togglePrintWarranty } from "../../../features/cart/cartSlice";
 import AccountsReceivablePaymentReceipt from "../checkout/receipts/AccountsReceivablePaymentReceipt/AccountsReceivablePaymentReceipt";
 
 const EditButton = ({ value }) => {
@@ -46,12 +40,12 @@ const EditButton = ({ value }) => {
   const handleEdit = () => {
     const invoiceData = {
       ...data,
-      date: convertDate.fromTimestampToMillis(data.date),
+      date: DateUtils.convertTimestampToMillis(data.date),
       payWith: data?.paymentMethod.find((method) => method.status === true)?.value,
-      updateAt: convertDate.fromTimestampToMillis(data?.updateAt),
+      updateAt: DateUtils.convertTimestampToMillis(data?.updateAt),
       cancel: data?.cancel ? {
         ...data.cancel,
-        cancelledAt: convertDate.fromTimestampToMillis(data?.cancel?.cancelledAt),
+        cancelledAt: DateUtils.convertTimestampToMillis(data?.cancel?.cancelledAt),
       } : null
     }
     dispatch(addInvoice({ invoice: invoiceData }))

@@ -1,6 +1,6 @@
 import { Timestamp, doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebaseconfig";
-import { fbAddMultipleFilesAndGetURLs } from "../img/fbUploadFileAndGetURL";
+import { fbUploadFiles } from "../img/fbUploadFileAndGetURL";
 
 export const fbUpdateOrder = async (user, order, fileList) => {
    
@@ -19,7 +19,7 @@ export const fbUpdateOrder = async (user, order, fileList) => {
         }
         const orderRef = doc(db, 'businesses', user.businessID, 'orders', order.id)
         if(fileList && fileList.length > 0){
-            const files = await fbAddMultipleFilesAndGetURLs(user, "orderReceipts", fileList);
+            const files = await fbUploadFiles(user, "orderReceipts", fileList);
             data.fileList = [...(data?.fileList || []), ...files]
         }
         await updateDoc(orderRef, { data })

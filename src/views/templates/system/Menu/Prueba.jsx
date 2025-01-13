@@ -9,6 +9,9 @@ import { Receipt } from '../../../pages/checkout/Receipt';
 // import { GridVirtualizerFixed } from './ProductList';
 import PurchaseManagement from '../../../pages/OrderAndPurchase/PurchaseManagement/PurchaseManagement';
 import styled from 'styled-components';
+import FileProcessor from './RncFileUpload';
+import RncSearch from './RncSearch';
+import OrderManagement from '../../../pages/OrderAndPurchase/OrderManagement/OrderManagement';
 
 const { FloatButton } = antd
 
@@ -19,9 +22,11 @@ export const Prueba = () => {
 
   return (
     <Container>
-    
+       {/* <FileProcessor />
+      <RncSearch />  */}
+
       {/* <GridVirtualizerFixed /> */}
-      <PurchaseManagement />
+      <OrderManagement />
       {/* <Receipt data={invoice} ignoreHidden={true} />  */}
       {/* <FloatButton onClick={handleSubmit}>Corregir productos sin Id</FloatButton> */}
     </Container>

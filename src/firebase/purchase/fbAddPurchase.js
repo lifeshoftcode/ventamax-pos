@@ -1,59 +1,140 @@
 import { nanoid } from 'nanoid';
-import { Timestamp, doc, setDoc } from "firebase/firestore";
+import { Timestamp, doc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "../firebaseconfig";
-import { fbAddMultipleFilesAndGetURLs, fbUploadFileAndGetURL } from '../img/fbUploadFileAndGetURL';
+import { fbUploadFiles } from '../img/fbUploadFileAndGetURL';
 import { getNextID } from '../Tools/getNextID';
-import { isImageFile, isPDFFile } from '../../utils/file/isValidFile';
 import { fbUpdateProdStockForReplenish } from './fbUpdateProdStockForReplenish';
+
+const cleanLocalAttachments = (attachments = []) => {
+    return attachments.filter(attachment => attachment.location !== 'local');
+};
+
+export const updateLocalAttachmentsWithRemoteURLs = (localAttachments, uploadedFiles) => {
+    return localAttachments.map(attachment => {
+        if (attachment.location === 'local') {
+            const uploadedFile = uploadedFiles.find(uf => uf.name === attachment.name);
+            if (uploadedFile) {
+                return {
+                    ...attachment,
+                    location: 'remote',
+                    url: uploadedFile.url,
+                    size: uploadedFile.size,
+                    mimeType: uploadedFile.mimeType
+                };
+            }
+        }
+        return attachment;
+    });
+};
 
 export const fbAddPurchase = async (user, purchase, fileList = [], setLoading) => {
     try {
         const id = nanoid(10);
         const purchasesRef = doc(db, "businesses", user.businessID, "purchases", id);
         setLoading({ isOpen: true, message: "Iniciando proceso de registro de Compra" });
-        // Completa la información de la compra con un nuevo ID y las fechas actuales
+        
         console.log("purchase------: ", purchase)
-        const nextID = await getNextID(user, 'lastOrdersId');
-        const providerRef = doc(db, "businesses", user.businessID, 'providers', purchase.provider.id);
+        const nextID = await getNextID(user, 'lastPurchaseNumberId');
+        
+        // Convert replenishment expirationDates to Timestamps
+        const updatedReplenishments = purchase.replenishments.map(item => ({
+            ...item,
+            expirationDate: item.expirationDate ? Timestamp.fromMillis(item.expirationDate) : null
+        }));
+
         let data = {
             ...purchase,
             id,
             numberId: nextID,
-            state: "state_3",
-            type: "Direct",
-            provider: providerRef,
-            dates: {
-                ...purchase.dates,
-                deliveryDate: Timestamp.fromMillis(purchase.dates.deliveryDate),
-                paymentDate: Timestamp.fromMillis(purchase.dates.paymentDate),
-            }
+            deliveryDate: Timestamp.fromMillis(purchase.dates.deliveryDate),
+            paymentDate: Timestamp.fromMillis(purchase.dates.paymentDate),
+            replenishments: updatedReplenishments
         };
 
-        // Sube la imagen al servidor
+        // ...existing code...
         if (fileList.length > 0) {
             setLoading({ isOpen: true, message: "Subiendo imagen del recibo al servidor..." });
-            const files = await fbAddMultipleFilesAndGetURLs(user, "purchaseReceipts", fileList);
-         
+            const files = await fbUploadFiles(user, "purchaseReceipts", fileList);
             data.fileList = [...(data?.fileList || []), ...files]
-
         }
 
-        // Actualiza el stock de los productos
         setLoading({ isOpen: true, message: "Actualizando stock de productos..." });
-        
         await fbUpdateProdStockForReplenish(user, data.replenishments);
 
-
-        // Agrega el documento a Firestore y espera a que se complete
         console.log("*************data: ", data)
         await setDoc(purchasesRef, { data });
-        // Opcionalmente, podrías devolver algún dato o confirmación
         setLoading({ isOpen: false, message: "" });
         return data;
     } catch (error) {
         setLoading({ isOpen: false, message: "" });
-        // Manejar el error como consideres adecuado (e.g., re-lanzarlo, registrar en un log, etc.)
         console.error("Error adding purchase: ", error);
         throw error;
     }
 };
+
+export const safeTimestamp = (date) => {
+    if (!date) return serverTimestamp();
+    const milliseconds = typeof date === 'number' ? date : new Date(date).getTime();
+    if (isNaN(milliseconds)) return serverTimestamp();
+    return Timestamp.fromMillis(milliseconds);
+};
+
+
+export async function addPurchase({ user, purchase, localFiles = [], setLoading = () => { } }) {
+    try {
+        const id = nanoid();
+        const numberId = await getNextID(user, 'lastPurchaseNumberId');
+        const purchasesRef = doc(db, "businesses", user.businessID, "purchases", id);
+
+        if (purchase.orderId) {
+            const ordersRef = doc(db, "businesses", user.businessID, "orders", purchase.orderId);
+            await updateDoc(ordersRef, { status: 'completed' });
+        }
+
+        let uploadedFiles = [];
+        // Solo intentar subir archivos si hay archivos locales
+        if (localFiles && localFiles.length > 0) {
+            const files = localFiles.map(({ file }) => file);
+            uploadedFiles = await fbUploadFiles(user, "purchaseAndOrderFiles", files, {
+                customMetadata: {
+                    type: "purchase_attachment",
+                },
+            });
+        }
+
+        const existingAttachments = purchase.attachmentUrls || [];
+
+        const updatedAttachments = updateLocalAttachmentsWithRemoteURLs(
+            existingAttachments,
+            uploadedFiles
+        );
+
+        // Update replenishments with safe timestamp conversion
+        const updatedReplenishments = purchase.replenishments?.map(item => ({
+            ...item,
+            expirationDate: safeTimestamp(item.expirationDate)
+        })) || [];
+
+        const data = {
+            ...purchase,
+            id,
+            numberId,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            deliveryAt: safeTimestamp(purchase.deliveryAt),
+            paymentAt: safeTimestamp(purchase.paymentAt),
+            completedAt: purchase.completedAt ? safeTimestamp(purchase.completedAt) : null,
+            attachmentUrls: updatedAttachments,
+            replenishments: updatedReplenishments
+        };
+        console.log("purchase pending",data)
+
+        await setDoc(purchasesRef, data);
+        setLoading(false);
+        return data;
+    } catch (error) {
+        setLoading(false);
+        console.error("Error in addPurchase:", error);
+        throw error;
+    }
+}

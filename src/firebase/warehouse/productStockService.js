@@ -16,19 +16,25 @@ import {
   onSnapshot,
 } from 'firebase/firestore';
 
-
 // Obtener referencia de la colección de productos en stock
 export const getProductStockCollectionRef = (businessID) => {
+  if (!businessID) {
+    console.warn('businessID is empty. Skipping collection reference.');
+    return null; // Return early or handle gracefully
+  }
   return collection(db, 'businesses', businessID, 'productsStock');
 };
 
 // Crear un nuevo producto en stock
 export const createProductStock = async (user, productStockData) => {
   const id = nanoid();
+
   try {
     const productStockCollectionRef = getProductStockCollectionRef(user.businessID);
-    const productStockDocRef = doc(productStockCollectionRef, id);
+    if (!productStockCollectionRef) return; // If null, do not proceed
 
+    const productStockDocRef = doc(productStockCollectionRef, id);
+    console.log("product stock: ", productStockData);
     await setDoc(productStockDocRef, {
       ...productStockData,
       id,
@@ -52,9 +58,14 @@ export const createProductStock = async (user, productStockData) => {
 export const getAllProductStocks = async (user) => {
   try {
     const productStockCollectionRef = getProductStockCollectionRef(user.businessID);
+    if (!productStockCollectionRef) return []; // If null, return empty array
+
     const querySnapshot = await getDocs(productStockCollectionRef);
     const productsStock = querySnapshot.docs.map((doc) => ({
       id: doc.id,
+      productId: doc.data().productId, // Ensure productId is included
+      location: doc.data().location, // Ensure location is included
+      stock: doc.data().stock, // Ensure stock is included
       ...doc.data(),
     }));
     return productsStock;
@@ -100,6 +111,8 @@ export const deleteProductStock = async (user, id) => {
 export const listenAllProductStock = (user, productId, callback) => {
   try {
     const productStockCollectionRef = getProductStockCollectionRef(user.businessID);
+    if (!productStockCollectionRef) return; // If null, do not proceed
+
     const q = query(
       productStockCollectionRef,
       where('productId', '==', productId),
@@ -125,36 +138,31 @@ export const listenAllProductStock = (user, productId, callback) => {
 
 // Escuchar en tiempo real todos los productos en stock por ubicación
 export const listenAllProductStockByLocation = (user, location, callback) => {
-  try {
-    const productStockCollectionRef = getProductStockCollectionRef(user.businessID);
-    let q;
-
-    if (location) {
-      q = query(
-        productStockCollectionRef,
-        where('location.id', '==', location.id),
-        where('isDeleted', '==', false)
-      );
-    } else {
-      q = query(productStockCollectionRef, where('isDeleted', '==', false));
-    }
-
-    const unsubscribe = onSnapshot(
-      q,
-      (querySnapshot) => {
-        const data = querySnapshot.docs.map((doc) => doc.data());
-        callback(data);
-      },
-      (error) => {
-        console.error('Error al escuchar documentos en tiempo real:', error);
-      }
-    );
-
-    return unsubscribe;
-  } catch (error) {
-    console.error('Error al escuchar documentos en tiempo real:', error);
-    throw error;
+  if (!location) {
+    console.warn('location is undefined or empty. Skipping listener.');
+    return () => {}; // Return no-op function
   }
+  const productStockCollectionRef = getProductStockCollectionRef(user.businessID);
+  if (!productStockCollectionRef) return () => {}; // No-op if collection ref is null
+
+  let q = query(
+    productStockCollectionRef,
+    where('location', '==', location),
+    where('isDeleted', '==', false)
+  );
+
+  const unsubscribe = onSnapshot(
+    q,
+    (querySnapshot) => {
+      const data = querySnapshot.docs.map((doc) => doc.data());
+      callback(data);
+    },
+    (error) => {
+      console.error('Error al escuchar documentos en tiempo real:', error);
+    }
+  );
+
+  return unsubscribe; // Return the actual unsubscribe
 };
 
 // Hook para escuchar productos en stock por ubicación
@@ -163,11 +171,9 @@ export const useListenProductsStockByLocation = (location = null) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const stableUser = useMemo(() => user, [user]);
-  const stableLocation = useMemo(() => location, [location]);
-
   useEffect(() => {
-    if (!stableLocation?.id || !stableUser) {
+    // Si no hay location.id o no hay user, limpiamos y salimos.
+    if (!location || !user) {
       setData([]);
       setLoading(false);
       return;
@@ -175,13 +181,18 @@ export const useListenProductsStockByLocation = (location = null) => {
 
     setLoading(true);
 
-    const unsubscribe = listenAllProductStockByLocation(stableUser, stableLocation, (updatedProducts) => {
-      setData(updatedProducts);
-      setLoading(false);
-    });
+    const unsubscribe = listenAllProductStockByLocation(
+      user,
+      location,
+      (updatedProducts) => {
+        setData(updatedProducts);
+        setLoading(false);
+      }
+    );
 
+    // Limpiamos el listener al desmontar
     return () => unsubscribe();
-  }, [stableUser, stableLocation]);
+  }, [user, location]);
 
   return { data, loading };
 };
@@ -221,3 +232,38 @@ export const useListenProductsStock = (productId = null) => {
 /* ==========================
    Exportación de Servicios
 ========================== */
+
+export const getProductStockByBatch = async (
+  user,
+  { productId, batchId, location } = {}
+) => {
+  console.log("businessId: ", user.businessID);
+  console.log("productId: ", productId);
+  console.log("batchId: ", batchId);
+  console.log("location: ", location);
+
+  const productStockCollectionRef = getProductStockCollectionRef(user.businessID);
+  if (!productStockCollectionRef) return [];
+
+  // Armamos los filtros dinámicamente
+  const filters = [where('isDeleted', '==', false)];
+
+  if (productId) {
+    filters.push(where('productId', '==', productId));
+  }
+
+  if (batchId) {
+    filters.push(where('batchId', '==', batchId));
+  }
+
+  if (location) {
+    filters.push(where('location', '==', location));
+  }
+
+  // Creamos la query con todos los filtros
+  const q = query(productStockCollectionRef, ...filters);
+
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => doc.data());
+};
+

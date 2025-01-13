@@ -3,8 +3,8 @@ import * as antd from 'antd';
 const { Button, Upload, Modal, message } = antd;
 import { FileAddOutlined, UploadOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
-import { importProductData } from '../../../../utils/import/product';
 
+import { importProductData } from '../../../../utils/import/product';
 
 export default function ImportModal({ open, onClose, onImport, onCreateTemplate }) {
   const [fileList, setFileList] = useState([]);

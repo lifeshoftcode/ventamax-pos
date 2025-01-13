@@ -15,8 +15,12 @@ export const ActionsButtonsGroup = ({ purchaseData }) => {
   
     const handleEditMode = () => {
         navigate(PURCHASES_CREATE);
-        dispatch(setAddPurchaseMode('edit'))
-        dispatch(setPurchase(purchaseData.value))
+        dispatch(setAddPurchaseMode('update'))
+        const purchase = {
+            ...purchaseData,
+            provider: purchaseData.provider.id,
+        }
+        dispatch(setPurchase(purchase))
     }
 
     const handleDeleteMode = (id) => {

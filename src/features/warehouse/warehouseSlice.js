@@ -7,8 +7,6 @@ const initialState = {
   selectedShelf: null,
   selectedRowShelf: null,
   selectedSegment: null,
-  selectedProduct: null, 
-  currentProducts: [],
   breadcrumbs: [{ title: 'Warehouse', key: 'warehouse', data: null }],
 };
 
@@ -18,7 +16,7 @@ const warehouseSlice = createSlice({
   reducers: {
     // Navega a una ubicación o un producto en cualquier nivel
     navigateWarehouse: (state, action) => {
-      const { view, data, product } = action.payload;
+      const { view, data } = action.payload;
       state.currentView = view;
 
       // Actualiza los breadcrumbs según la vista
@@ -37,28 +35,6 @@ const warehouseSlice = createSlice({
         case 'segment':
           state.breadcrumbs[3] = { title: data.name, key: 'segment' };
           state.breadcrumbs = state.breadcrumbs.slice(0, 4);
-          break;
-        case 'product':  // Navegar directamente al producto
-          // Si el producto está en un almacén
-          if (data.location === 'warehouse') {
-            state.breadcrumbs[1] = { title: data.name, key: 'product' };
-            state.breadcrumbs = state.breadcrumbs.slice(0, 2);
-          }
-          // Si el producto está en un estante
-          if (data.location === 'shelf') {
-            state.breadcrumbs[2] = { title: data.name, key: 'product' };
-            state.breadcrumbs = state.breadcrumbs.slice(0, 3);
-          }
-          // Si el producto está en una fila de estantes
-          if (data.location === 'rowShelf') {
-            state.breadcrumbs[3] = { title: data.name, key: 'product' };
-            state.breadcrumbs = state.breadcrumbs.slice(0, 4);
-          }
-          // Si el producto está en un segmento
-          if (data.location === 'segment') {
-            state.breadcrumbs[4] = { title: data.name, key: 'product' };
-            state.breadcrumbs = state.breadcrumbs.slice(0, 5);
-          }
           break;
         default:
           state.breadcrumbs = [{ title: 'Warehouse', key: 'warehouse' }];
@@ -83,20 +59,11 @@ const warehouseSlice = createSlice({
       if (view === 'segment') {
         state.selectedSegment = data;
       }
-      if (view === 'product') {
-        state.selectedProduct = data;
-      }
-
-      // Si se navega a un producto, se actualiza el producto seleccionado
-      if (product) {
-        state.selectedProduct = product;
-      }
     },
     
     // Retrocede un nivel en la navegación
     back: (state) => {
       const viewMap = {
-        product: 'segment',
         segment: 'rowShelf',
         rowShelf: 'shelf',
         shelf: 'warehouse',
@@ -110,16 +77,11 @@ const warehouseSlice = createSlice({
         state.selectedShelf = null;
         state.selectedRowShelf = null;
         state.selectedSegment = null;
-        state.selectedProduct = null;
       } else if (state.currentView === 'shelf') {
         state.selectedRowShelf = null;
         state.selectedSegment = null;
-        state.selectedProduct = null;
       } else if (state.currentView === 'rowShelf') {
         state.selectedSegment = null;
-        state.selectedProduct = null;
-      } else if (state.currentView === 'segment') {
-        state.selectedProduct = null;
       }
     },
 
@@ -137,22 +99,18 @@ const warehouseSlice = createSlice({
           state.selectedShelf = null;
           state.selectedRowShelf = null;
           state.selectedSegment = null;
-          state.selectedProduct = null;
           state.currentView = 'warehouse';
           break;
         case 1: // Shelf
           state.selectedRowShelf = null;
           state.selectedSegment = null;
-          state.selectedProduct = null;
           state.currentView = 'shelf';
           break;
         case 2: // RowShelf
           state.selectedSegment = null;
-          state.selectedProduct = null;
           state.currentView = 'rowShelf';
           break;
         case 3: // Segment
-          state.selectedProduct = null;
           state.currentView = 'segment';
           break;
         default:
@@ -161,7 +119,6 @@ const warehouseSlice = createSlice({
           state.selectedShelf = null;
           state.selectedRowShelf = null;
           state.selectedSegment = null;
-          state.selectedProduct = null;
           state.currentView = 'warehouse';
       }
     },

@@ -1,4 +1,3 @@
-
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
@@ -10,19 +9,21 @@ const initialState = {
         description: "",
         capacity: 0,
     },
+    path: [], // Nueva propiedad para almacenar la ruta
     loading: false,
     error: null,
 };
 
 const rowShelfModalSlice = createSlice({
-    name: 'rowShelfModal', // Updated slice name
+    name: 'rowShelfModal',
     initialState,
     reducers: {
         openRowShelfForm: (state, action) => {
             state.isOpen = true;
-            const data = action.payload;
+            const data = action.payload.data;
+            state.path = action.payload.path || []; // Almacenar la ruta
             if (data) {
-                state.formData = action.payload;
+                state.formData = data;
             } else {
                 state.formData = initialState.formData;
             }
@@ -30,6 +31,7 @@ const rowShelfModalSlice = createSlice({
         closeRowShelfForm: (state) => {
             state.isOpen = false;
             state.formData = initialState.formData;
+            state.path = []; // Limpiar la ruta
         },
         setRowShelfLoading: (state, action) => {
             state.loading = action.payload;

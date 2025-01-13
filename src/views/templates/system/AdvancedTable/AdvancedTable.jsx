@@ -13,7 +13,8 @@ import TableFooter from './components/Table/TableFooter/TableFooter';
 import { useColumnOrder } from './hooks/useColumnOrder';
 import { FilterUI } from './components/MenuFilter/MenuFilter';
 import { DatePicker } from '../Dates/DatePicker/DatePicker';
-import filterByDateRange from '../../../../utils/date/filterByDateRange';
+import { useWindowWidth } from '../../../../hooks/useWindowWidth';
+
 /**
  * AdvancedTable es un componente de tabla personalizado que acepta los siguientes props:
  *
@@ -29,6 +30,21 @@ const groupDataByField = (data, field) => {
     (acc[item[field]] = acc[item[field]] || []).push(item);
     return acc;
   }, {});
+};
+
+const useWideLayout = () => {
+  const [isWide, setIsWide] = useState(window.innerWidth >= 1600);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsWide(window.innerWidth >= 1600);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return isWide;
 };
 
 export const AdvancedTable = ({
@@ -49,8 +65,9 @@ export const AdvancedTable = ({
   onRowClick,
   footerLeftSide,
   footerRightSide,
-  numberOfElementsPerPage = 40, 
-  loading = false
+  numberOfElementsPerPage = 30, 
+  loading = false,
+  title // Add this new prop
 }) => {
   //Usuarios y referencias
   const user = useSelector(selectUser)
@@ -89,11 +106,16 @@ export const AdvancedTable = ({
   const totalElements = data?.length;
   const elementsShown = currentData?.length;
 
+  const isWideScreen = useWindowWidth(1366);
+  const isWideLayout = useWideLayout();
+
   return (
     <Container
       headerComponent={filterUI || headerComponent}
       datesFilter={setDateRange}
+      title={title}
       >
+      {title && <TableTitle>{title}</TableTitle>}
       {(filterUI || dateRange ?
         (
           <FilterBar>
@@ -123,11 +145,14 @@ export const AdvancedTable = ({
       <TableContainer columns={columns}>
         <Wrapper
           ref={wrapperRef}
+          isWideScreen={isWideScreen}
         >
           <TableHeader
             columnOrder={columnOrder}
             handleSort={handleSort}
             sortConfig={sortConfig}
+            isWideScreen={isWideScreen}
+            isWideLayout={isWideLayout}
           />
           <TableBody
             columnOrder={columnOrder}
@@ -137,6 +162,8 @@ export const AdvancedTable = ({
             onRowClick={onRowClick}
             shouldGroup={shouldGroup}
             loading={loading}
+            isWideScreen={isWideScreen}
+            isWideLayout={isWideLayout}
           />
         </Wrapper>
         <TableFooter
@@ -176,29 +203,42 @@ const Container = styled.div`
   height: 100%;
   display: grid;
   background-color: ${props => props.theme.bg.shade};
-  grid-template-rows: 1fr;
   border-radius: 0.4em;
   overflow: hidden;
-  ${props => {
-    if (props?.headerComponent) {
-      return `
-      grid-template-rows: min-content 1fr;
-      `
-    }
-    if (props?.datesFilter) {
-      return `
-      grid-template-rows: min-content 1fr;
-      `
-    }
-  }}
+  
+  /* Auto-fit grid template rows based on content presence */
+  grid-template-rows: ${props => {
+    const rows = [];
+    
+    // Add title row if present
+    if (props.title) rows.push('min-content');
+    
+    // Add header row if present
+    if (props.headerComponent || props.datesFilter) rows.push('min-content');
+    
+    // Always add main content
+    rows.push('1fr');
+    
+    return rows.join(' ');
+  }};
+`;
 
-`
+const TableTitle = styled.div`
+  padding: 0.8em 1em;
+  font-size: 1.1em;
+  height: min-content;
+  font-weight: 600;
+  background-color: ${props => props.theme.bg.primary};
+  border-bottom: var(--border-primary);
+`;
+
 const TableContainer = styled.div`
   display: grid;
   grid-template-rows: 1fr min-content;
- overflow: hidden;
+  overflow: hidden;
   position: relative;
   width: 100%;
+  isolation: isolate; // Para manejar el z-index de las columnas fijas
 `;
 
 const Wrapper = styled.div`
@@ -209,14 +249,46 @@ const Wrapper = styled.div`
   overflow-y: scroll;
   overflow-x: auto;
   background-color: #ffffff;
-`
+  position: relative;
+
+  /* Mejora el comportamiento del scroll horizontal */
+  &::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+`;
 
 export const Row = styled.div`
   display: grid;
-  grid-template-columns: ${props => props.columns.map(col => `minmax(${col.minWidth || 'auto'}, ${col.maxWidth || '1fr'})`).join(' ')};
+  grid-template-columns: ${props => {
+    if (props.isWideLayout) {
+      return props.columns.map(col => {
+        // Mantener tamaño original si keepWidth es true
+        if (col.keepWidth) {
+          return `minmax(${col.minWidth || '100px'}, ${col.maxWidth || '1fr'})`;
+        }
+        return '1fr';
+      }).join(' ');
+    }
+    // Comportamiento original para pantallas más pequeñas
+    return props.columns.map(col => 
+      `minmax(${col.minWidth || '100px'}, ${col.maxWidth || '1fr'})`
+    ).join(' ');
+  }};
   align-items: center;
-  justify-content: space-between;
   gap: 0.6em;
+  position: relative;
+  min-width: fit-content;
+  width: 100%;
 `;
 
 

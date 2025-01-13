@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import  { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { selectUser } from '../../features/auth/userSlice';
 import { listenAllWarehouses } from './warehouseService';
@@ -55,7 +55,7 @@ export const useWarehouseHierarchy = () => {
             [warehouse.id]: shelfData,
           }));
           setShelvesLoading((prev) => ({ ...prev, [warehouse.id]: false }));
-          
+
           shelfData.forEach((shelf) => {
             // Subscribe to shelf products
             const unsubscribeShelfStock = listenAllProductStockByLocation(
@@ -183,17 +183,7 @@ const transformData = (data, shelvesLoading, rowsLoading, segmentsLoading) => {
     isLoading: shelvesLoading[warehouse.id] !== false,
     productStock: warehouse.productStock || [], // Add productStock at warehouse level
     data: {
-      owner: warehouse.owner,
-      location: warehouse.location,
-      address: warehouse.address,
-      capacity: warehouse.capacity,
-      dimension: warehouse.dimension,
-      description: warehouse.description,
-      createdAt: warehouse.createdAt,
-      updatedAt: warehouse.updatedAt,
-      createdBy: warehouse.createdBy,
-      updatedBy: warehouse.updatedBy,
-      number: warehouse.number,
+      ...warehouse
     },
     children: warehouse.shelves?.map((shelf) => ({
       id: shelf.id,
@@ -201,14 +191,7 @@ const transformData = (data, shelvesLoading, rowsLoading, segmentsLoading) => {
       isLoading: rowsLoading[shelf.id] !== false,
       productStock: shelf.productStock || [], // Add productStock at shelf level
       data: {
-        rowCapacity: shelf.rowCapacity,
-        shortName: shelf.shortName,
-        description: shelf.description,
-        createdAt: shelf.createdAt,
-        updatedAt: shelf.updatedAt,
-        createdBy: shelf.createdBy,
-        updatedBy: shelf.updatedBy,
-        warehouseId: shelf.warehouseId,
+        ...shelf
       },
       children: shelf.rows?.map((row) => ({
         id: row.id,
@@ -216,14 +199,7 @@ const transformData = (data, shelvesLoading, rowsLoading, segmentsLoading) => {
         isLoading: segmentsLoading[row.id] !== false,
         productStock: row.productStock || [], // Add productStock at row level
         data: {
-          capacity: row.capacity,
-          shortName: row.shortName,
-          description: row.description,
-          createdAt: row.createdAt,
-          updatedAt: row.updatedAt,
-          createdBy: row.createdBy,
-          updatedBy: row.updatedBy,
-          shelfId: row.shelfId,
+          ...row
         },
         children: row.segments?.map((segment) => ({
           id: segment.id,
@@ -231,14 +207,7 @@ const transformData = (data, shelvesLoading, rowsLoading, segmentsLoading) => {
           isLoading: false, // Assuming segments load immediately
           productStock: segment.productStock || [], // Add productStock at segment level
           data: {
-            capacity: segment.capacity,
-            shortName: segment.shortName,
-            description: segment.description,
-            createdAt: segment.createdAt,
-            updatedAt: segment.updatedAt,
-            createdBy: segment.createdBy,
-            updatedBy: segment.updatedBy,
-            rowShelfId: segment.rowShelfId,
+            ...segment
           },
           children: [], // Segmento no tiene hijos
         })) || [],

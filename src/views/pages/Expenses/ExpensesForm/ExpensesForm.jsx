@@ -14,7 +14,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { selectUser } from '../../../../features/auth/userSlice';
 import { validateExpense } from '../../../../validates/expenseValidate';
 import { resetExpense, selectExpense, setExpense } from '../../../../features/expense/expenseManagementSlice';
-import { convertMillisToISO } from '../../../../utils/date/formatDate';
+import DateUtils from '../../../../utils/date/dateUtils';
 import { fbUpdateExpense } from '../../../../firebase/expenses/Items/fbUpdateExpense';
 import { useGoBack } from '../../../../hooks/path/useGoBack';
 import Loader from '../../../templates/system/loader/Loader';
@@ -118,7 +118,7 @@ const ExpensesForm = () => {
                     />
                     <InputV4
                         type="date"
-                        value={typeof expense.dates.expenseDate === 'number' ? convertMillisToISO(expense.dates.expenseDate) : expense.dates.expenseDate}
+                        value={typeof expense.dates.expenseDate === 'number' ? DateUtils.convertMillisToISODate(expense.dates.expenseDate) : expense.dates.expenseDate}
                         onChange={(e) => updateExpense({ dates: { ...expense.dates, expenseDate: e.target.value } })}
                         onClear={() => updateExpense({ dates: { ...expense.dates, expenseDate: '' } })}
                         label='Fecha de Gasto:'

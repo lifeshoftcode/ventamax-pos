@@ -3,7 +3,6 @@ import { faPlus, faEdit, faTrash, faEllipsisH } from "@fortawesome/free-solid-sv
 import Tree from "../../../../../../component/tree/Tree";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  navigateWarehouse,
   selectWarehouse,
 } from "../../../../../../../features/warehouse/warehouseSlice";
 import { openShelfForm } from "../../../../../../../features/warehouse/shelfModalSlice"; // Updated import
@@ -19,6 +18,7 @@ import { deleteWarehouse } from "../../../../../../../firebase/warehouse/warehou
 import {
   openWarehouseForm
 } from "../../../../../../../features/warehouse/warehouseModalSlice"; // New import
+import { useNavigate } from 'react-router-dom'
 
 // Estilo para el sidebar
 const SidebarContainer = styled.div`
@@ -83,33 +83,42 @@ const Sidebar = ({ onSelectNode, items }) => {
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
   const { currentView, selectedWarehouse, selectedShelf, selectedRowShelf, selectedSegment } = useSelector(selectWarehouse);
-
-  // Removed local state for form visibility and warehouse data
+  const navigate = useNavigate();
 
   const handleNodeClick = (node, level) => {
-    const viewMap = {
-      0: 'warehouse',
-      1: 'shelf',
-      2: 'rowShelf',
-      3: 'segment',
-      4: 'product'
-    };
-
-    // Encontrar la ruta completa al nodo seleccionado
+    
+    // Base URL
+    let url = '/inventory/warehouse';
+    
+    // Obtener el camino completo al nodo
     const path = findPathToNode(items, node.id);
 
-    if (path) {
-      // Iterar desde el primer padre hasta el nodo seleccionado
-      path.forEach((currentNode, index) => {
-        const selectedView = viewMap[index];
-        const currentPath = path.slice(0, index + 1);
-        dispatch(navigateWarehouse({
-          view: selectedView,
-          data: currentNode,
-          // path: currentPath 
-        }));
-      });
+    if (node.data && path) {
+      switch (level) {
+        case 0: // Warehouse level
+          url += `/${node.id}`;
+          break;
+        case 1: // Shelf level
+          url += `/${path[0].id}/shelf/${node.id}`;
+          break;
+        case 2: // Row level
+          url += `/${path[0].id}/shelf/${path[1].id}/row/${node.id}`;
+          break;
+        case 3: // Segment level
+          if (path.length >= 3) {
+            url += `/${path[0].id}/shelf/${path[1].id}/row/${path[2].id}/segment/${node.id}`;
+          } else {
+            message.error("Camino al nodo incompleto para segmento");
+            return;
+          }
+          break;
+        default:
+          message.error("Nivel de nodo desconocido");
+          return;
+      }
     }
+    
+    navigate(url);
   };
 
   // Funciones para manejar acciones en estantes y filas
@@ -121,14 +130,53 @@ const Sidebar = ({ onSelectNode, items }) => {
     dispatch(openWarehouseForm(data)); // Open form with initial data for editing
   };
 
-  const handleAddShelf = (parentNode) => dispatch(openShelfForm({ parentNode }));
-  const handleUpdateShelf = (shelf) => dispatch(openShelfForm(shelf));
+  const handleAddShelf = (clickedNode) => {
+    const path = findPathToNode(items, clickedNode.id);
+    dispatch(openShelfForm({
+      data: null, // Para creación
+      path: path.map(node => ({ id: node.id, name: node.name })), // Pasar la ruta
+    }));
+  };
+  
+  const handleAddRowShelf = (parentNode) => {
+    const path = findPathToNode(items, parentNode.id);
+    dispatch(openRowShelfForm({
+      data: null, // Para creación
+      path: path.map(node => ({ id: node.id, name: node.name })), // Pasar la ruta
+    }));
+  };
 
-  const handleAddRowShelf = (parentNode) => dispatch(openRowShelfForm({ parentNode }));
-  const handleUpdateRowShelf = (data) => dispatch(openRowShelfForm({ data }));
+  const handleAddSegment = (parentNode) => {
+    const path = findPathToNode(items, parentNode.id);
+    dispatch(openSegmentForm({
+      data: null, // Para creación
+      path: path.map(node => ({ id: node.id, name: node.name })), // Pasar la ruta
+    }));
+  };
 
-  const handleAddSegment = () => dispatch(openSegmentForm());
-  const handleUpdateSegment = (segment) => dispatch(openSegmentForm(segment));
+  const handleUpdateShelf = (shelf) => {
+    const path = findPathToNode(items, shelf.id);
+    dispatch(openShelfForm({
+      data: shelf,
+      path: path.map(node => ({ id: node.id, name: node.name })), // Pasar la ruta
+    }));
+  };
+
+  const handleUpdateRowShelf = (data) => {
+    const path = findPathToNode(items, data.id);
+    dispatch(openRowShelfForm({
+      data: data,
+      path: path.map(node => ({ id: node.id, name: node.name })), // Pasar la ruta
+    }));
+  };
+
+  const handleUpdateSegment = (segment) => {
+    const path = findPathToNode(items, segment.id);
+    dispatch(openSegmentForm({
+      data: segment,
+      path: path.map(node => ({ id: node.id, name: node.name })), // Pasar la ruta
+    }));
+  };
 
   // Definir la configuración de eliminación dinámica utilizando el camino completo
   const deleteConfig = {
@@ -210,6 +258,11 @@ const Sidebar = ({ onSelectNode, items }) => {
     });
   };
 
+  // Add helper function to check if warehouse is default
+  const isDefaultWarehouse = (node) => {
+    return node?.data?.defaultWarehouse === true;
+  };
+
   // Configuración de acciones personalizada
   const config = {
     actions: [
@@ -217,6 +270,8 @@ const Sidebar = ({ onSelectNode, items }) => {
         name: "More",
         icon: faEllipsisH,
         type: 'dropdown',
+        // Agregar una condición para mostrar/ocultar el icono
+        show: (node, level) => !(level === 0 && isDefaultWarehouse(node)),
         items: (node, level) => {
           const actions = getLevelActions(level);
           const menuItems = [];
@@ -230,7 +285,9 @@ const Sidebar = ({ onSelectNode, items }) => {
                   handleAddShelf(node);
                 } else if (level === 1 && actions.create === "Crear Fila") {
                   handleAddRowShelf(node);
-                } else if (level === 0 && actions.create === "Crear Almacén") { // Changed from -1 to 0
+                } else if (level === 2 && actions.create === "Crear Segmento") {
+                  handleAddSegment(node);
+                } else if (level === 0 && actions.create === "Crear Almacén") { 
                   handleAddWarehouse();
                 } else {
                   alert(`${actions.create} en: ${node.name}`);
@@ -268,6 +325,7 @@ const Sidebar = ({ onSelectNode, items }) => {
       },
     ],
     onNodeClick: handleNodeClick,
+    showMatchedStockCount: true, // 1. Agregar esta propiedad para mostrar coincidencias
   };
 
   // Determinar el ID seleccionado basado en la vista actual
@@ -290,7 +348,7 @@ const Sidebar = ({ onSelectNode, items }) => {
     <SidebarContainer>
       <Tree
         data={items}
-        config={config}
+        config={config} // 2. Pasar la config al componente Tree
         selectedId={getSelectedId()}
       />
       <WarehouseForm />

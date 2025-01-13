@@ -39,6 +39,7 @@ const createEmptyProduct = () => ({
     packSize: 1, // Cantidad de productos en un paquete
     netContent: '',
     restrictSaleWithoutStock: false,
+    activeIngredients: '',
     amountToBuy: 1,
     createdBy: 'unknown',
     id: '',

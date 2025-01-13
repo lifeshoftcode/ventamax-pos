@@ -4,12 +4,14 @@ import styled from 'styled-components';
 import { useSelector } from 'react-redux';
 import { InfoItem, Spacing } from '../../Style';
 import { useFormatPhoneNumber } from '../../../../../../../../hooks/useFormatPhoneNumber';
-import { convertTimeStampToMillis, fromMillisToDateISO } from '../../../../../../../../utils/date/convertTimeStampToDate';
+import DateUtils from '../../../../../../../../utils/date/dateUtils';
 import { selectBusinessData } from '../../../../../../../../features/auth/businessSlice';
 
 export const Header = ({ data, Space }) => {
     let business = useSelector(selectBusinessData) || ""
-    const fechaActual = data?.date ? fromMillisToDateISO(convertTimeStampToMillis(data.date), "dd/MM/yyyy HH:mm") : DateTime.now().toFormat('dd/MM/yyyy HH:mm');
+    const fechaActual = data?.date 
+      ? DateUtils.convertMillisToISODate(DateUtils.convertTimestampToMillis(data.date), "dd/MM/yyyy HH:mm") 
+      : DateTime.now().toFormat('dd/MM/yyyy HH:mm');
     return (
         <Container>
                 <Title>{business?.name}</Title>

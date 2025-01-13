@@ -48,6 +48,7 @@ import ProductExpirySelection from "./ProductExpirySelection/ProductExpirySelect
 import ActiveIngredientModal from "./ActiveIngredients/ActiveIngredientModal"
 import { WarehouseForm } from "../../pages/Inventory/components/Warehouse/forms/WarehouseForm/WarehouseForm"
 import ARSummaryModal from "./ARInfoModal/ARSummaryModal"
+import EvidenceUploadDrawer from "../../pages/OrderAndPurchase/PurchaseManagement/components/EvidenceUploadDrawer/EvidenceUploadDrawer"
 
 export const ModalManager = () => {
 
@@ -153,6 +154,8 @@ export const ModalManager = () => {
             data={ViewOrdersNotesModalDataSelected.data}
           />
         )}
+
+<EvidenceUploadDrawer />
       </AnimatePresence>
       <NoteModal />
       <Loader />

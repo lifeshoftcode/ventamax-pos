@@ -3,7 +3,9 @@ import { icons } from "../../../../../constants/icons/icons";
 import ROUTES_NAME from "../../../../../routes/routesName";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
-const { ORDERS, ORDERS_CREATE, PURCHASES, PURCHASES_CREATE } = ROUTES_NAME.PURCHASE_TERM
+const { PURCHASES, PURCHASES_CREATE } = ROUTES_NAME.PURCHASE_TERM
+const { ORDERS, ORDERS_CREATE } = ROUTES_NAME.ORDER_TERM
+
 const { EXPENSES_CREATE, EXPENSES_LIST, EXPENSES_CATEGORY } = ROUTES_NAME.EXPENSES_TERM
 const { CASH_RECONCILIATION_LIST } = ROUTES_NAME.CASH_RECONCILIATION_TERM
 
@@ -19,27 +21,15 @@ const financialManagement = [
         group: 'financialManagement',
         submenu: [
             {
-                title: 'Pedidos Pendientes',
+                title: 'Pedidos',
                 icon: <FontAwesomeIcon icon={faClipboard} />,
                 route: ORDERS,
-                group: 'orders'
-            },
-            {
-                title: 'Crear Pedido',
-                route: ORDERS_CREATE,
-                icon: icons.operationModes.add,
-                group: 'orders'
+                group: 'purchases'
             },
             {
                 title: 'Compras',
                 route: PURCHASES,
                 icon: <FontAwesomeIcon icon={faClipboardCheck} />,
-                group: 'purchases'
-            },
-            {
-                title: 'Crear Compra',
-                route: PURCHASES_CREATE,
-                icon: icons.operationModes.add,
                 group: 'purchases'
             },
         ]

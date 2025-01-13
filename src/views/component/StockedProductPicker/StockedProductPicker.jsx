@@ -123,7 +123,6 @@ export const StockedProductPicker = ({ addProduct, selectedProduct, selectProduc
                 </div>
                 <div>
                     <InputV4
-                      
                         value={useFormatPrice(subTotal || 0)}
                         placeholder='SubTotal'
                         readOnly
@@ -132,7 +131,8 @@ export const StockedProductPicker = ({ addProduct, selectedProduct, selectProduc
                     />
                 </div>
                 <div>
-                    <Button title={<TbPlus />} width='icon32' border='light' borderRadius='normal' onClick={AddToProductList} >
+                    <Button 
+                    title={<TbPlus />} width='icon32' border='light' borderRadius='normal' onClick={AddToProductList} >
                     </Button>
                 </div>
             </Group>

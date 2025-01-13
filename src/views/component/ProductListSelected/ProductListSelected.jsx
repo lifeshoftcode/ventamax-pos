@@ -1,14 +1,7 @@
 import React from 'react'
 import styled from 'styled-components'
-import { ProductCard } from './ProductCard'
-import { SelectProducts, SelectTotalPurchase } from '../../../features/addOrder/addOrderModalSlice'
-import { useSelector } from 'react-redux'
-import { separator } from '../../../hooks/separator'
 import { useFormatPrice } from '../../../hooks/useFormatPrice'
-
-import * as antd from 'antd';
-const { Table, Input, Button } = antd;
-import { IoMdTrash } from 'react-icons/io';
+import { Table, Input, Button }from 'antd';
 import { icons } from '../../../constants/icons/icons'
 
 export const ProductListSelected = ({

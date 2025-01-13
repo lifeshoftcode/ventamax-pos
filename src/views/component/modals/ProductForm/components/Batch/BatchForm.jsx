@@ -9,8 +9,7 @@ import { createBatch, updateBatch } from "../../../../../../firebase/warehouse/b
 import { selectUser } from "../../../../../../features/auth/userSlice";
 import { useSelector } from "react-redux";
 import { selectUpdateProductData } from "../../../../../../features/updateProduct/updateProductSlice";
-import { Timestamp } from "firebase/firestore";
-import { convertDayjs } from "../../../../../../utils/date/convertDayjs";
+import DateUtils from "../../../../../../utils/date/dateUtils";
 
 // Styled Components
 const StyledContainer = styled.div`
@@ -41,9 +40,9 @@ export const BatchForm = ({
   const { product, status } = useSelector(selectUpdateProductData);
   const convertedData = {
     ...initialData,
-    expirationDate: convertDayjs.timestampToDayjs(initialData?.expirationDate),
-    manufacturingDate: convertDayjs.timestampToDayjs(initialData?.manufacturingDate),
-    receivedDate: convertDayjs.timestampToDayjs(initialData?.receivedDate),
+    expirationDate: DateUtils.convertTimestampToDayjs(initialData?.expirationDate),
+    manufacturingDate: DateUtils.convertTimestampToDayjs(initialData?.manufacturingDate),
+    receivedDate: DateUtils.convertTimestampToDayjs(initialData?.receivedDate),
   };
 
   const showModal = () => {
@@ -73,9 +72,9 @@ export const BatchForm = ({
       ...values,
       notes: values?.notes || "",
       productId: product?.id,
-      expirationDate: convertDayjs.dayjsToTimestamp(values?.expirationDate),
-      manufacturingDate: convertDayjs.dayjsToTimestamp(values?.manufacturingDate),
-      receivedDate: convertDayjs.dayjsToTimestamp(values?.receivedDate),
+      expirationDate: DateUtils.convertDayjsToTimestamp(values?.expirationDate),
+      manufacturingDate: DateUtils.convertDayjsToTimestamp(values?.manufacturingDate),
+      receivedDate: DateUtils.convertDayjsToTimestamp(values?.receivedDate),
     };
     console.log(batchData);
 

@@ -2,23 +2,37 @@ import React, { Fragment, useEffect, useState } from 'react'
 import { NavLink, useLocation, useMatch } from 'react-router-dom'
 import styled, { css } from 'styled-components'
 import { SubMenu } from './SubMenu/SubMenu'
-import * as antd from "antd"
-const { Tag } = antd
+import { Tag } from "antd"
 export const MenuLink = ({ item, Items }) => {
   const [isOpenSubMenu, setIsOpenSubMenu] = useState(false)
-  const showSubMenu = () => { setIsOpenSubMenu(!isOpenSubMenu) };
-  const isCurrentRoute = item?.submenu?.some(subItem => subItem.route === location.pathname);
+  const location = useLocation();
+
+  const isExactMatch = useMatch({
+    path: item?.route || '',
+    end: true
+  });
+
+  const isRouteActive = (route) => {
+    const currentPath = location.pathname;
+    return currentPath === route || currentPath.startsWith(route + '/');
+  };
+
+  const isCurrentRoute = item?.submenu?.some(subItem => isRouteActive(subItem.route));
+
   useEffect(() => {
     if (isCurrentRoute) {
       setIsOpenSubMenu(true);
     }
   }, [isCurrentRoute]);
+
+  const showSubMenu = () => { setIsOpenSubMenu(!isOpenSubMenu) };
   const Component = item?.route ? MenuItemLink : MenuItemDiv;
   return (
     <Fragment>
       <Component
         onClick={item.submenu ? showSubMenu : null}
         to={item?.route || "#"}
+        className={isExactMatch ? 'active' : ''}
       >
         <Group>
           <Icon color={item.color}>
@@ -57,7 +71,6 @@ const commonStyles = css`
   }
   :hover{
     color: ${props => props.theme.bg.color};
-    /* background-color: var(--color2); */
     transition: background-color 400ms ease;
     svg{
       color: ${props => props.theme.bg.color};
@@ -68,9 +81,7 @@ const commonStyles = css`
   }
 `;
 
-
-
-const MenuItemLink = styled(NavLink)`
+const MenuItemLink = styled(NavLink).attrs({ end: true })`
   ${commonStyles}
 
   &.active {
@@ -78,15 +89,12 @@ const MenuItemLink = styled(NavLink)`
     font-weight: 600;
     background-color: ${props => props.theme.bg.color};
     border-radius: 0.4em;
-   
 
     svg {
       color: white;
     }
   }
-
-
- `
+`
 const MenuItemDiv = styled.div`
   ${commonStyles}
 `
@@ -99,11 +107,8 @@ const Group = styled.div`
   }
 `
 const Icon = styled.div`
-width: 1.2em;
-display: flex;
-align-items: center;
-justify-content: center;
-
- 
-
-`
+  width: 1.2em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  `

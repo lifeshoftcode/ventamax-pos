@@ -11,7 +11,7 @@ import {
 
 import { selectCategoryGrouped } from '../../../features/setting/settingSlice'
 import { useGetProducts } from '../../../firebase/products/fbGetProducts'
-import { filterData } from '../../../hooks/search/useSearch'
+import useFilter from '../../../hooks/search/useSearch' // Cambiar importación
 import { addProduct, CancelShipping, toggleCart } from '../../../features/cart/cartSlice'
 import { useBarcodeScanner } from '../../../hooks/barcode/useBarcodeScanner'
 import { motion } from 'framer-motion'
@@ -82,7 +82,7 @@ export const Sales = () => {
 
   useBarcodeScanner(products, checkBarcode);
 
-  const productFiltered = filterData(products, searchData)
+  const productFiltered = useFilter(products, searchData)
   const filterProductsByVisibility = productFiltered.filter((product) => product.isVisible !== false);
 
   useEffect(() => {

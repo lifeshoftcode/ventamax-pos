@@ -6,7 +6,7 @@ import modalReducer from '../features/modals/modalSlice';
 import categoryReducer from '../features/category/categorySlicer';
 import customProductReducer from '../features/customProducts/customProductSlice';
 import addProductReducer from "../features/Firestore/products/addProductSlice";
-import addOrderReducer from "../features/addOrder/addOrderModalSlice";
+import addOrderReducer from "../features/addOrder/addOrderSlice";
 import updateProductReducer from "../features/updateProduct/updateProductSlice";
 import alertReducer from "../features/Alert/AlertSlice";
 import uploadImgReducer from "../features/uploadImg/uploadImageSlice";
@@ -46,48 +46,63 @@ import rowShelfModalReducer from "../features/warehouse/rowShelfModalSlice";
 import segmentModalReducer from "../features/warehouse/segmentModalSlice";
 import productExpirySelectorReducer from "../features/warehouse/productExpirySelectionSlice";
 import activeIngredientsReducer from "../features/activeIngredients/activeIngredientsSlice";
+import fileReducer from '../features/files/fileSlice';
 
 export const store = configureStore({
   reducer: {
+    // Core
     app: appReducer,
+    nav: navReducer,
+    loader: loaderReducer,
+    alert: alertReducer,
+    
+    // Auth & Users
     user: userReducer,
-    cart: cartReducer,
-    abilities: abilitiesReducer,
-    accountsReceivable: accountsReceivableReducer,
-    accountsReceivablePayment: accountsReceivablePaymentReducer,
-    productWeightEntryModalSlice: productWeightEntryModalSlice,
-    filterProducts: filterProductsSliceReducer,
-    clientCart: clientCartReducer,
-    addOrder: addOrderReducer,
-    productOutflow: productOutflowReducer,
     business: businessReducer,
+    abilities: abilitiesReducer,
+    usersManagement: usersManagementSlice,
+    
+    // UI Components
+    modal: modalReducer,
+    theme: themeReducer,
+    setting: settingReducer,
+    notification: notificationReducer,
+    userNotification: UserNotificationReducer,
+    imageViewer: viewerImageReducer,
+    uploadImg: uploadImgReducer,
+    note: noteModalReducer,
+    
+    // Products & Categories
     search: searchReducer,
     category: categoryReducer,
-    customProduct: customProductReducer,
     addProduct: addProductReducer,
     updateProduct: updateProductReducer,
+    filterProducts: filterProductsSliceReducer,
+    customProduct: customProductReducer,
     customPizza: customPizzaReducer,
-    modal: modalReducer,
-    invoiceForm: invoiceFormReducer,
-    alert: alertReducer,
-    notification: notificationReducer,
-    setting: settingReducer,
-    theme: themeReducer,
-    nav: navReducer,
-    uploadImg: uploadImgReducer,
-    imageViewer: viewerImageReducer,
-    taxReceipt: taxReceiptReducer,
-    loader: loaderReducer,
+    productOutflow: productOutflowReducer,
+    activeIngredients: activeIngredientsReducer,
+    
+    // Cart & Orders
+    cart: cartReducer,
+    clientCart: clientCartReducer,
+    addOrder: addOrderReducer,
+    
+    // Financial
     cashCountManagement: cashCountManagementReducer,
-    userNotification: UserNotificationReducer,
-    usersManagement: usersManagementSlice,
-    note: noteModalReducer,
-    invoices: invoicesSlice,
-    invoicePreview: invoicePreviewReducer,
+    cashCountState: cashCountState,
+    accountsReceivable: accountsReceivableReducer,
+    accountsReceivablePayment: accountsReceivablePaymentReducer,
     ...expenseSlices,
     ...purchaseSlices,
-    cashCountState: cashCountState,
-    barcodePrintModal: barcodePrintModalReducer,
+    
+    // Invoicing
+    invoiceForm: invoiceFormReducer,
+    invoices: invoicesSlice,
+    invoicePreview: invoicePreviewReducer,
+    taxReceipt: taxReceiptReducer,
+    
+    // Warehouse & Inventory
     warehouse: warehouseReducer,
     warehouseModal: warehouseModalReducer,
     shelfModal: shelfModalReducer,
@@ -95,7 +110,12 @@ export const store = configureStore({
     segmentModal: segmentModalReducer,
     productStock: productStockReducer,
     productExpirySelector: productExpirySelectorReducer,
-    activeIngredients: activeIngredientsReducer,
+    
+    // Utilities
+    barcodePrintModal: barcodePrintModalReducer,
+    productWeightEntryModalSlice: productWeightEntryModalSlice,
+    files: fileReducer,
   }
-  ,
 })
+
+export default store;

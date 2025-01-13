@@ -18,6 +18,7 @@ import { getProducts } from '../../../../../../utils/pricing'
 import { useGetProducts } from '../../../../../../firebase/products/fbGetProducts'
 import { ExportProducts } from '../../../../../../hooks/exportToExcel/useExportProducts'
 import { selectTaxReceiptEnabled } from '../../../../../../features/taxReceipt/taxReceiptSlice'
+import { fbAddActiveIngredients } from './fbAddActiveIngredients'
 
 export const InventoryMenuToolbar = ({ side = 'left' }) => {
     const { INVENTORY_ITEMS } = ROUTES_NAME.INVENTORY_TERM
@@ -30,7 +31,7 @@ export const InventoryMenuToolbar = ({ side = 'left' }) => {
     const handleImport = async (file) => {
         try {
             const productData = await importProductData(file, 'es');
-
+            await fbAddActiveIngredients(user, productData);
             await fbAddProducts(user, productData);
             message.success('Archivo importado correctamente.');
         } catch (error) {

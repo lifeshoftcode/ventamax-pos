@@ -2,11 +2,12 @@ import React, { useEffect, useRef, useState } from 'react'
 import styled from 'styled-components'
 import { IoClose } from 'react-icons/io5'
 import { ProductCard } from './ProductCard'
-import { SelectProductSelected } from '../../../features/addOrder/addOrderModalSlice'
 import { useGetProducts } from '../../../firebase/products/fbGetProducts'
 import { useClickOutSide } from '../../../hooks/useClickOutSide'
-import { InputV4 } from '../../templates/system/Inputs/GeneralInput/InputV4'
 import { filterData } from '../../../hooks/search/useSearch'
+
+import { Input } from 'antd'
+
 export const ProductFilter = ({ productName, isOpen, setIsOpen, handleSelectProduct }) => {
 
   const [searchTerm, setSearchTerm] = useState(productName || null)
@@ -31,14 +32,11 @@ export const ProductFilter = ({ productName, isOpen, setIsOpen, handleSelectProd
 
   return (
     <Component>
-      <InputV4
-        size='base'
-        border
+      <Input
         value={searchTerm}
         placeholder='Buscar...'
         onChange={(e) => setSearchTerm(e.target.value)}
         onFocus={() => setIsOpen(true)}
-        bgColor='gray-light'
       />
       {isOpen ? (
         <ProductsList ref={productListRef}>

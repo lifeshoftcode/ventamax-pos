@@ -37,21 +37,21 @@ const AUTH_TERM = {
 }
 
 const INVENTORY_BASE_PATH = '/inventory';
-const WAREHOUSE_BASE_PATH = `${INVENTORY_BASE_PATH}/warehouse`;
-const SHELVE_BASE_PATH = `${WAREHOUSE_BASE_PATH}/:warehouseId/shelf`;
-const ROW_BASE_PATH = `${SHELVE_BASE_PATH}/:shelfId/row`;
-const SEGMENT_BASE_PATH = `${ROW_BASE_PATH}/:rowId/segment`;
+const WAREHOUSE_BASE_PATH = `${INVENTORY_BASE_PATH}/warehouse/:warehouseId`;
+const SHELVE_BASE_PATH = `${WAREHOUSE_BASE_PATH}/shelf/:shelfId`;
+const ROW_BASE_PATH = `${SHELVE_BASE_PATH}/row/:rowId`;
+const SEGMENT_BASE_PATH = `${ROW_BASE_PATH}/segment/:segmentId`;
 
 const INVENTORY_TERM = {
     CREATE_PRODUCT: `${INVENTORY_BASE_PATH}/create-product`,
     PRODUCT: `${INVENTORY_BASE_PATH}/product/:productId`,
     INVENTORY_ITEMS: '/inventory/items',
     CATEGORIES: '/inventory/categories',
-    WAREHOUSES: `${INVENTORY_BASE_PATH}/warehouse`, // Listado de almacenes
-    WAREHOUSE: `${WAREHOUSE_BASE_PATH}/:warehouseId`, // Detalle de un almacén
-    SHELF: `${SHELVE_BASE_PATH}/:shelfId`, // Detalle de un estante
-    ROW: `${ROW_BASE_PATH}/:rowId`, // Detalle de una fila
-    SEGMENT: `${SEGMENT_BASE_PATH}/:segmentId`, // Detalle de un segmento
+    WAREHOUSES: `${WAREHOUSE_BASE_PATH}`, // Listado de almacenes
+    WAREHOUSE: `${WAREHOUSE_BASE_PATH}`, // Detalle de un almacén
+    SHELF: `${SHELVE_BASE_PATH}`, // Detalle de un estante
+    ROW: `${ROW_BASE_PATH}`, // Detalle de una fila
+    SEGMENT: `${SEGMENT_BASE_PATH}`, // Detalle de un segmento
     CREATE_WAREHOUSE: `${INVENTORY_BASE_PATH}/warehouses/create`, // Crear un nuevo almacén
     EDIT_WAREHOUSE: `${INVENTORY_BASE_PATH}/warehouses/edit/:id`,
     INVENTORY_SERVICES: '/inventory/services',
@@ -75,10 +75,16 @@ const SETTING_TERM = {
     TAX_RECEIPT: '/tax-receipt',
 }
 const PURCHASE_TERM = {
-    PURCHASES: '/purchases-list',
-    PURCHASES_CREATE: '/purchases-create',
-    ORDERS: '/orders-list',
-    ORDERS_CREATE: '/orders-create',
+    PURCHASES: '/purchases',
+    PURCHASES_CREATE: '/purchases/create',
+    PURCHASES_UPDATE: '/purchases/update/:id',
+    PURCHASES_COMPLETE: '/purchases/complete/:id',
+}
+const ORDER_TERM = {
+    ORDERS: '/orders',
+    ORDERS_CREATE: '/orders/create',
+    ORDERS_UPDATE: '/orders/update/:id',
+    ORDERS_CONVERT: '/orders/convert-to-purchase/:id',
 }
 const EXPENSES_TERM = {
     EXPENSES: '/expenses',
@@ -105,8 +111,12 @@ const ROUTES_PATH = {
     CONTACT_TERM,
     SETTING_TERM,
     PURCHASE_TERM,
+    ORDER_TERM,
     DEV_VIEW_TERM,
     CHANGELOG_TERM
+}
+export const ROUTES = {
+    ...ROUTES_PATH,
 }
 
 export default ROUTES_PATH

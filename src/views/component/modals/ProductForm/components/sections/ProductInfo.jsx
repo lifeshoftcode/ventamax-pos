@@ -1,27 +1,19 @@
-import React, { useState } from 'react'
-import * as ant from 'antd'
-const { Card, Space, Button, Input, Row, Col, Select, Form } = ant
+import { useDispatch } from 'react-redux'
+import { Card, Button, Input, Row, Col, Select, Form } from 'antd'
 import { icons } from '../../../../../../constants/icons/icons'
 import { useFbGetCategories } from '../../../../../../firebase/categories/useFbGetCategories'
 import { useCategoryState } from '../../../../../../Context/CategoryContext/CategoryContext'
 import { openModal } from '../../../../../../features/activeIngredients/activeIngredientsSlice'
-import { useDispatch } from 'react-redux'
 import { useListenActiveIngredients } from '../../../../../../firebase/products/activeIngredient/activeIngredients'
 
 export const ProductInfo = ({ product }) => {
-    const { categories } = useFbGetCategories()
-    const {data: activeIngredients } = useListenActiveIngredients()
-    // const [activeIngredients, setActiveIngredients] = useState([])
     const dispatch = useDispatch();
+    const { categories } = useFbGetCategories()
+    const { data: activeIngredients } = useListenActiveIngredients()
     const { configureAddProductCategoryModal } = useCategoryState();
-    const configureAddActiveIngredientModal = () => {
-        // Lógica para abrir modal de agregar principio activo
-        console.log('Abrir modal para agregar principio activo');
-    }
- 
-    const handleOpenActiveIngredientModal = () => {
-        dispatch(openModal({ initialValues: null }));
-      };
+
+    const handleOpenActiveIngredientModal = () => dispatch(openModal({ initialValues: null }));
+
     return (
         <Card
             size='small'
@@ -130,22 +122,22 @@ export const ProductInfo = ({ product }) => {
                         label={"Principio Activo"}
                     >
                         <Select
-                             showSearch
-                             placeholder="Selecciona el principio activo"
-                             optionFilterProp="children"
-                             filterOption={(input, option) =>
-                                 option.children.toLowerCase().includes(input.toLowerCase())
-                             }
+                            showSearch
+                            placeholder="Selecciona el principio activo"
+                            optionFilterProp="children"
+                            filterOption={(input, option) =>
+                                option.children.toLowerCase().includes(input.toLowerCase())
+                            }
                         >
                             <Option key="none" value="none">Ninguno</Option>
                             {
                                 activeIngredients.map((ingredient) => (
                                     <Option
-                                    key={ingredient.id}
-                                    value={ingredient.name} // Usar id como valor
-                                >
-                                    {ingredient.name}
-                                </Option>
+                                        key={ingredient.id}
+                                        value={ingredient.name} // Usar id como valor
+                                    >
+                                        {ingredient.name}
+                                    </Option>
                                 ))
                             }
                         </Select>
@@ -158,7 +150,6 @@ export const ProductInfo = ({ product }) => {
                     </Form.Item>
                 </Col>
             </Row>
-            {/* Nuevos campos de Medida y Pie */}
             <Row gutter={16}>
                 <Col span={12}>
                     <Form.Item name="measurement" label="Medida">
@@ -171,17 +162,6 @@ export const ProductInfo = ({ product }) => {
                     </Form.Item>
                 </Col>
             </Row>
-
-            {/* Descripción dinámica basada en Medida y Pie */}
-            {/* {product?.medida || product?.pie ? (
-                <div style={{ marginTop: 16 }}>
-                    <p>
-                    {product?.measurement && `Medida: [${product.measurement}]`}
-                    {product?.measurement && product?.footer && ', '}
-                    {product?.footer && `Pie: [${product.footer}]`}
-                    </p>
-                </div>
-            ) : null} */}
         </Card>
     )
 }

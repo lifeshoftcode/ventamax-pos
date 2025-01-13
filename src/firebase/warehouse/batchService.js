@@ -26,7 +26,7 @@ export const createBatch = async (user, batchData) => {
     const batchCollectionRef = getBatchCollectionRef(user.businessID);
     const batchDocRef = doc(batchCollectionRef, id);
 
-    await setDoc(batchDocRef, {
+    const batch = {
       ...batchData,
       id,
       isDeleted: false,
@@ -36,9 +36,11 @@ export const createBatch = async (user, batchData) => {
         updatedAt: serverTimestamp(),
         updatedBy: user.uid,
       },
-    });
+    };
 
-    return { ...batchData, id };
+    await setDoc(batchDocRef, batch);
+
+    return batch;
   } catch (error) {
     console.error('Error al añadir el batch:', error);
     throw error;

@@ -10,9 +10,10 @@ import useViewportWidth from '../../../../../../hooks/windows/useViewportWidth';
 import { Receipt } from '../../../../checkout/Receipt';
 import { useReactToPrint } from 'react-to-print';
 import { useDispatch } from 'react-redux';
-import { convertDate } from '../../../../../../utils/date/convertTimeStampToDate';
+import DateUtils from '../../../../../../utils/date/dateUtils';
 import { addInvoice } from '../../../../../../features/invoice/invoiceFormSlice';
 import { openInvoicePreviewModal } from '../../../../../../features/invoice/invoicePreviewSlice';
+
 export const Footer = ({ data }) => {
     const componentToPrintRef = useRef(null)
     const isCredit = isInvoicePaidInFull(data);
@@ -24,12 +25,12 @@ export const Footer = ({ data }) => {
     const handleEdit = () => {
         const invoiceData = {
             ...data,
-            date: convertDate.fromTimestampToMillis(data.date),
+            date: DateUtils.convertTimestampToMillis(data.date),
             payWith: data?.paymentMethod.find((method) => method.status === true)?.value,
-            updateAt: convertDate.fromTimestampToMillis(data?.updateAt),
+            updateAt: DateUtils.convertTimestampToMillis(data?.updateAt),
             cancel: data?.cancel ? {
                 ...data.cancel,
-                cancelledAt: convertDate.fromTimestampToMillis(data?.cancel?.cancelledAt),
+                cancelledAt: DateUtils.convertTimestampToMillis(data?.cancel?.cancelledAt),
             } : null
         }
         dispatch(addInvoice({ invoice: invoiceData }))

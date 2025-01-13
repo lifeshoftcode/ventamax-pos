@@ -157,6 +157,7 @@ export const icons = {
             home: <FontAwesomeIcon icon={faHome} />,
             sale: <FontAwesomeIcon icon={faBagShopping} />,
             purchase: <FontAwesomeIcon icon={faCartShopping} />,
+            order: <FontAwesomeIcon icon={faCartPlus} />,
             inventory: <FontAwesomeIcon icon={faCartFlatbed} />,
             contacts: <FontAwesomeIcon icon={faAddressBook} />,
             category: <FontAwesomeIcon icon={faTags} />,

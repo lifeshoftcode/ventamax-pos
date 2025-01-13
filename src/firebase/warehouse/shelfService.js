@@ -13,22 +13,24 @@ import {
     query,
     where,
     orderBy,
+    getDocs,
 } from 'firebase/firestore';
 
 // Obtener referencia de la colección de estantes de un almacén
-const getShelfCollectionRef = (businessId, warehouseId) => {
-    if (typeof businessId !== 'string' || !businessId || typeof warehouseId !== 'string' || !warehouseId) {
-        console.error("Invalid parameter passed to getShelfCollectionRef", businessId, warehouseId);
+const getShelfCollectionRef = (businessId) => {
+    if (typeof businessId !== 'string' || !businessId) {
+        console.error("Invalid parameter passed to getShelfCollectionRef", businessId);
         return;
     }
-    return collection(db, 'businesses', businessId, 'warehouses', warehouseId, 'shelves');
+    return collection(db, 'businesses', businessId, 'shelves');
 };
 
 // Crear un nuevo estante
 const createShelf = async (user, warehouseId, data) => {
     const id = nanoid();
+    console.log('data', data);
     try {
-        const shelfCollectionRef = getShelfCollectionRef(user.businessID, warehouseId);
+        const shelfCollectionRef = getShelfCollectionRef(user.businessID);
         const shelfDocRef = doc(shelfCollectionRef, id);
 
         await setDoc(shelfDocRef, {
@@ -54,21 +56,19 @@ const createShelf = async (user, warehouseId, data) => {
 // Leer todos los estantes de un almacén específico
 const getShelves = async (user, warehouseId) => {
     try {
-        const shelfCollectionRef = getShelfCollectionRef(user.businessID, warehouseId);
-        return onSnapshot(shelfCollectionRef, (querySnapshot) => {
-            const shelves = querySnapshot.docs.map((doc) => (doc.data()));
-            callback(shelves);
-        });
+        const shelfCollectionRef = getShelfCollectionRef(user.businessID);
+        const q = query(shelfCollectionRef, where('warehouseId', '==', warehouseId));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map((doc) => doc.data());
     } catch (error) {
-        console.error('Error al escuchar documentos en tiempo real: ', error);
-        callback([]);
+        console.error('Error al obtener estantes:', error);
         throw error;
     }
 };
 
 // Escuchar en tiempo real todos los estantes de un almacén específico
 const listenAllShelves = (user, warehouseId, callback, onError) => {
-    const shelfCollectionRef = getShelfCollectionRef(user.businessID, warehouseId);
+    const shelfCollectionRef = getShelfCollectionRef(user.businessID);
     const q = query(shelfCollectionRef, where('isDeleted', "==", false), where('warehouseId', "==", warehouseId));
 
     return onSnapshot(
@@ -76,7 +76,6 @@ const listenAllShelves = (user, warehouseId, callback, onError) => {
         (snapshot) => {
             const shelves = snapshot.docs.map((doc) => doc.data());
             const order = shelves.sort((a, b) => a.createdAt - b.createdAt);
-            const filterDeleted = order.filter((a) => !a.isDeleted)
             callback(order);
         },
         (error) => {
@@ -88,9 +87,9 @@ const listenAllShelves = (user, warehouseId, callback, onError) => {
 };
 
 // Actualizar un estante
-const updateShelf = async (user, warehouseId, data) => {
+const updateShelf = async (user, data) => {
     try {
-        const shelfDocRef = doc(db, 'businesses', user.businessID, 'warehouses', warehouseId, 'shelves', data.id);
+        const shelfDocRef = doc(db, 'businesses', user.businessID, 'shelves', data.id);
         await updateDoc(shelfDocRef, {
             ...data,
             updatedAt: serverTimestamp(),
@@ -104,9 +103,9 @@ const updateShelf = async (user, warehouseId, data) => {
 };
 
 // Marcar un estante como eliminado
-const deleteShelf = async (user, warehouseId, id) => {
+const deleteShelf = async (user, id) => {
     try {
-        const shelfDocRef = doc(db, 'businesses', user.businessID, 'warehouses', warehouseId, 'shelves', id);
+        const shelfDocRef = doc(db, 'businesses', user.businessID, 'shelves', id);
         await updateDoc(shelfDocRef, {
             isDeleted: true,
             deletedAt: serverTimestamp(),

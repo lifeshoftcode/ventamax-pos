@@ -1,13 +1,12 @@
 import { useFormatPrice } from "../../../../../hooks/useFormatPrice"
-import { convertMillisToDate, } from "../../../../../utils/date/formatDate"
 import { CashCountStateIndicator } from "../../resource/CashCountStatusIndicator/CashCountStateIndicator"
 import { CashCountMetaData } from "../../page/CashRegisterClosure/components/Body/RightSide/CashCountMetaData"
-import { DateSection } from "../../page/CashRegisterClosure/components/Header/DateSection"
 import * as antd from 'antd'
 import { fbLoadInvoicesForCashCount } from "../../../../../firebase/cashCount/fbLoadInvoicesForCashCount"
 import { useSelector } from "react-redux"
 import { selectUser } from "../../../../../features/auth/userSlice"
 import { fbUpdateCashCountTotals } from "../../../../../firebase/cashCount/fbUpdateCashCountTotals"
+import DateUtils from "../../../../../utils/date/dateUtils";
 const { Tag, Dropdown, Button } = antd
 import { MoreOutlined } from '@ant-design/icons';
 
@@ -69,7 +68,7 @@ export const tableConfig = () => {
       maxWidth: '0.4fr',
       minWidth: '160px',
       //cell: ({value}) => convertMillisToDate(value)
-      cell: ({ value }) => convertMillisToDate(value)
+      cell: ({ value }) => DateUtils.convertMillisToFriendlyDate(value)
     },
     {
       accessor: 'user',

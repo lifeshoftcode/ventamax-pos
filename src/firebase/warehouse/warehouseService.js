@@ -13,6 +13,7 @@ import {
   getDoc,
   onSnapshot,
   where,
+  query,
 } from 'firebase/firestore';
 import { getNextID } from '../Tools/getNextID';
 
@@ -124,6 +125,76 @@ export const deleteWarehouse = async (user, id) => {
     console.error('Error al borrar el almacén:', error);
     throw error;
   }
+};
+
+// Crear un almacén por defecto si no existe
+export const getDefaultWarehouse = async (user) => {
+  const warehouseCollectionRef = collection(db, 'businesses', user.businessID, 'warehouses');
+  const defaultWarehouseQuery = query(warehouseCollectionRef, where('defaultWarehouse', '==', true));
+
+  try {
+    const querySnapshot = await getDocs(defaultWarehouseQuery);
+    if (querySnapshot.empty) {
+      const id = nanoid();
+      const warehouseDocReference = doc(warehouseCollectionRef, id);
+      const warehouseData = {
+        id,
+        name: 'Almacen Virtual',
+        description: 'Almacén por defecto para compras',
+        shortName: 'Virtual',
+        number: await getNextID(user, 'lastWarehouseId'),
+        owner: user.uid,
+        location: 'default',
+        address: 'default address',
+        dimension: {
+          length: 0,
+          width: 0,
+          height: 0,
+        },
+        capacity: 0,
+        defaultWarehouse: true,
+        createdAt: serverTimestamp(),
+        createdBy: user.uid,
+        updatedAt: serverTimestamp(),
+        updatedBy: user.uid,
+      };
+      await setDoc(warehouseDocReference, warehouseData);
+      return warehouseData;
+    } else {
+      return querySnapshot.docs[0].data();
+    }
+  } catch (error) {
+    console.error('Error al crear el almacén por defecto:', error);
+    throw error;
+  }
+};
+
+// Hook para crear y obtener el almacén por defecto
+export const useDefaultWarehouse = () => {
+  const user = useSelector(selectUser);
+  const [defaultWarehouse, setDefaultWarehouse] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchDefaultWarehouse = async () => {
+      try {
+        setLoading(true);
+        const warehouse = await getDefaultWarehouse(user);
+        setDefaultWarehouse(warehouse);
+      } catch (error) {
+        setError(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchDefaultWarehouse();
+    }
+  }, [user]);
+
+  return { defaultWarehouse, loading, error };
 };
 
 // Hooks para escuchar almacenes en tiempo real

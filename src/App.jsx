@@ -34,7 +34,7 @@ import { useCurrentCashDrawer } from './firebase/cashCount/useCurrentCashDrawer'
 import { useTaxReceiptEnabledToCart } from './features/cart/thunk';
 import useInitializeBillingSettings from './firebase/billing/useInitializeBillingSettings';
 import SEO from './Seo/Seo';
-//const router = createBrowserRouter(routes)
+import { PageTransition } from './components/PageTransition';
 
 function App() {
   const dispatch = useDispatch();
@@ -80,19 +80,23 @@ function App() {
     <Fragment>
       <Router>
         <SEO />
-        <Routes>
-          {routes.map((route, index) => (
-            <Route key={index} path={route.path} element={route.element}>
-              {route.children && route.children.map((childRoute, childIndex) => (
-                <Route
-                  key={childIndex}
-                  path={childRoute?.path}
-                  element={childRoute?.element}
-                />
+        <AnimatePresence mode="wait">
+          {/* <PageTransition> */}
+            <Routes>
+              {routes.map((route, index) => (
+                <Route key={index} path={route.path} element={route.element}>
+                  {route.children && route.children.map((childRoute, childIndex) => (
+                    <Route
+                      key={childIndex}
+                      path={childRoute?.path}
+                      element={childRoute?.element}
+                    />
+                  ))}
+                </Route>
               ))}
-            </Route>
-          ))}
-        </Routes>
+            </Routes>
+          {/* </PageTransition> */}
+        </AnimatePresence>
         <AnimatePresence>
           <ModalManager />
         </AnimatePresence>

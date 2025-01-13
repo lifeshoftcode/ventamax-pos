@@ -1,10 +1,9 @@
 import { Timestamp, doc, setDoc } from "firebase/firestore";
 import { nanoid } from "nanoid";
 import { db } from "../../firebaseconfig";
-import { fbUploadFileAndGetURL } from "../../img/fbUploadFileAndGetURL";
-import { convertDate } from "../../../utils/date/formatDate";
+import { fbUploadFile } from "../../img/fbUploadFileAndGetURL";
+import DateUtils from "../../../utils/date/dateUtils";
 import { getNextID } from "../../Tools/getNextID";
-import { set } from "lodash";
 
 export const fbAddExpense = async (user, setLoading, expense, receiptImage, ) => {
     try {
@@ -19,7 +18,7 @@ export const fbAddExpense = async (user, setLoading, expense, receiptImage, ) =>
             ...expense,
             dates: {
                 ...expense.dates,
-                expenseDate: Timestamp.fromMillis(convertDate(expense.dates.expenseDate)),
+                expenseDate: Timestamp.fromMillis(DateUtils.convertDateToMillis(expense.dates.expenseDate)),
                 createdAt: Timestamp.now(),
             },
             status: "active",
@@ -29,7 +28,7 @@ export const fbAddExpense = async (user, setLoading, expense, receiptImage, ) =>
         setLoading({ isOpen: true, message: "Subiendo imagen del recibo al servidor..." });
 
         if (receiptImage) {
-            const url = await fbUploadFileAndGetURL(user, 'expensesReceiptImg', receiptImage);
+            const url = await fbUploadFile(user, 'expensesReceiptImg', receiptImage);
             modifiedExpense.receiptImageUrl = url;
         }
 
