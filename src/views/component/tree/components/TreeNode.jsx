@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo, useCallback, useMemo } from "react";
 import styled from "styled-components";
 import { faSpinner, faCircle } from "@fortawesome/free-solid-svg-icons";
 import { selectNode } from "../helpers/nodeHelper";
@@ -49,7 +49,7 @@ const NodeContainer = styled.div`
   }
 `;
 
-const TreeNode = ({
+const TreeNode = memo(({
   node,
   level,
   expandedNodes,
@@ -61,26 +61,35 @@ const TreeNode = ({
   traverse,
   renderHighlightedText,
   path, // Agregar 'path' como prop
+  onToggleNode, // Add onToggleNode prop
 }) => {
   const isExpanded = expandedNodes[node.id] || false;
   const hasChildren = !!node.children?.length;
   const isSelected = selectedNode === node.id;
   const isDisabled = config.disabledNodes?.includes(node.id);
-  const match =
+
+  const match = useMemo(() => 
     node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (node.productStock &&
       node.productStock.some((stock) =>
         stock.productName.toLowerCase().includes(searchTerm.toLowerCase())
-      ));
+      )),
+    [node.name, node.productStock, searchTerm]
+  );
 
-  const getNodeIcon = () => {
+  const getNodeIcon = useCallback(() => {
     if (node.isLoading) return faSpinner;
     if (!hasChildren) return faCircle;
     return null;
-  };
+  }, [node.isLoading, hasChildren]);
 
-  // Eliminar la llamada incorrecta a findPathToNode
-  // const path = findPathToNode([...], node.id); // Remover esta línea
+  const handleToggle = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (hasChildren && !node.isLoading) {
+      onToggleNode(node.id);
+    }
+  }, [hasChildren, node.id, node.isLoading, onToggleNode]);
 
   return (
     <div>
@@ -110,6 +119,8 @@ const TreeNode = ({
             isLoading={node.isLoading}
             node={node}
             setExpandedNodes={setExpandedNodes}
+            onToggleNode={onToggleNode} // Ensure onToggleNode is passed
+            onClick={handleToggle}
           />
           <NodeName
             title={node.name}
@@ -141,12 +152,21 @@ const TreeNode = ({
             config={config}
             traverse={traverse}
             renderHighlightedText={renderHighlightedText}
-            path={path} // Asegurarse de pasar 'path' a los hijos si es necesario
+            path={path}
+            onToggleNode={onToggleNode} // Ensure onToggleNode is passed to children
           />
         ))
       )}
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison function for memo
+  return (
+    prevProps.node === nextProps.node &&
+    prevProps.expandedNodes[prevProps.node.id] === nextProps.expandedNodes[prevProps.node.id] &&
+    prevProps.selectedNode === nextProps.selectedNode &&
+    prevProps.searchTerm === nextProps.searchTerm
+  );
+});
 
 export default TreeNode;

@@ -136,8 +136,6 @@ export const ProductMovementModal = ({
         return;
       }
 
-      
-
       try {
         await moveProduct({
           user,
@@ -205,7 +203,7 @@ export const ProductMovementModal = ({
         </Form.Item>
 
         <FormContainer>
-          <QuantityInputWithMax maxQuantity={product?.stock || 0} />
+          <QuantityInputWithMax maxQuantity={product?.quantity || 0} />
 
           <Form.Item
             name="destination"

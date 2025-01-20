@@ -19,6 +19,7 @@ import { formatPhoneNumber, unformatPhoneNumber, isValidPhoneNumber } from '../.
 import { comprobantesOptions } from './constants'
 import { useRncSearch } from '../../../../../../hooks/useRncSearch'
 import { RncPanel } from '../../../../../component/Rnc/RncPanel/RncPanel'
+import { fbCheckProviderExists } from '../../../../../../firebase/provider/fbCheckProviderExists';
 
 const { TextArea } = Input
 
@@ -119,7 +120,24 @@ export const ProviderForm = () => {
 
     const submitForm = async (values) => {
         try {
-            message.loading({ content: 'Procesando...', key: 'providerSubmit' });
+            message.loading({ content: 'Validando...', key: 'providerSubmit' });
+            
+            // Check for duplicates
+            const duplicates = await fbCheckProviderExists(
+                user.businessID, 
+                values.rnc.trim(), 
+                values.name.trim(),
+                mode === updateMode ? data.id : null
+            );
+
+            if (duplicates.rnc || duplicates.name) {
+                let errorMsg = '';
+                if (duplicates.rnc) errorMsg += 'Ya existe un proveedor con este RNC. ';
+                if (duplicates.name) errorMsg += 'Ya existe un proveedor con este nombre. ';
+                message.error({ content: errorMsg.trim(), key: 'providerSubmit' });
+                return;
+            }
+
             const provider = {
                 ...values,
                 tel: unformatPhoneNumber(values.tel),

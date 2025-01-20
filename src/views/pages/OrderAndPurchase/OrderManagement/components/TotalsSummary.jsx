@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Statistic } from 'antd';
+import { calculateOrderTotals } from '../utils/orderCalculationsUtil';
 
 const Contained = styled.div`
   padding: 1em 0;
@@ -40,35 +41,35 @@ const GrandTotalItem = styled(TotalItem)`
 `;
 
 const TotalsSummary = ({ replenishments }) => {
-  const calculateTotals = () => {
-    return replenishments.reduce(
-      (acc, item) => {
-        const baseCostTotal = Number(item.baseCost) * Number(item.quantity);
-        const taxPercentage = Number(item.taxPercentage) || 0; // Use provided tax percentage
-        const itemITBIS = (baseCostTotal * taxPercentage) / 100; // Calculate ITBIS (tax)
-        const shippingCost = Number(item.freight) || 0; // Use provided freight or default to 0
-        const otherCosts = Number(item.otherCosts) || 0; // Use provided other costs or default to 0
-        const subTotal = baseCostTotal + itemITBIS + shippingCost + otherCosts;
+  // const calculateTotals = () => {
+  //   return replenishments.reduce(
+  //     (acc, item) => {
+  //       const baseCostTotal = Number(item.baseCost) * Number(item.quantity);
+  //       const taxPercentage = Number(item.taxPercentage) || 0; // Use provided tax percentage
+  //       const itemITBIS = (baseCostTotal * taxPercentage) / 100; // Calculate ITBIS (tax)
+  //       const shippingCost = Number(item.freight) || 0; // Use provided freight or default to 0
+  //       const otherCosts = Number(item.otherCosts) || 0; // Use provided other costs or default to 0
+  //       const subTotal = baseCostTotal + itemITBIS + shippingCost + otherCosts;
 
-        return {
-          totalProducts: acc.totalProducts + Number(item.quantity),
-          totalBaseCost: acc.totalBaseCost + baseCostTotal,
-          totalShipping: acc.totalShipping + shippingCost,
-          totalOtherCosts: acc.totalOtherCosts + otherCosts,
-          grandTotal: acc.grandTotal + subTotal,
-        };
-      },
-      {
-        totalProducts: 0,
-        totalBaseCost: 0,
-        totalShipping: 0,
-        grandTotal: 0,
-      }
-    );
-  };
+  //       return {
+  //         totalProducts: acc.totalProducts + Number(item.quantity),
+  //         totalBaseCost: acc.totalBaseCost + baseCostTotal,
+  //         totalShipping: acc.totalShipping + shippingCost,
+  //         totalOtherCosts: acc.totalOtherCosts + otherCosts,
+  //         grandTotal: acc.grandTotal + subTotal,
+  //       };
+  //     },
+  //     {
+  //       totalProducts: 0,
+  //       totalBaseCost: 0,
+  //       totalShipping: 0,
+  //       grandTotal: 0,
+  //     }
+  //   );
+  // };
 
 
-  const totals = calculateTotals();
+  const totals = calculateOrderTotals(replenishments);
 
   return (
     <StyledCard>

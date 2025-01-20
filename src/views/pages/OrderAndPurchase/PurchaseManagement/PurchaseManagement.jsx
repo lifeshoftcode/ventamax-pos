@@ -115,7 +115,7 @@ const PurchaseManagement = () => {
     if ((mode === 'update' || mode === 'complete') && fetchedPurchase) {
       dispatch(setPurchase(fetchedPurchase));
     } else if (mode === 'convert' && fetchedOrder) {
-      dispatch(setPurchase(fetchedOrder));
+      dispatch(setPurchase({ ...fetchedOrder, id: '', orderId: fetchedOrder.id }));
     }
   }, [mode, fetchedPurchase, fetchedOrder, dispatch]);
 

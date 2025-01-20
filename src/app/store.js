@@ -47,6 +47,7 @@ import segmentModalReducer from "../features/warehouse/segmentModalSlice";
 import productExpirySelectorReducer from "../features/warehouse/productExpirySelectionSlice";
 import activeIngredientsReducer from "../features/activeIngredients/activeIngredientsSlice";
 import fileReducer from '../features/files/fileSlice';
+import productStockSimpleReducer from '../features/productStock/productStockSimpleSlice';
 
 export const store = configureStore({
   reducer: {
@@ -110,6 +111,7 @@ export const store = configureStore({
     segmentModal: segmentModalReducer,
     productStock: productStockReducer,
     productExpirySelector: productExpirySelectorReducer,
+    productStockSimple: productStockSimpleReducer,
     
     // Utilities
     barcodePrintModal: barcodePrintModalReducer,

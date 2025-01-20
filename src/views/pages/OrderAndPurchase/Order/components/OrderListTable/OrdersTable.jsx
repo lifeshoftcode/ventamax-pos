@@ -4,6 +4,7 @@ import { fbGetPendingOrders } from '../../../../../../firebase/order/fbGetPeding
 import { AdvancedTable } from '../../../../../templates/system/AdvancedTable/AdvancedTable'
 import { DateTime } from 'luxon';
 import { columns, filterConfig } from './tableConfig'
+import { calculateOrderTotals } from '../../../OrderManagement/utils/orderCalculationsUtil';
 
 const calculatePaymentDate = (createdAt, conditionId) => {
   if (!createdAt) return null;
@@ -22,7 +23,7 @@ const calculatePaymentDate = (createdAt, conditionId) => {
     case 'thirty_days': // 30 días
       daysToAdd = 30;
       break;
-    case 'other': 
+    case 'other':
       daysToAdd = 0;
       break;
     default:
@@ -47,12 +48,12 @@ export const calculateTotalNewStockFromReplenishments = (replenishments) => {
 
 export const OrdersTable = ({ orders = [], loading = true }) => {
 
-  
+
 
   const data = orders.map((data) => {
     const createdAt = data?.createdAt || null;
     const paymentDate = createdAt ? calculatePaymentDate(createdAt, data?.condition) : null;
-    
+    const { grandTotal } = calculateOrderTotals(data.replenishments);
     return {
       number: data?.numberId,
       status: data?.status,
@@ -64,7 +65,7 @@ export const OrdersTable = ({ orders = [], loading = true }) => {
       items: calculateTotalNewStockFromReplenishments(data?.replenishments),
       deliveryDate: data?.deliveryDate,
       fileList: data?.attachmentUrls || [],
-      total: data?.total,
+      total: grandTotal,
       action: data
     }
   })

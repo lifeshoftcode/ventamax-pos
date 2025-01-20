@@ -90,7 +90,7 @@ const OrderManagement = () => {
     const newErrors = {
       provider: !orderData.provider,
       deliveryAt: !orderData.deliveryAt,
-      note: !orderData.note,
+      note: orderData.note && orderData.note.length > 300 // Solo validar longitud si hay nota
     };
 
     setErrors(newErrors);

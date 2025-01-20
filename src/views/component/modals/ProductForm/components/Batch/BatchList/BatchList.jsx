@@ -91,7 +91,7 @@ const BatchList = () => {
 
   return (
     <StyledContainer>
-      <Form.Item
+      {/* <Form.Item
         label="Producto con lotes"
         valuePropName="checked"
       >
@@ -100,9 +100,9 @@ const BatchList = () => {
           onChange={handleBatchSwitch}
           style={{ marginRight: 8 }}
         />
-      </Form.Item>
+      </Form.Item> */}
       
-      {product.hasBatch && (
+      {/* {product.hasBatch && ( */}
         <div>
           <Header>
             <StyledTitle>Lista de Lotes</StyledTitle>
@@ -128,7 +128,7 @@ const BatchList = () => {
                 ]}
               >
                 <List.Item.Meta
-                  title={<strong>{item.shortName}</strong>}
+                  title={<strong>Lote #{item.numberId}</strong>}
                   description={
                     <>
                       <div>Cantidad: <Tag color="blue">{item.quantity}</Tag></div>
@@ -139,8 +139,8 @@ const BatchList = () => {
               </List.Item>
             )}
           />
-        </div>)
-      }
+        </div>
+       {/* )} */}
     </StyledContainer>
   );
 };

@@ -4,7 +4,7 @@ import { checkOpenCashReconciliation } from "../../firebase/cashCount/useIsOpenC
 import { fbGetAndUpdateTaxReceipt } from "../../firebase/taxReceipt/fbGetAndUpdateTaxReceipt";
 import { fbUpsertClient } from "../../firebase/client/fbUpsertClient";
 import { GenericClient } from "../../features/clientCart/clientCartSlice";
-import { fbUpdateProductsStock } from "../../firebase/products/fbUpdateProductStock";
+import { fbUpdateProductsStock } from "../../firebase/products/fbUpdateProductsStock";
 import { fbAddInvoice } from "../../firebase/invoices/fbAddInvoice";
 import { fbAddAR } from "../../firebase/accountsReceivable/fbAddAR";
 import { fbAddInstallmentAR } from "../../firebase/accountsReceivable/fbAddInstallmentAR";

@@ -14,6 +14,7 @@ import {
   query,
   where,
   onSnapshot,
+  getDoc,
 } from 'firebase/firestore';
 
 // Obtener referencia de la colección de productos en stock
@@ -34,7 +35,11 @@ export const createProductStock = async (user, productStockData) => {
     if (!productStockCollectionRef) return; // If null, do not proceed
 
     const productStockDocRef = doc(productStockCollectionRef, id);
-    console.log("product stock: ", productStockData);
+
+    // Asegurarse de que location esté en el formato 'warehouse/shelf/row/segment'
+    const { warehouse, shelf, row, segment } = productStockData.location; // Asumiendo que location es un objeto
+    const locationPath = [warehouse, shelf, row, segment].filter(Boolean).join('/');
+
     await setDoc(productStockDocRef, {
       ...productStockData,
       id,
@@ -47,7 +52,7 @@ export const createProductStock = async (user, productStockData) => {
       deletedBy: null,
     });
 
-    return { ...productStockData, id };
+    return productStockData;
   } catch (error) {
     console.error('Error al añadir el documento: ', error);
     throw error;
@@ -61,13 +66,7 @@ export const getAllProductStocks = async (user) => {
     if (!productStockCollectionRef) return []; // If null, return empty array
 
     const querySnapshot = await getDocs(productStockCollectionRef);
-    const productsStock = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      productId: doc.data().productId, // Ensure productId is included
-      location: doc.data().location, // Ensure location is included
-      stock: doc.data().stock, // Ensure stock is included
-      ...doc.data(),
-    }));
+    const productsStock = querySnapshot.docs.map((doc) => doc.data());
     return productsStock;
   } catch (error) {
     console.error('Error al obtener documentos: ', error);
@@ -109,16 +108,27 @@ export const deleteProductStock = async (user, id) => {
 
 // Escuchar en tiempo real todos los productos en stock filtrados por productId
 export const listenAllProductStock = (user, productId, callback) => {
+  const noOp = () => {};
+  
+  if (!user || !productId || !callback) {
+    console.warn('Missing required parameters in listenAllProductStock');
+    return noOp;
+  }
+
   try {
     const productStockCollectionRef = getProductStockCollectionRef(user.businessID);
-    if (!productStockCollectionRef) return; // If null, do not proceed
+    if (!productStockCollectionRef) {
+      console.warn('No collection reference available');
+      return noOp;
+    }
 
     const q = query(
       productStockCollectionRef,
       where('productId', '==', productId),
       where('isDeleted', '==', false)
     );
-    const unsubscribe = onSnapshot(
+
+    return onSnapshot(
       q,
       (querySnapshot) => {
         const data = querySnapshot.docs.map((doc) => doc.data());
@@ -126,43 +136,52 @@ export const listenAllProductStock = (user, productId, callback) => {
       },
       (error) => {
         console.error('Error al escuchar documentos en tiempo real:', error);
+        callback([]);
       }
     );
-
-    return unsubscribe;
   } catch (error) {
-    console.error('Error al escuchar documentos en tiempo real:', error);
-    throw error;
+    console.error('Error al configurar listener:', error);
+    return noOp;
   }
 };
 
 // Escuchar en tiempo real todos los productos en stock por ubicación
 export const listenAllProductStockByLocation = (user, location, callback) => {
-  if (!location) {
-    console.warn('location is undefined or empty. Skipping listener.');
-    return () => {}; // Return no-op function
+  const noOp = () => {};
+
+  if (!user || !location || !callback) {
+    console.warn('Missing required parameters in listenAllProductStockByLocation');
+    return noOp;
   }
-  const productStockCollectionRef = getProductStockCollectionRef(user.businessID);
-  if (!productStockCollectionRef) return () => {}; // No-op if collection ref is null
 
-  let q = query(
-    productStockCollectionRef,
-    where('location', '==', location),
-    where('isDeleted', '==', false)
-  );
-
-  const unsubscribe = onSnapshot(
-    q,
-    (querySnapshot) => {
-      const data = querySnapshot.docs.map((doc) => doc.data());
-      callback(data);
-    },
-    (error) => {
-      console.error('Error al escuchar documentos en tiempo real:', error);
+  try {
+    const productStockCollectionRef = getProductStockCollectionRef(user.businessID);
+    if (!productStockCollectionRef) {
+      console.warn('No collection reference available');
+      return noOp;
     }
-  );
 
-  return unsubscribe; // Return the actual unsubscribe
+    const q = query(
+      productStockCollectionRef,
+      where('location', '==', location),
+      where('isDeleted', '==', false)
+    );
+
+    return onSnapshot(
+      q,
+      (querySnapshot) => {
+        const data = querySnapshot.docs.map((doc) => doc.data());
+        callback(data);
+      },
+      (error) => {
+        console.error('Error al escuchar documentos en tiempo real:', error);
+        callback([]);
+      }
+    );
+  } catch (error) {
+    console.error('Error al configurar listener:', error);
+    return noOp;
+  }
 };
 
 // Hook para escuchar productos en stock por ubicación
@@ -267,3 +286,39 @@ export const getProductStockByBatch = async (
   return snapshot.docs.map(doc => doc.data());
 };
 
+export const getProductStockByProductId = async (
+  user,
+  { productId } = {}
+) => {
+  console.log("Fetching stock for productId:", productId); // Debugging log
+  const productStockCollectionRef = getProductStockCollectionRef(user.businessID);
+  if (!productStockCollectionRef) return [];
+
+  const q = query(
+    productStockCollectionRef,
+    where('isDeleted', '==', false),
+    where('productId', '==', productId)
+  );
+
+  const snapshot = await getDocs(q);
+  const data = snapshot.docs.map(doc => doc.data());
+  console.log('Fetched product stock:', data); // Debugging log
+  return data;
+};
+
+// Obtener producto en stock por su ID
+export const getProductStockById = async (user, productStockId) => {
+  if (!productStockId) return null;
+
+  try {
+    const productStockDocRef = doc(db, 'businesses', user.businessID, 'productsStock', productStockId);
+    const snapshot = await getDoc(productStockDocRef);
+    if (snapshot.exists()) {
+      return snapshot.data();
+    }
+    return null;
+  } catch (error) {
+    console.error('Error al obtener producto en stock por ID:', error);
+    throw error;
+  }
+};

@@ -30,6 +30,15 @@ const LocationCell = styled.div`
     isEntry
       ? 'rgba(76, 175, 80, 0.25)'   // Verde institucional
       : 'rgba(239, 83, 80, 0.25)'}; // Rojo institucional
+  opacity: ${({ isExternal }) => isExternal ? 0.85 : 1};
+  ${({ isExternal }) => isExternal && `
+    background: #f5f5f5;
+    border: 1px dashed #bdbdbd;
+    &:hover {
+      transform: none;
+      box-shadow: none;
+    }
+  `}
   
   &:hover {
     transform: translateY(-1px);
@@ -112,9 +121,108 @@ const MovementTypeBadge = styled.span`
   }
 `;
 
+const ReasonBadge = styled.span`
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 0.85em;
+  font-weight: 500;
+  white-space: nowrap;
+  
+  ${({ reasonType }) => {
+    switch (reasonType) {
+      case 'purchase':
+        return `
+          background: rgba(25, 118, 210, 0.1);
+          color: #1976D2;
+          border: 1px solid rgba(25, 118, 210, 0.2);
+        `;
+      case 'sale':
+        return `
+          background: rgba(76, 175, 80, 0.1);
+          color: #388E3C;
+          border: 1px solid rgba(76, 175, 80, 0.2);
+        `;
+      case 'adjustment':
+        return `
+          background: rgba(255, 152, 0, 0.1);
+          color: #F57C00;
+          border: 1px solid rgba(255, 152, 0, 0.2);
+        `;
+      case 'return':
+        return `
+          background: rgba(156, 39, 176, 0.1);
+          color: #7B1FA2;
+          border: 1px solid rgba(156, 39, 176, 0.2);
+        `;
+      case 'initial_stock':
+        return `
+          background: rgba(0, 150, 136, 0.1);
+          color: #00796B;
+          border: 1px solid rgba(0, 150, 136, 0.2);
+        `;
+      case 'transfer':
+        return `
+          background: rgba(121, 134, 203, 0.1);
+          color: #5C6BC0;
+          border: 1px solid rgba(121, 134, 203, 0.2);
+        `;
+      default:
+        return `
+          background: rgba(158, 158, 158, 0.1);
+          color: #757575;
+          border: 1px solid rgba(158, 158, 158, 0.2);
+        `;
+    }
+  }}
+`;
+
+// Add this helper function before generateRoute
+const getExternalLocationText = (movement) => {
+  switch (movement.movementReason) {
+    case 'purchase':
+      return 'Proveedor Externo';
+    case 'sale':
+      return 'Cliente';
+    case 'return':
+      return movement.movementType === 'in' ? 'Devolución Cliente' : 'Devolución Proveedor';
+    case 'initial_stock':
+      return 'Inventario Inicial';
+    case 'adjustment':
+      return 'Ajuste de Inventario';
+    default:
+      return movement.movementType === 'in' ? 'Origen Externo' : 'Destino Externo';
+  }
+};
+
+const getLocationDisplay = (movement) => {
+  const isEntry = movement.movementType === 'in';
+  const locationName = isEntry ? movement.sourceLocationName : movement.destinationLocationName;
+  const location = isEntry ? movement.sourceLocation : movement.destinationLocation;
+
+  if (!location || !locationName) {
+    return getExternalLocationText(movement);
+  }
+
+  return locationName;
+};
+
+const formatMovementReason = (reason) => {
+  const reasonMap = {
+    'purchase': 'Compra',
+    'sale': 'Venta',
+    'adjustment': 'Ajuste',
+    'return': 'Devolución',
+    'initial_stock': 'Stock Inicial',
+    'transfer': 'Transferencia'
+  };
+  return reasonMap[reason] || 'Desconocido';
+};
+
 // Update helper function to build route dynamically
 const generateRoute = (isEntry, location) => {
   const loc = isEntry ? location.sourceLocation : location.destinationLocation;
+  if (!loc) return null; // Return null if no location exists
+  
   const segments = loc.split('/');
   console.log('segments:..........................................................................................', segments);
   let route = '/inventory/warehouse';
@@ -188,10 +296,19 @@ export const MovementsTable = ({ location }) => {
       minWidth: "200px",
       cell: ({ value }) => {
         const isEntry = value.movementType === 'in';
+        const route = generateRoute(isEntry, value);
+        const locationDisplay = getLocationDisplay(value);
+        const isExternal = !route;
+        
         return (
-          <LocationCell isEntry={isEntry} onClick={() => navigate(generateRoute(isEntry, value))}>
+          <LocationCell 
+            isEntry={isEntry}
+            isExternal={isExternal}
+            onClick={() => route ? navigate(route) : null}
+            style={{ cursor: route ? 'pointer' : 'default' }}
+          >
             <LocationName isEntry={isEntry}>
-              {isEntry ? value.sourceLocationName : value.destinationLocationName}
+              {locationDisplay}
             </LocationName>
             <DirectionWrapper>
               <DirectionLabel isEntry={isEntry}>
@@ -204,6 +321,16 @@ export const MovementsTable = ({ location }) => {
           </LocationCell>
         );
       },
+    },
+    {
+      Header: "Motivo",
+      accessor: "movementReason",
+      minWidth: "150px",
+      cell: ({ value }) => (
+        <ReasonBadge reasonType={value}>
+          {formatMovementReason(value)}
+        </ReasonBadge>
+      ),
     },
     {
       Header: "Cantidad",

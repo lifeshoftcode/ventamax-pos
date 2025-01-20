@@ -73,12 +73,11 @@ export const fbAddPurchase = async (user, purchase, fileList = [], setLoading) =
 };
 
 export const safeTimestamp = (date) => {
-    if (!date) return serverTimestamp();
+    if (!date) return Timestamp.now(); // Changed from serverTimestamp()
     const milliseconds = typeof date === 'number' ? date : new Date(date).getTime();
-    if (isNaN(milliseconds)) return serverTimestamp();
+    if (isNaN(milliseconds)) return Timestamp.now(); // Changed from serverTimestamp()
     return Timestamp.fromMillis(milliseconds);
 };
-
 
 export async function addPurchase({ user, purchase, localFiles = [], setLoading = () => { } }) {
     try {
@@ -112,14 +111,14 @@ export async function addPurchase({ user, purchase, localFiles = [], setLoading 
         // Update replenishments with safe timestamp conversion
         const updatedReplenishments = purchase.replenishments?.map(item => ({
             ...item,
-            expirationDate: safeTimestamp(item.expirationDate)
+            expirationDate: item.expirationDate ? Timestamp.fromMillis(new Date(item.expirationDate).getTime()) : null
         })) || [];
 
         const data = {
             ...purchase,
             id,
             numberId,
-            createdAt: serverTimestamp(),
+            createdAt: serverTimestamp(), // These are fine as they're not in arrays
             updatedAt: serverTimestamp(),
             deliveryAt: safeTimestamp(purchase.deliveryAt),
             paymentAt: safeTimestamp(purchase.paymentAt),

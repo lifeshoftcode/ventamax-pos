@@ -10,6 +10,7 @@ import {
   onSnapshot,
   query,
   where,
+  getDoc,
 } from 'firebase/firestore';
 import { useEffect, useMemo, useState } from 'react';
 import { selectUser } from '../../features/auth/userSlice';
@@ -43,6 +44,22 @@ export const createBatch = async (user, batchData) => {
     return batch;
   } catch (error) {
     console.error('Error al añadir el batch:', error);
+    throw error;
+  }
+};
+
+// Obtener un batch por su ID
+export const getBatchById = async (user, batchId) => {
+  try {
+    if(!batchId)  return null;
+    const batchDocRef = doc(db, 'businesses', user.businessID, 'batches', batchId);
+    const snapshot = await getDoc(batchDocRef);
+    if (snapshot.exists()) {
+      return snapshot.data();
+    }
+    return null;
+  } catch (error) {
+    console.error('Error al obtener el batch por ID:', error);
     throw error;
   }
 };

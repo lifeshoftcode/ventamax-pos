@@ -1,6 +1,8 @@
-import { doc, increment, writeBatch } from "firebase/firestore";
+import { doc, increment, setDoc, writeBatch } from "firebase/firestore";
 import { db } from "../firebaseconfig";
 import { validateUser } from "../../utils/userValidation";
+import { nanoid } from "nanoid";
+import { MovementReason, MovementType } from "../../models/Warehouse/Movement";
 
 // Función para dividir el array en subarrays de tamaño máximo size
 function chunkArray(array, size) {
@@ -49,8 +51,8 @@ export async function fbUpdateProductsStock(products, user) {
                 if (!product?.trackInventory) continue;
 
                 const productRef = doc(db, "businesses", businessID, "products", product.id);
-                const batchId = product?.batch?.id;
-                const productStockId = product?.productStock?.id;
+                const batchId = product?.batchId;
+                const productStockId = product?.productStockId;
                 const amountToBuy = Number(product?.amountToBuy);
 
                 if (isNaN(amountToBuy) || amountToBuy <= 0) {
@@ -63,11 +65,26 @@ export async function fbUpdateProductsStock(products, user) {
                 batch.update(productRef, { "stock": stockUpdateValue });
 
                 if (product?.hasExpirationDate && batchId && productStockId) {
+                    const movementId = nanoid();
                     const productBatchRef = doc(db, "businesses", businessID, "batches", batchId);
                     const productStockRef = doc(db, "businesses", businessID, "productsStock", productStockId);
-
+                    const movementRef = doc(db, "businesses", businessID, "movements", movementId)
                     batch.update(productBatchRef, { "quantity": stockUpdateValue });
-                    batch.update(productStockRef, { "stock": stockUpdateValue });
+                    batch.update(productStockRef, { "quantity": stockUpdateValue });
+                    
+                    const movement = {
+                        ...baseFields,
+                        id: movementId,
+                        batchId: batchId,
+                        productName: product.name,
+                        batchNumberId: productBatch.numberId,
+                        destinationLocation: null,
+                        sourceLocation: productStock.location,
+                        productId: product.id,
+                        movementType: MovementType.Exit,
+                        movementReason: MovementReason.Sale
+                    }
+                    setDoc(movementRef, movement)
                 }
             }
             batches.push(batch);

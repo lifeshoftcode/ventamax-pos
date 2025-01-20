@@ -9,16 +9,23 @@ import {
 import { doc, getDocs, query, serverTimestamp, setDoc, where, or, collection, onSnapshot, getDoc, and, orderBy } from 'firebase/firestore';
 import { db } from '../firebaseconfig';
 import { useState, useEffect } from 'react';
+import { MovementReason, MovementType } from '../../models/Warehouse/Movement';
 
 // Agregar funciones para crear y leer movimientos
-export const createMovementLog = async (user, {
-  sourceLocation,
-  destinationLocation,
-  productId,
-  productName,
-  quantity,
-  movementType // Nuevo parámetro
-}) => {
+export const createMovementLog = async (
+  user,
+  {
+    sourceLocation,
+    destinationLocation,
+    productId,
+    productName,
+    quantity,
+    movementType,
+    movementReason,  // NEW
+    batchId,         // NEW
+    notes            // NEW
+  }
+) => {
   // Usa una colección "movements" para almacenar
   const movementId = nanoid();
   const movementRef = doc(db, 'businesses', user.businessID, 'movements', movementId);
@@ -29,10 +36,13 @@ export const createMovementLog = async (user, {
     createdBy: user.uid,
     productId,
     productName,
+    batchId,          // NEW
     sourceLocation,
     destinationLocation,
     movementType,        // Tipo de movimiento (Entrada/Salida)
+    movementReason,    // NEW
     quantity,
+    notes,            // NEW
     isDeleted: false
   });
 };
@@ -107,8 +117,8 @@ export const moveProduct = async ({
   }
 
   // 3. Update source
-  const updatedSource = { ...sourceDoc, stock: sourceDoc.stock - quantityToMove };
-  updatedSource.stock === 0 
+  const updatedSource = { ...sourceDoc, quantity: sourceDoc.quantity - quantityToMove };
+  updatedSource.quantity === 0 
   ? await deleteProductStock(user, updatedSource.id)
   : await updateProductStock(user, updatedSource);
  
@@ -120,7 +130,10 @@ export const moveProduct = async ({
     productId: sourceDoc.productId,
     productName: sourceDoc.productName,
     quantity: quantityToMove,
-    movementType: 'out'
+    movementType: MovementType.Exit,
+    movementReason: MovementReason.Transfer, 
+    batchId,
+    notes: ''
   });
 
   // 4. Find destination stocks
@@ -134,13 +147,13 @@ export const moveProduct = async ({
   if (destinationDoc) {
     await updateProductStock(user, {
       ...destinationDoc,
-      stock: destinationDoc.stock + quantityToMove
+      quantity: destinationDoc.quantity + quantityToMove
     });
   } else {
     const newDestData = {
       ...sourceDoc,
       location: destinationLocation,
-      stock: quantityToMove,
+      quantity: quantityToMove,
       isDeleted: false,
       productId,
       productName

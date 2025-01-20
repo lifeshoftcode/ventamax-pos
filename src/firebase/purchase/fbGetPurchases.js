@@ -3,6 +3,7 @@ import { db } from "../firebaseconfig";
 import { createReference, getDocFromRef } from "../../utils/refereceUtils";
 
 export const convertFirestoreTimestamps = (dates, fields) => {
+    console.log(dates, fields)
     fields.forEach((field) => {
         const timestamp = dates[field]?.seconds;
         if (timestamp) dates[field] = timestamp * 1000;

@@ -26,12 +26,10 @@ const NotesInput = ({ initialValue = '', onNoteChange, errors }) => {
 
     return (
         <Form.Item
-            label="Notas"
-            required
+            label="Notas (opcional)"
             validateStatus={errors?.note ? "error" : ""}
-            help={errors?.note ? "La nota es requerida" : ""}
+            help={errors?.note ? "La nota no puede exceder los 300 caracteres" : ""}
         >
-           
             <TextArea
                 value={localNote}
                 onChange={handleChange}

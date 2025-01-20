@@ -30,7 +30,7 @@ const DateUtils = {
     },
 
     // Convert Milliseconds to ISO Date
-    convertMillisToISODate: (milliseconds, format) => {
+    convertMillisToISODate: (milliseconds, format = 'dd/MM/yyyy') => {
         if (!milliseconds) return null;
         if (typeof milliseconds === 'object' && milliseconds.seconds !== undefined) {
             milliseconds = (milliseconds.seconds * 1000) + (milliseconds.nanoseconds / 1000000);
@@ -38,7 +38,7 @@ const DateUtils = {
             milliseconds = JSON.parse(milliseconds);
         }
         const date = DateTime.fromMillis(milliseconds);
-        return format ? date.toFormat(format) : date.toISODate();
+        return date.toFormat(format);
     },
 
     // Convert Firestore Timestamp to Milliseconds

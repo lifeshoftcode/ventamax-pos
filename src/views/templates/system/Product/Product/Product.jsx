@@ -16,6 +16,8 @@ import { selectTaxReceiptEnabled } from '../../../../../features/taxReceipt/taxR
 import { openProductExpirySelector } from '../../../../../features/warehouse/productExpirySelectionSlice'
 import { useFormatNumber } from '../../../../../hooks/useFormatNumber'
 import { truncateString } from '../../../../../utils/text/truncateString'
+import { useProductStockCheck } from '../../../../../hooks/useProductStockCheck'
+import { openProductStockSimple } from '../../../../../features/productStock/productStockSimpleSlice'
 
 const item = {
     hidden: { y: 20, opacity: 0 },
@@ -40,7 +42,9 @@ export const Product = ({ product, }) => {
 
     const price = useMemo(() => getTotalPrice(product, taxReceiptEnabled), [product, taxReceiptEnabled]);
 
-    const handleGetThisProduct = (product) => {
+    const { checkProductStock } = useProductStockCheck();
+
+    const handleGetThisProduct = async (product) => {
         if (isLowStock) {
             notification.warning({
                 message: 'Alerta de Stock Bajo',
@@ -52,18 +56,24 @@ export const Product = ({ product, }) => {
                 message: 'Alerta de Stock Agotado',
                 description: `El stock de ${product.name} está agotado\nStock actual: ${product?.stock} unidades`,
             });
-
             return;
         }
-        if (product?.hasBatch) {
-            dispatch(openProductExpirySelector(product))
-            return
+
+        const productStocks = await checkProductStock(product);
+        if (Array.isArray(productStocks) && productStocks.length > 1) {
+            dispatch(openProductStockSimple(product));
+            return;
+        } else if (productStocks.length === 1) {
+            const productStock = productStocks[0];
+            dispatch(addProduct({ ...product, productStockId: productStock.id, batchId: productStock.batchId }))
+            return;
         }
+
         if (product?.weightDetail?.isSoldByWeight) {
             setProductWeightEntryModal(true);
             return
         }
-    
+
         dispatch(addProduct(product))
     }
 
@@ -95,8 +105,8 @@ export const Product = ({ product, }) => {
                         </ImageContainer>
                     </ImageWrapper>
                 }
-              {isOutOfStock && <StockWarning>Agotado</StockWarning>}
-              {isLowStock && !isOutOfStock && <StockWarning>Pocas unidades</StockWarning>}
+                {isOutOfStock && <StockWarning>Agotado</StockWarning>}
+                {isLowStock && !isOutOfStock && <StockWarning>Pocas unidades</StockWarning>}
                 <Content>
                     <Header>
                         <Title isOpen={isProductInCart}>
@@ -354,4 +364,9 @@ left: 0;
     background-size: 200% 100%;
     animation: ${props => props.isImageLoaded ? 'none' : css`${loadingAnimation} 1.5s infinite`};
     background: ${props => props.isImageLoaded ? 'none' : 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)'};
+
+    height: 100%;
+    width: 100%;
+    border-radius: 7px;
+    transition: background 400ms ease-in-out;
 `

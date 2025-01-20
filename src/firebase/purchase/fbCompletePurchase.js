@@ -1,4 +1,4 @@
-import {  doc, getDoc,  updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, updateDoc, serverTimestamp, collection, addDoc } from "firebase/firestore";
 import { db } from "../firebaseconfig";
 import { fbUploadFiles } from '../img/fbUploadFileAndGetURL';
 import { deleteRemovedFiles, findRemovedAttachments } from "./fbUpdatePurchase";
@@ -7,9 +7,24 @@ import { createProductStock } from "../warehouse/productStockService";
 import { getDefaultWarehouse } from "../warehouse/warehouseService";
 import { safeTimestamp, updateLocalAttachmentsWithRemoteURLs } from "./fbAddPurchase";
 import { getNextID } from "../Tools/getNextID";
+import { MovementReason, MovementType } from "../../models/Warehouse/Movement";
+import { nanoid } from "nanoid";
 
 const updatePurchaseWarehouseStock = async (user, purchase, defaultWarehouse) => {
     const productBatches = {};
+
+    const baseFields = {
+        createdAt: serverTimestamp(),
+        createdBy: user.uid,
+        updatedAt: serverTimestamp(),
+        updatedBy: user.uid,
+        deletedAt: null,
+        deletedBy: null,
+        isDeleted: false
+    };
+
+    // const defaultWarehouse = getDefaultWarehouse(user);
+
 
     // Group replenishments by product and expiration date
     for (const replenishment of purchase.replenishments) {
@@ -35,6 +50,7 @@ const updatePurchaseWarehouseStock = async (user, purchase, defaultWarehouse) =>
 
         // Create batch for this product
         const batchData = await createBatch(user, {
+            ...baseFields,
             productId: batch.productId,
             purchaseId: purchase.id,
             numberId: await getNextID(user, 'batches'),
@@ -43,30 +59,43 @@ const updatePurchaseWarehouseStock = async (user, purchase, defaultWarehouse) =>
             status: 'active',
             receivedDate: new Date(),
             providerId: purchase.provider,
-            count: totalStock,
-            createdAt: serverTimestamp(),
-            createdBy: user.uid,
-            updatedAt: serverTimestamp(),
-            updatedBy: user.uid
+            quantity: totalStock,
+            initialQuantity: totalStock,
         });
 
         // Update product stock
         const productStockData = {
+            ...baseFields,
             batchId: batchData.id,
             batchNumberId: batchData.numberId,
-            //path structured: 'warehouseId/shefId/rowId/segmentId'
             location: `${defaultWarehouse.id}`,
             productId: batch.productId,
             productName: batch.productName,
-            stock: totalStock,
+            quantity: totalStock,
+            initialQuantity: totalStock,
             expirationDate: batch?.expirationDate ? new Date(batch.expirationDate) : null,
-            createdAt: serverTimestamp(),
-            createdBy: user.uid,
-            updatedAt: serverTimestamp(),
-            updatedBy: user.uid
         };
 
         await createProductStock(user, productStockData);
+
+        // Create movement
+        const movementRef = collection(db, "businesses", user.businessID, "movements");
+        const movement = {
+            ...baseFields,
+            id: nanoid(),
+            batchId: batchData.id,
+            productName: batch.productName,
+            batchNumberId: batchData.numberId,
+            destinationLocation: defaultWarehouse.id,
+            sourceLocation: null,
+            productId: batch.productId,
+            quantity: totalStock,
+            movementType: MovementType.Entry,
+            movementReason: MovementReason.Purchase,
+        };
+
+        await addDoc(movementRef, movement);
+        console.log('Movement document written', movement);
     }
 };
 

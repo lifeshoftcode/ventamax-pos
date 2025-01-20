@@ -35,8 +35,8 @@ export const Warehouse = () => {
 
   useEffect(() => {
     // Si no hay parámetros y tenemos el almacén por defecto, navegamos a él
-    if ((!params.warehouseId || params.warehouseId === ':warehouseId') && !loading && !loadingDefault && defaultWarehouse) {
-      navigate(`/inventory/warehouse/${defaultWarehouse.id}`);
+    if ((!params.warehouseId && params.warehouseId === ':warehouseId') && !loading && !loadingDefault && defaultWarehouse) {
+      navigate(`/inventory/warehouses/warehouse/${defaultWarehouse.id}`);
       return;
     }
 
@@ -74,9 +74,9 @@ export const Warehouse = () => {
     <Sidebar items={data} />
   ), [data]);
 
-  const memoizedDetailView = useMemo(() => (
-    <DetailView />
-  ), [data]);
+  // const memoizedDetailView = useMemo(() => (
+  //   <DetailView />
+  // ), [data]);
 
   // if (loading) return <div>Cargando...</div>
   if (error) return <div>Error al cargar los datos</div>

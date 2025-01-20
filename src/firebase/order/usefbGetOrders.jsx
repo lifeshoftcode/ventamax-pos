@@ -39,12 +39,13 @@ export const useFbGetOrders = () => {
 }
 
 const transformOrderData = (item) => {
-    const data = item.data().data;
+    const data = item.data();
     return {
-        data: {
-            ...data,
-            provider: data.provider || null,
-        },
+        // data: {
+        //     ...data,
+        //     provider: data.provider || null,
+        // },
+        data
     };
 };
 
@@ -64,15 +65,15 @@ export const useFbGetPendingOrdersByProvider = (providerId) => {
         setLoading(true);
 
         const orderRef = collection(db, "businesses", user.businessID, "orders")
-        const q = query(orderRef, where("data.provider", "==", providerId), where("data.state", "==", "state_2"))
+        const q = query(orderRef, where("provider", "==", providerId), where("status", "==", "pending"))
 
         const unsubscribe = onSnapshot(
             q,
             (snapshot) => {
-                let orderArray = snapshot.docs.map(transformOrderData);
+                let orderArray = snapshot.docs.map(doc => doc.data())
                 let orderUpdated = orderArray.map((order) => {
-                    convertFirestoreTimestamps(order.data.dates, ['createdAt', 'completedAt', 'deliveryDate', 'paymentDate', 'deletedAt']);
-                    return order.data;
+                    convertFirestoreTimestamps(order, ['createdAt', 'completedAt', 'deliveryDate', 'paymentDate', 'deletedAt']);
+                    return order;
                 })
                 console.log('orderUpdated', orderUpdated)
                 setData(orderUpdated);

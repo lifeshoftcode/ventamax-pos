@@ -25,6 +25,7 @@ import { clearTaxReceiptData } from '../../../features/taxReceipt/taxReceiptSlic
 import { deleteClient } from '../../../features/clientCart/clientCartSlice.js'
 import { Helmet } from 'react-helmet-async'
 import { ClientSelector } from '../../component/contact/ClientControl/ClientSelector.jsx'
+import { ProductBatchModal } from '../Inventory/components/Warehouse/components/ProductBatchModal/ProductBatchModal.jsx'
 
 export const Sales = () => {
   const [searchData, setSearchData] = useState('')
@@ -117,6 +118,7 @@ export const Sales = () => {
       </ProductContainer>
       <Cart />
       <InvoicePanel />
+      <ProductBatchModal />
     </Container>
     </>
   )

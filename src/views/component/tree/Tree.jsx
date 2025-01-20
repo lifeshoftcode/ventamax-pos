@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useCallback, memo } from "react";
 import styled from "styled-components";
 import { traverse } from "./utils/traverseUtils";
 import { defaultFilterNodes } from "./utils/filterUtils";
@@ -7,6 +7,10 @@ import TreeHeader from "./components/TreeHeader";
 import TreeContent from "./components/TreeContent";
 import TreeNode from "./components/TreeNode";
 import { renderHighlightedText } from "./utils/textUtils";
+import useExpandedNodes from "./hooks/useExpandedNodes";
+import useSearchTerm from "./hooks/useSearchTerm";
+import useSelectedNode from "./hooks/useSelectedNode";
+import { findPathToNode } from "./utils/nodeUtils";
 
 const Container = styled.div`
   font-family: Arial, sans-serif;
@@ -19,90 +23,54 @@ const Container = styled.div`
   max-width: 800px;
 `;
 
-const Tree = ({ data = [], config = {}, selectedId }) => {
-  const [manualExpandedNodes, setManualExpandedNodes] = useState({});
-  const [searchExpandedNodes, setSearchExpandedNodes] = useState({});
-  const [selectedNode, setSelectedNode] = useState(selectedId);
-  const [searchTerm, setSearchTerm] = useState("");
-
-  // Calcular expandedNodes combinando expansiones manuales con las de búsqueda
-  const expandedNodes = { ...manualExpandedNodes, ...searchExpandedNodes };
-
-  useEffect(() => {
-    if (!searchTerm) {
-      setSearchExpandedNodes({});
-    } else {
-      expandMatchingNodes(searchTerm, data, traverse, setSearchExpandedNodes);
-    }
-  }, [searchTerm, data]);
-
-  useEffect(() => {
-    if (selectedId) {
-      const path = findPathToNode(data, selectedId);
-      if (path) {
-        const expandedNodesMap = {};
-        path.forEach(id => {
-          expandedNodesMap[id] = true;
-        });
-        setManualExpandedNodes(prev => ({ ...prev, ...expandedNodesMap }));
-      }
-      setSelectedNode(selectedId);
-    }
-  }, [selectedId, data]);
-
-  const handleToggleNode = (nodeId) => {
-    setManualExpandedNodes((prev) =>
-      prev[nodeId] ? { ...prev, [nodeId]: undefined } : { ...prev, [nodeId]: true }
-    );
+const Tree = memo(({ data = [], config = {}, selectedId }) => {
+  // Establecer valores por defecto para la configuración
+  const defaultConfig = {
+    showAllOnSearch: true,
+    initialVisibleCount: undefined,
+    ...config
   };
 
-  const handleToggleAll = () => {
-    if (Object.keys(manualExpandedNodes).length > 0) {
-      setManualExpandedNodes({});
-      setSearchExpandedNodes({});
-    } else {
-      const allNodeIds = new Set();
+  const {
+    expandedNodes,
+    handleToggleNode,
+    handleToggleAll,
+    manualExpandedNodes,
+    searchExpandedNodes,
+    manuallyClosedNodes,
+    setManualExpandedNodes,
+    setSearchExpandedNodes,
+    setManuallyClosedNodes,
+  } = useExpandedNodes(data);
 
-      const collectNodeIds = (nodes) => {
-        nodes.forEach(node => {
-          allNodeIds.add(node.id);
-          if (node.children) {
-            collectNodeIds(node.children);
-          }
-        });
-      };
+  const { searchTerm, setSearchTerm } = useSearchTerm(data, manuallyClosedNodes, setSearchExpandedNodes);
 
-      collectNodeIds(data);
-      setManualExpandedNodes(
-        Object.fromEntries([...allNodeIds].map(id => [id, true]))
-      );
-    }
-  };
+  const { selectedNode, setSelectedNode } = useSelectedNode(data, selectedId, manuallyClosedNodes, setManualExpandedNodes);
 
-  const handleNodeClick = (node, level) => {
+  const handleNodeClick = useCallback((node) => {
     setSelectedNode(node.id);
-    // Opcional: pasar la ruta al estado si es necesario
-  };
+  }, [setSelectedNode]);
 
-  const filterNodes = config.filterNodes || defaultFilterNodes;
+  const filteredData = useMemo(() => 
+    (defaultConfig.filterNodes || defaultFilterNodes)(data, searchTerm, defaultConfig),
+    [data, searchTerm, defaultConfig]
+  );
 
-  const filteredData = filterNodes(data, searchTerm, config);
-
-  const findPathToNode = (nodes, nodeId, path = []) => {
-    for (const node of nodes) {
-      const currentPath = [...path, node.id];
-      if (node.id === nodeId) {
-        return currentPath;
-      }
-      if (node.children) {
-        const result = findPathToNode(node.children, nodeId, currentPath);
-        if (result) {
-          return result;
-        }
-      }
+  const visibleData = useMemo(() => {
+    const filtered = (defaultConfig.filterNodes || defaultFilterNodes)(data, searchTerm, defaultConfig);
+    
+    // Si hay término de búsqueda, siempre mostrar todos (por defecto)
+    if (searchTerm) {
+      return filtered;
     }
-    return null;
-  };
+    
+    // Solo aplicar límite inicial si está configurado
+    if (!searchTerm && defaultConfig.initialVisibleCount) {
+      return filtered.slice(0, defaultConfig.initialVisibleCount);
+    }
+    
+    return filtered;
+  }, [data, searchTerm, defaultConfig]);
 
   return (
     <Container>
@@ -111,13 +79,9 @@ const Tree = ({ data = [], config = {}, selectedId }) => {
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
       />
-      <TreeContent
-        filteredData={filteredData}
-        selectedId={selectedId}
-      >
-        {filteredData.map((node) => {
-          const path = findPathToNode(data, node.id); // Obtener la ruta
-
+      <TreeContent filteredData={filteredData} selectedId={selectedId}>
+        {visibleData.map((node) => {
+          const path = findPathToNode(data, node.id);
           return (
             <TreeNode
               key={node.id}
@@ -128,17 +92,29 @@ const Tree = ({ data = [], config = {}, selectedId }) => {
               searchTerm={searchTerm}
               selectedNode={selectedNode}
               setSelectedNode={setSelectedNode}
-              config={config}
+              config={defaultConfig}
               traverse={traverse}
               renderHighlightedText={renderHighlightedText}
-              path={path} // Pasar la ruta
-              onNodeClick={handleNodeClick} // Asegurar que el clic actualiza correctamente
+              path={path}
+              onNodeClick={handleNodeClick}
+              onToggleNode={handleToggleNode}
             />
           );
         })}
+        {!searchTerm && defaultConfig.initialVisibleCount && filteredData.length > defaultConfig.initialVisibleCount && (
+          <div style={{ 
+            padding: '8px 16px', 
+            color: '#666', 
+            fontSize: '0.9em',
+            textAlign: 'center' 
+          }}>
+            Mostrando {defaultConfig.initialVisibleCount} de {filteredData.length} elementos.
+            Use la búsqueda para ver más.
+          </div>
+        )}
       </TreeContent>
     </Container>
   );
-};
+});
 
 export default Tree;

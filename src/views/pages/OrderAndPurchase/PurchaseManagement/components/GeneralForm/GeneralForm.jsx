@@ -1,22 +1,38 @@
-import { Form, Input, Select, DatePicker } from 'antd'
-import { useCallback, useMemo } from 'react' // Add these imports
-import debounce from 'lodash/debounce' // Add this import
-import dayjs from 'dayjs'; // Add this import
+import { Form, Input, Select, DatePicker, message, Modal } from 'antd'
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react'
+import debounce from 'lodash/debounce'
+import dayjs from 'dayjs'
 import styled from 'styled-components'
 import EvidenceUpload from '../EvidenceUpload/EvidenceUpload'
 import ProductsTable from '../ProductsTable'
 import TotalsSummary from '../TotalsSummary'
 import AddProductForm from '../AddProduct'
-import ProviderSelector from './components/ProviderSelector'
+import ProviderSelector from '../../../components/ProviderSelector/ProviderSelector'
 import OrderSelector from './components/OrderSelector'
 import { useSelector, useDispatch } from 'react-redux'
-import { selectPurchase, AddProductToPurchase, setProductSelected, deleteProductFromPurchase, clearProductSelected, updateProduct, setPurchase } from '../../../../../../features/purchase/addPurchaseSlice'
+import { selectPurchase, AddProductToPurchase, setProductSelected, deleteProductFromPurchase, clearProductSelected, updateProduct, setPurchase, cleanPurchase } from '../../../../../../features/purchase/addPurchaseSlice'
 import { getTransactionConditionById, transactionConditions } from '../../../../../../constants/orderAndPurchaseState'
 import { useFbGetPendingOrdersByProvider } from '../../../../../../firebase/order/usefbGetOrders'
 import NotesInput from './components/NotesInput'
+import { useFbGetProviders } from '../../../../../../firebase/provider/useFbGetProvider'
+import { onSnapshot, doc } from 'firebase/firestore'
+import { db } from '../../../../../../firebase/firebaseconfig'
+import { OPERATION_MODES } from '../../../../../../constants/modes'
+import { toggleProviderModal } from '../../../../../../features/modals/modalSlice'
+import { normalizeText } from '../../../../../../utils/text'
+import { selectUser } from '../../../../../../features/auth/userSlice'
+
+const { confirm } = Modal;
 
 const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors }) => {
     const dispatch = useDispatch();
+    const user = useSelector(selectUser);
+    const [selectedProvider, setSelectedProvider] = useState(null);
+    const [providerSearch, setProviderSearch] = useState('');
+    const [providerDrawerVisible, setProviderDrawerVisible] = useState(false);
+    const unsubscribeRef = useRef(null);
+    const { providers = [], loading: providersLoading } = useFbGetProviders();
+
     const {
         invoiceNumber,
         proofOfPurchase,
@@ -28,13 +44,97 @@ const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors 
         paymentAt,
         note
     } = useSelector(selectPurchase);
+    console.log('-----',providerId)
     const { data: orders = [], loading: orderLoading } = useFbGetPendingOrdersByProvider(providerId);
 
     const conditionData = getTransactionConditionById(condition);
     const conditionItems = transactionConditions.map((item) => ({
         label: item.label,
-        value: item.id // Cambiar de item.value a item.id
+        value: item.id
     }));
+
+    useEffect(() => {
+        if (providerId) {
+            const providerFromState = providers.find(p => p.provider.id === providerId);
+            if (providerFromState) {
+                setSelectedProvider(providerFromState.provider);
+            }
+        }
+    }, [providers, providerId]);
+
+    useEffect(() => {
+        if (selectedProvider?.id) {
+            if (unsubscribeRef.current) {
+                unsubscribeRef.current();
+            }
+
+            unsubscribeRef.current = onSnapshot(
+                doc(db, 'businesses', user.businessID, 'providers', selectedProvider.id),
+                (docSnapshot) => {
+                    if (docSnapshot.exists()) {
+                        const updatedProvider = {
+                            ...selectedProvider,
+                            ...docSnapshot.data().provider
+                        };
+                        setSelectedProvider(updatedProvider);
+                        dispatch(setPurchase({ provider: selectedProvider.id }));
+                    }
+                },
+                (error) => {
+                    console.error('Error observando proveedor:', error);
+                    message.error('Error al sincronizar datos del proveedor');
+                }
+            );
+        }
+
+        return () => {
+            if (unsubscribeRef.current) {
+                unsubscribeRef.current();
+            }
+        };
+    }, [selectedProvider?.id]);
+
+    const filteredProviders = useMemo(() => 
+        providerSearch
+            ? providers.filter(({ provider }) =>
+                normalizeText(provider.name).includes(normalizeText(providerSearch)) ||
+                normalizeText(provider.rnc || '').includes(normalizeText(providerSearch))
+            )
+            : providers,
+        [providers, providerSearch]
+    );
+
+    const handleProviderSelect = (providerData) => {
+        if (selectedProvider && providerData && selectedProvider.id !== providerData.id) {
+            confirm({
+                title: 'Confirmar cambio de proveedor',
+                content: '¿Quieres reemplazar el proveedor y descartar datos actuales?',
+                onOk() {
+                    dispatch(cleanPurchase());
+                    dispatch(setPurchase({ provider: providerData.id }));
+                    setSelectedProvider(providerData);
+                },
+            });
+        } else if (providerData) {
+            setSelectedProvider(providerData);
+            dispatch(cleanPurchase());
+            dispatch(setPurchase({ provider: providerData.id }));
+        } else {
+            setSelectedProvider(null);
+            dispatch(setPurchase({ provider: null }));
+        }
+        setProviderDrawerVisible(false);
+        setProviderSearch('');
+    };
+
+    const handleAddProvider = () => {
+        dispatch(toggleProviderModal({ mode: OPERATION_MODES.CREATE.id, data: null }));
+    };
+
+    const handleEditProvider = (provider) => {
+        dispatch(toggleProviderModal({ mode: OPERATION_MODES.UPDATE.id, data: provider }));
+        setProviderDrawerVisible(false);
+    };
 
     const handleProductSave = (productData) => {
         dispatch(setProductSelected(productData));
@@ -51,16 +151,6 @@ const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors 
         dispatch(deleteProductFromPurchase({ id: purchase.replenishments[index].id }));
     };
 
-    const handleSave = () => {
-        // Add your save logic here
-        console.log('Saving purchase...');
-    };
-
-    const handleCancel = () => {
-        // Add your cancel logic here
-        console.log('Canceling purchase...');
-    };
-
     const handleInputChange = (field, value) => {
         dispatch(setPurchase({ [field]: value }));
     };
@@ -75,27 +165,21 @@ const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors 
         dispatch(setPurchase({ condition: value }));
     };
 
-    // Debounced note change handler
-    const debouncedNoteChange = useMemo(
-        () =>
-            debounce((value) => {
-                dispatch(setPurchase({ note: value }));
-            }, 300),
-        [dispatch]
-    );
-
-    // Optimized note change handler
-    const handleNoteChange = useCallback((value) => {
+     const handleNoteChange = useCallback((value) => {
         dispatch(setPurchase({ note: value }));
     }, [dispatch]);
 
     return (
         <>
-
             <InvoiceDetails>
                 <ProviderSelector
                     validateStatus={errors?.provider ? "error" : ""}
                     help={errors?.provider ? "El proveedor es requerido" : ""}
+                    providers={filteredProviders}
+                    selectedProvider={selectedProvider}
+                    onSelectProvider={handleProviderSelect}
+                    onAddProvider={handleAddProvider}
+                    onEditProvider={handleEditProvider}
                 />
                 <OrderSelector orders={orders} orderLoading={orderLoading} />
                 <Form.Item label="Número de Factura">
@@ -134,7 +218,7 @@ const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors 
                         <Form.Item label="Condición" required>
                             <Select
                                 options={conditionItems}
-                                value={condition} // Cambiado de conditionKey a condition
+                                value={condition}
                                 onChange={handleConditionChange}
                             />
                         </Form.Item>
@@ -170,7 +254,7 @@ const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors 
                     <NotesInput
                         initialValue={note}
                         onNoteChange={handleNoteChange}
-                        errors={{}} // Remove note error validation
+                        errors={{}}
                     />
                 </div>
                 <EvidenceUpload
@@ -180,8 +264,6 @@ const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors 
                     onRemoveFiles={onRemoveFiles}
                 />
             </div>
-
-
         </>
     );
 }
@@ -210,15 +292,4 @@ const InvoiceDetails = styled.div`
     grid-template-columns: 300px 200px 200px 200px;
     gap: 0.4em;
   
-`
-const ButtonsContainer = styled.div`
-    display: flex;
-    justify-content: flex-end;
-    position: sticky;
-    bottom: 0;
-    width: 100%;
-    gap: 1em;
-   background-color: white;
-   padding-top: 1em;
-   border-top: 1px solid #e8e8e8;
 `

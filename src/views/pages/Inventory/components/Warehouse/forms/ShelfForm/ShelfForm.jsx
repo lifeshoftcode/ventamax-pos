@@ -10,7 +10,6 @@ export function ShelfForm({ }) {
   const dispatch = useDispatch();
   const [form] = Form.useForm();
   const { formData, isOpen, path } = useSelector(selectShelfState) // Obtener la ruta
-  const { selectedWarehouse } = useSelector(selectWarehouse);
   const user = useSelector(selectUser);
 
   useEffect(() => {

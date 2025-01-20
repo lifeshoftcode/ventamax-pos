@@ -37,21 +37,28 @@ const AUTH_TERM = {
 }
 
 const INVENTORY_BASE_PATH = '/inventory';
-const WAREHOUSE_BASE_PATH = `${INVENTORY_BASE_PATH}/warehouse/:warehouseId`;
+
+const WAREHOUSES_PATH = `${INVENTORY_BASE_PATH}/warehouses`;
+const PRODUCTS_STOCK = `${WAREHOUSES_PATH}/products-stock`;
+const PRODUCT_STOCK = `${PRODUCTS_STOCK}/:productId`;
+const WAREHOUSE_BASE_PATH = `${WAREHOUSES_PATH}/warehouse/:warehouseId`;
 const SHELVE_BASE_PATH = `${WAREHOUSE_BASE_PATH}/shelf/:shelfId`;
 const ROW_BASE_PATH = `${SHELVE_BASE_PATH}/row/:rowId`;
 const SEGMENT_BASE_PATH = `${ROW_BASE_PATH}/segment/:segmentId`;
+
 
 const INVENTORY_TERM = {
     CREATE_PRODUCT: `${INVENTORY_BASE_PATH}/create-product`,
     PRODUCT: `${INVENTORY_BASE_PATH}/product/:productId`,
     INVENTORY_ITEMS: '/inventory/items',
     CATEGORIES: '/inventory/categories',
-    WAREHOUSES: `${WAREHOUSE_BASE_PATH}`, // Listado de almacenes
+    WAREHOUSES: `${WAREHOUSES_PATH}`, // Listado de almacenes
     WAREHOUSE: `${WAREHOUSE_BASE_PATH}`, // Detalle de un almacén
     SHELF: `${SHELVE_BASE_PATH}`, // Detalle de un estante
     ROW: `${ROW_BASE_PATH}`, // Detalle de una fila
     SEGMENT: `${SEGMENT_BASE_PATH}`, // Detalle de un segmento
+    PRODUCTS_STOCK: PRODUCTS_STOCK, // Resumen de stock de productos
+    PRODUCT_STOCK: `${PRODUCT_STOCK}`, // Resumen de stock de un producto
     CREATE_WAREHOUSE: `${INVENTORY_BASE_PATH}/warehouses/create`, // Crear un nuevo almacén
     EDIT_WAREHOUSE: `${INVENTORY_BASE_PATH}/warehouses/edit/:id`,
     INVENTORY_SERVICES: '/inventory/services',

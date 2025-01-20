@@ -8,6 +8,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import { normalizeText } from '../../../../../../../utils/text';
 import { icons } from '../../../../../../../constants/icons/icons';
 import { LoadingOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
+import { calculateOrderTotals } from '../../../../OrderManagement/utils/orderCalculationsUtil';
 
 const Wrapper = styled.div`
   height: 100%;
@@ -90,8 +92,8 @@ const OrderSelector = ({ orders, orderLoading }) => {
     const [search, setSearch] = useState('');
     const [selectedOrder, setSelectedOrder] = useState(null);
     const searchInputRef = useRef(null);
-    const { provider: providerId } = useSelector(selectPurchase);
-
+    const { provider: providerId, orderId } = useSelector(selectPurchase);
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (visible && searchInputRef.current) {
@@ -101,16 +103,31 @@ const OrderSelector = ({ orders, orderLoading }) => {
         }
     }, [visible]);
 
-    const filteredOrders = search
-        ? orders.filter((order) =>
-            normalizeText(order.numberId.toString()).includes(normalizeText(search)) ||
-            normalizeText(DateUtils.convertMillisToISODate(order.dates.createdAt)).includes(normalizeText(search))
-        )
-        : orders;
+    useEffect(() => {
+        if (orderId && orders?.length) {
+            const match = orders.find(order => order.id === orderId);
+            if (match) {
+                setSelectedOrder(match);
+            }
+        }
+    }, [orderId, orders]);
+
+    const filteredOrders = (search
+        ? orders.filter((order) => {
+            if (!order) return false;
+            return (
+                normalizeText(order?.numberId?.toString() ?? '').includes(normalizeText(search)) ||
+                normalizeText(DateUtils.convertMillisToISODate(order?.dates?.createdAt ?? order?.createdAt ?? 0))
+                    .includes(normalizeText(search))
+            );
+        })
+        : orders
+    ).filter(Boolean);
 
     const handleOrderSelect = (order) => {
         setSelectedOrder(order);
-        dispatch(getOrderData(order));
+        // dispatch(getOrderData(order));
+        navigate(`/orders/convert-to-purchase/${order.id}`);
         setVisible(false);
         setSearch('');
         message.success('Pedido seleccionado');
@@ -124,13 +141,19 @@ const OrderSelector = ({ orders, orderLoading }) => {
 
     return (
         <div>
-            <Space.Compact style={{ width: '100%' }}>
-                <div style={{ width: '100%', position: 'relative' }}>
-                    <Form.Item
-                        label="Pedido"
-                        rules={[{ required: true, message: 'Por favor selecciona un pedido' }]}
-                        help={selectedOrder ? `${DateUtils.convertMillisToISODate(selectedOrder?.dates?.createdAt)} | (${useFormatPrice(selectedOrder.total)}) ` : ''}
-                    >
+            <div style={{ width: '100%', position: 'relative' }}>
+                <Form.Item
+                    label="Pedido"
+                    rules={[{ required: true, message: 'Por favor selecciona un pedido' }]}
+                    help={
+                        selectedOrder
+                            ? `${DateUtils.convertMillisToISODate(selectedOrder?.dates?.createdAt ?? selectedOrder?.createdAt ?? 0)} | (${useFormatPrice(
+                                calculateOrderTotals(selectedOrder.replenishments).grandTotal
+                            )}) `
+                            : ''
+                    }
+                >
+                    <Space.Compact style={{ width: '100%' }}>
                         <Input
                             value={selectedOrder ? `Pedido #${selectedOrder.numberId}` : ''}
                             placeholder="Buscar y seleccionar pedido..."
@@ -140,16 +163,16 @@ const OrderSelector = ({ orders, orderLoading }) => {
                             onClick={() => setVisible(true)}
                             style={{ width: '100%' }}
                         />
-                    </Form.Item>
-                </div>
-                {selectedOrder && (
-                    <Button
-                        onClick={handleClear}
-                        type="default"
-                        icon={icons.operationModes.close}
-                    />
-                )}
-            </Space.Compact>
+                        {selectedOrder && (
+                            <Button
+                                onClick={handleClear}
+                                type="default"
+                                icon={icons.operationModes.close}
+                            />
+                        )}
+                    </Space.Compact>
+                </Form.Item>
+            </div>
             <Drawer
                 title="Lista de Pedidos"
                 placement="bottom"
@@ -173,17 +196,21 @@ const OrderSelector = ({ orders, orderLoading }) => {
                     </Header>
                     <OrdersContainer>
                         {filteredOrders.length > 0 ? (
-                            filteredOrders.map((order) => (
-                                <OrderCard
-                                    key={order.id}
-                                    onClick={() => handleOrderSelect(order)}
-                                    $isSelected={selectedOrder?.id === order.id}
-                                >
-                                    <div className="order-number">Pedido #{order.numberId}</div>
-                                    <div className="order-date">{DateUtils.convertMillisToISODate(order.dates.createdAt)}</div>
-                                    <div className="order-total">Total: {useFormatPrice(order.total)}</div>
-                                </OrderCard>
-                            ))
+                            filteredOrders.map((order) => {
+                                if (!order) return null;
+                                const { grandTotal } = calculateOrderTotals(order.replenishments);
+                                return (
+                                    <OrderCard
+                                        key={order?.id}
+                                        onClick={() => handleOrderSelect(order)}
+                                        $isSelected={selectedOrder?.id === order?.id}
+                                    >
+                                        <div className="order-number">Pedido #{order?.numberId ?? '(sin número)'}</div>
+                                        <div className="order-date">{DateUtils.convertMillisToISODate(order?.dates?.createdAt ?? order?.createdAt ?? 0)}</div>
+                                        <div className="order-total">Total: {useFormatPrice(grandTotal)}</div>
+                                    </OrderCard>
+                                );
+                            })
                         ) : (
                             <div className="empty-container">
                                 <Empty

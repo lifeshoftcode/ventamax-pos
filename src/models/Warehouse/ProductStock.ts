@@ -18,7 +18,8 @@ export interface ProductStock extends AuditInfo {
   batchId: string; 
   location: string;
   productId: string;
-  stock: number; 
+  quantity: number; 
+  initialQuantity: number;
   updatedAt?: Timestamp; 
   updatedBy?: string; 
 }

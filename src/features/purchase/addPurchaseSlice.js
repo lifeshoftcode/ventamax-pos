@@ -51,7 +51,7 @@ export const addPurchaseSlice = createSlice({
         },
         getOrderData: (state, actions) => {
             const data = actions.payload
-            state.purchase = data ? data : null
+            state.purchase = data ? data : EmptyPurchase
         },
         setProductSelected: (state, actions) => {
             const newValue = actions.payload

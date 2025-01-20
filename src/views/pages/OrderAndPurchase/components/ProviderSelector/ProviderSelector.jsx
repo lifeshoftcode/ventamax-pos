@@ -1,18 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { Form, Input, Button, Drawer, message, Dropdown, Tooltip } from 'antd';
 import { PlusOutlined, EditOutlined, MoreOutlined, CloseOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
-import { onSnapshot, doc } from 'firebase/firestore';
-
-import { db } from '../../../../../../../firebase/firebaseconfig';
-import { useFbGetProviders } from '../../../../../../../firebase/provider/useFbGetProvider';
-import { normalizeText } from '../../../../../../../utils/text';
-import { OPERATION_MODES } from '../../../../../../../constants/modes';
-import { toggleProviderModal } from '../../../../../../../features/modals/modalSlice';
-import { selectUser } from '../../../../../../../features/auth/userSlice';
-import { comprobantesOptions } from '../../../../../Contact/Provider/components/CreateContact/constants';
-import { selectOrder, setOrder, cleanOrder } from '../../../../../../../features/addOrder/addOrderSlice';
+import { normalizeText } from '../../../../../utils/text';
+import { comprobantesOptions } from '../../../Contact/Provider/components/CreateContact/constants';
 
 const Wrapper = styled.div`
   height: 100%;
@@ -130,17 +121,18 @@ const ProviderInfo = styled.div`
   }
 `;
 
-const ProviderSelector = ({ validateStatus, help }) => {
-    const dispatch = useDispatch();
+const ProviderSelector = ({
+    providers = [],
+    selectedProvider,
+    onSelectProvider,
+    onAddProvider,
+    onEditProvider,
+    validateStatus,
+    help,
+}) => {
     const [visible, setVisible] = useState(false);
     const [search, setSearch] = useState('');
-    const [selectedProvider, setSelectedProvider] = useState(null);
     const searchInputRef = useRef(null);
-    const user = useSelector(selectUser);
-    const unsubscribeRef = useRef(null);
-    const order = useSelector(selectOrder);
-
-    const { providers = [], loading } = useFbGetProviders();
 
     useEffect(() => {
         if (visible && searchInputRef.current) {
@@ -150,26 +142,6 @@ const ProviderSelector = ({ validateStatus, help }) => {
         }
     }, [visible]);
 
-    useEffect(() => {
-      
-            if (order.provider) {
-                // Buscar el proveedor que coincida con el ID en el estado de order
-                const providerFromState = providers.find(p => p.provider.id === order.provider);
-                if (providerFromState) {
-                    setSelectedProvider(providerFromState.provider);
-                }
-            } 
-            else {
-                // Solo si no hay ID de proveedor en order, establecer el primero
-                const defaultProvider = providers[0]?.provider;
-                if (defaultProvider) {
-                    setSelectedProvider(defaultProvider);
-                    dispatch(setOrder({ provider: defaultProvider.id }));
-                }
-            }
-        
-    }, [providers]);
-
     const filteredProviders = search
         ? providers.filter(({ provider }) =>
             normalizeText(provider.name).includes(normalizeText(search)) ||
@@ -178,32 +150,23 @@ const ProviderSelector = ({ validateStatus, help }) => {
         : providers;
 
     const handleProviderSelect = (providerData) => {
-        setSelectedProvider(providerData.provider);
-        dispatch(cleanOrder());
-        dispatch(setOrder({ provider: providerData.provider.id }));
+        onSelectProvider?.(providerData.provider);
         setVisible(false);
         setSearch('');
-        message.success('Proveedor seleccionado');
     };
 
     const handleAddProvider = () => {
-        // TODO: Implementar lógica para agregar proveedor
-        dispatch(toggleProviderModal({ mode: createMode, data: null }))
-        message.info('Funcionalidad de agregar proveedor pendiente');
+        onAddProvider?.();
     };
 
-    const createMode = OPERATION_MODES.CREATE.id
-    const updateMode = OPERATION_MODES.UPDATE.id;
-
     const handleCardClick = (e, providerData) => {
-        // Solo ejecutar si el clic no viene del dropdown o sus elementos
         if (!e.target.closest('.dropdown-container')) {
             handleProviderSelect(providerData);
         }
     };
 
     const openModalUpdateMode = (e, provider) => {
-        dispatch(toggleProviderModal({ mode: updateMode, data: provider }));
+        onEditProvider?.(provider);
         setVisible(false);
     };
 
@@ -212,53 +175,14 @@ const ProviderSelector = ({ validateStatus, help }) => {
             key: 'edit',
             label: 'Editar',
             icon: <EditOutlined />,
-            onClick: (e) => openModalUpdateMode(e, provider)
-        }
+            onClick: (e) => openModalUpdateMode(e, provider),
+        },
     ];
-
-    // Efecto para observar cambios en el documento del proveedor seleccionado
-    useEffect(() => {
-        if (selectedProvider?.id) {
-            // Limpiar suscripción anterior si existe
-            if (unsubscribeRef.current) {
-                unsubscribeRef.current();
-            }
-
-            // Crear nueva suscripción
-            unsubscribeRef.current = onSnapshot(
-                doc(db, 'businesses', user.businessID, 'providers', selectedProvider.id),
-                (docSnapshot) => {
-                    if (docSnapshot.exists()) {
-                        const updatedProvider = {
-                            ...selectedProvider,
-                            ...docSnapshot.data().provider
-                        };
-                        setSelectedProvider(updatedProvider);
-                        dispatch(setOrder({ provider: selectedProvider.id }));
-                    }
-                },
-                (error) => {
-                    console.error('Error observando proveedor:', error);
-                    message.error('Error al sincronizar datos del proveedor');
-                }
-            );
-        }
-
-        // Cleanup function
-        return () => {
-            if (unsubscribeRef.current) {
-                unsubscribeRef.current();
-            }
-        };
-    }, [selectedProvider?.id]);
 
     const handleClearProvider = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        setSelectedProvider(null);
-        dispatch(cleanOrder());
-        dispatch(setOrder({ provider: "" }));
-        message.info('Proveedor deseleccionado');
+        onSelectProvider?.(null);
     };
 
     const selectedVoucherType = comprobantesOptions.find(
@@ -271,7 +195,7 @@ const ProviderSelector = ({ validateStatus, help }) => {
             validateStatus={validateStatus}
             help={help}
         >
-            <ProviderInfo 
+            <ProviderInfo
                 className={!selectedProvider ? 'empty' : ''}
                 onClick={() => setVisible(true)}
             >
@@ -284,7 +208,7 @@ const ProviderSelector = ({ validateStatus, help }) => {
                     <>
                         <div className="provider-header">
                             <span className="provider-name">{selectedProvider.name}</span>
-                            <CloseOutlined 
+                            <CloseOutlined
                                 onClick={handleClearProvider}
                                 style={{ cursor: 'pointer', color: '#8c8c8c' }}
                             />
@@ -302,7 +226,7 @@ const ProviderSelector = ({ validateStatus, help }) => {
                     </>
                 )}
             </ProviderInfo>
-            
+
             <Drawer
                 title="Lista de Proveedores"
                 placement="bottom"

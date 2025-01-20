@@ -1,3 +1,6 @@
+import { Tabs } from 'antd';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faWarehouse, faBoxes } from '@fortawesome/free-solid-svg-icons';
 import styled from "styled-components";
 import { faPlus, faEdit, faTrash, faEllipsisH } from "@fortawesome/free-solid-svg-icons";
 import Tree from "../../../../../../component/tree/Tree";
@@ -19,12 +22,57 @@ import {
   openWarehouseForm
 } from "../../../../../../../features/warehouse/warehouseModalSlice"; // New import
 import { useNavigate } from 'react-router-dom'
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useGetProducts } from '../../../../../../../firebase/products/fbGetProducts';
+import { filterData } from '../../../../../../../hooks/search/useSearch';
+import { replacePathParams } from '../../../../../../../routes/replacePathParams';
+import ROUTES_PATH from '../../../../../../../routes/routesName';
+import { useLocation } from 'react-router-dom';
+import { useDefaultWarehouse } from '../../../../../../../firebase/warehouse/warehouseService';
 
 // Estilo para el sidebar
 const SidebarContainer = styled.div`
   padding: 10px;
   display: grid;
   height: 100%;
+`;
+
+// Estilos personalizados para las pestañas
+const StyledTabs = styled(Tabs)`
+  .ant-tabs-nav {
+    margin-bottom: 16px;
+    
+    &::before {
+      border: none;
+    }
+  }
+
+  .ant-tabs-tab {
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+
+    &:hover {
+      color: #1890ff;
+    }
+  }
+
+  .ant-tabs-tab-active {
+    background: #e6f7ff;
+    border-radius: 4px;
+  }
+
+  .ant-tabs-ink-bar {
+    display: none;
+  }
+`;
+
+// Actualizar el estilo del TabIcon para Font Awesome
+const TabIcon = styled(FontAwesomeIcon)`
+  font-size: 16px;
+  margin-right: 8px;
 `;
 
 // Función para obtener las acciones según el nivel
@@ -71,6 +119,21 @@ const findPathToNode = (nodes, targetId, path = []) => {
   return null;
 };
 
+const addParentIds = (nodes, parentId = null, grandParentId = null, greatGrandParentId = null) => {
+  return nodes.map(node => {
+    const newNode = {
+      ...node,
+      parentId,
+      grandParentId,
+      greatGrandParentId,
+    };
+    if (node.children) {
+      newNode.children = addParentIds(node.children, node.id, parentId, grandParentId);
+    }
+    return newNode;
+  });
+};
+
 // Paso 1: Agregar un mapa de género para los tipos de nodos
 const nodeGenderMap = {
   'Almacén': 'masculino',
@@ -79,46 +142,87 @@ const nodeGenderMap = {
   'Segmento': 'masculino',
 };
 
-const Sidebar = ({ onSelectNode, items }) => {
+const Sidebar = ({ onSelectNode, items, productItems = [] }) => {
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
   const { currentView, selectedWarehouse, selectedShelf, selectedRowShelf, selectedSegment } = useSelector(selectWarehouse);
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("almacenes");
+  const [search, setSearch] = useState('');
+  const location = useLocation();
+  const { defaultWarehouse, loading: loadingDefault } = useDefaultWarehouse();
 
-  const handleNodeClick = (node, level) => {
-    
-    // Base URL
-    let url = '/inventory/warehouse';
-    
-    // Obtener el camino completo al nodo
+  // Obtener productos
+  const { products, loading } = useGetProducts(true);
+  const filteredProducts = search ? filterData(products, search) : products;
+
+  // Add parent IDs to items
+  const itemsWithParentIds = useMemo(() => addParentIds(items), [items]);
+  const { WAREHOUSE, SHELF, ROW, SEGMENT, PRODUCT_STOCK } = ROUTES_PATH.INVENTORY_TERM
+
+  // Decide which data to display based on the active tab
+  const dataToDisplay = activeTab === "almacenes" ? itemsWithParentIds : productItems;
+
+  const handleWarehouseNodeClick = (node, level) => {
     const path = findPathToNode(items, node.id);
 
     if (node.data && path) {
       switch (level) {
         case 0: // Warehouse level
-          url += `/${node.id}`;
+          navigate(replacePathParams(WAREHOUSE, node.id));
           break;
         case 1: // Shelf level
-          url += `/${path[0].id}/shelf/${node.id}`;
+          navigate(replacePathParams(SHELF, [path[0].id, node.id]));
           break;
         case 2: // Row level
-          url += `/${path[0].id}/shelf/${path[1].id}/row/${node.id}`;
+          navigate(replacePathParams(ROW, [path[0].id, path[1].id, node.id]));
           break;
         case 3: // Segment level
           if (path.length >= 3) {
-            url += `/${path[0].id}/shelf/${path[1].id}/row/${path[2].id}/segment/${node.id}`;
+            navigate(replacePathParams(SEGMENT, [
+              path[0].id,
+              path[1].id,
+              path[2].id,
+              node.id
+            ]));
           } else {
             message.error("Camino al nodo incompleto para segmento");
-            return;
           }
           break;
         default:
           message.error("Nivel de nodo desconocido");
-          return;
       }
     }
+  };
+
+  const handleProductNodeClick = (node) => {
+    console.log("node id: ", node.id);
+    console.log("Product stock: ", PRODUCT_STOCK);
+    navigate(replacePathParams(PRODUCT_STOCK, [node.id]));
+  };
+
+  // Add a helper function to find default warehouse
+  const getDefaultWarehouseId = useCallback(() => {
+    if (defaultWarehouse) {
+      return defaultWarehouse.id;
+    }
+    // Fallback to existing logic
+    if (!items || items.length === 0) return 'default';
+    const defaultFromItems = items.find(warehouse => warehouse.data?.defaultWarehouse === true);
+    return defaultFromItems?.id || items[0]?.id || 'default';
+  }, [defaultWarehouse, items]);
+
+  // Update handleTabChange function to clear search
+  const handleTabChange = (key) => {
+    setActiveTab(key);
+    setSearch(''); // Limpiar búsqueda al cambiar de tab
     
-    navigate(url);
+    if (key === "productos") {
+      navigate('/inventory/warehouses/products-stock');
+    } else if (key === "almacenes") {
+      const defaultId = getDefaultWarehouseId();
+      navigate(`/inventory/warehouses/warehouse/${defaultId}`);
+    }
   };
 
   // Funciones para manejar acciones en estantes y filas
@@ -137,7 +241,7 @@ const Sidebar = ({ onSelectNode, items }) => {
       path: path.map(node => ({ id: node.id, name: node.name })), // Pasar la ruta
     }));
   };
-  
+
   const handleAddRowShelf = (parentNode) => {
     const path = findPathToNode(items, parentNode.id);
     dispatch(openRowShelfForm({
@@ -287,7 +391,7 @@ const Sidebar = ({ onSelectNode, items }) => {
                   handleAddRowShelf(node);
                 } else if (level === 2 && actions.create === "Crear Segmento") {
                   handleAddSegment(node);
-                } else if (level === 0 && actions.create === "Crear Almacén") { 
+                } else if (level === 0 && actions.create === "Crear Almacén") {
                   handleAddWarehouse();
                 } else {
                   alert(`${actions.create} en: ${node.name}`);
@@ -324,8 +428,15 @@ const Sidebar = ({ onSelectNode, items }) => {
         }
       },
     ],
-    onNodeClick: handleNodeClick,
+    onNodeClick: handleWarehouseNodeClick, // Usar directamente la función específica
     showMatchedStockCount: true, // 1. Agregar esta propiedad para mostrar coincidencias
+  };
+
+  const productConfig = {
+    actions: [],
+    onNodeClick: handleProductNodeClick, // Usar directamente la función específica
+    showMatchedStockCount: true, // 1. Agregar esta propiedad para mostrar coincidencias
+    initialVisibleCount: 10, // Solo necesitamos configurar esto
   };
 
   // Determinar el ID seleccionado basado en la vista actual
@@ -344,12 +455,66 @@ const Sidebar = ({ onSelectNode, items }) => {
     }
   };
 
+  const tabItems = [
+    {
+      key: 'almacenes',
+      label: (
+        <span>
+          <TabIcon icon={faWarehouse} />
+          Almacenes
+        </span>
+      ),
+      children: (
+        <Tree
+          data={items}
+          config={config}
+          selectedId={getSelectedId()}
+        />
+      ),
+    },
+    {
+      key: 'productos',
+      label: (
+        <span>
+          <TabIcon icon={faBoxes} />
+          Productos
+        </span>
+      ),
+      children: (
+        <Tree
+          data={filteredProducts}
+          config={productConfig}
+          selectedId={getSelectedId()}
+        />
+      ),
+    },
+  ];
+
+  // Agregar efecto para cambiar el tab según la ruta
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.includes('/products-stock') || path.includes('/product-stock-overview/')) {
+      setActiveTab('productos');
+    } else {
+      setActiveTab('almacenes');
+
+      // Solo navegar al almacén por defecto si estamos en la ruta base o con placeholder
+      if (path === '/inventory/warehouses' || path === '/inventory/warehouses/warehouse/:warehouseId') {
+        const defaultId = getDefaultWarehouseId();
+        if (!loadingDefault) {
+          navigate(`/inventory/warehouses/warehouse/${defaultId}`);
+        }
+      }
+    }
+  }, [location.pathname, navigate, getDefaultWarehouseId, loadingDefault]);
+
   return (
     <SidebarContainer>
-      <Tree
-        data={items}
-        config={config} // 2. Pasar la config al componente Tree
-        selectedId={getSelectedId()}
+      <StyledTabs
+        activeKey={activeTab} // Change from defaultActiveKey to activeKey
+        items={tabItems}
+        onChange={handleTabChange}
+        animated={{ tabPane: true }}
       />
       <WarehouseForm />
     </SidebarContainer>
@@ -357,5 +522,4 @@ const Sidebar = ({ onSelectNode, items }) => {
 };
 
 export default Sidebar;
-
 

@@ -164,7 +164,7 @@ export const InventoryTable = ({ currentNode, searchTerm, setSearchTerm, setDate
         key: stock.id,
         productName: stock.productName || 'Producto sin nombre', // Changed from product to productName
         productId: stock.productId || '',
-        quantity: stock.stock || 0,
+        quantity: stock.quantity || 0,
         batch: stock.batchNumberId || 'N/A',
         actions: stock, // Pass the entire stock object
         expiryDate: stock?.expirationDate ? DateUtils.convertMillisToISODate(stock?.expirationDate) : 'N/A',

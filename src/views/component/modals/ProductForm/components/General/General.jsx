@@ -17,6 +17,7 @@ import { selectUser } from '../../../../../../features/auth/userSlice';
 import { fbUpdateProduct } from '../../../../../../firebase/products/fbUpdateProduct';
 import { fbAddProduct } from '../../../../../../firebase/products/fbAddProduct';
 import * as antd from 'antd';
+
 export const General = ({ showImageManager }) => {
     const dispatch = useDispatch();
     const user = useSelector(selectUser);
