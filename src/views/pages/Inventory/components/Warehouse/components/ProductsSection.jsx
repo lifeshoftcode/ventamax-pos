@@ -6,7 +6,7 @@ import { faEdit } from '@fortawesome/free-solid-svg-icons';
 import { openProductStock } from '../../../../../../features/productStock/productStockSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { icons } from '../../../../../../constants/icons/icons';
-import { deleteProductStock, useListenProductsStockByLocation } from '../../../../../../firebase/warehouse/ProductStockService';
+import { deleteProductStock, useListenProductsStockByLocation } from '../../../../../../firebase/warehouse/productStockService';
 import { selectUser } from '../../../../../../features/auth/userSlice';
 import { useNavigate } from 'react-router-dom';
 

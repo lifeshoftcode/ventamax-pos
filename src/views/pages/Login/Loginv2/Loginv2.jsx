@@ -1,23 +1,41 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { fbLogin } from "../../../../firebase/Auth/fbLogin";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { selectUser } from "../../../../features/auth/userSlice";
 import { Login } from "./Login";
 import img from './imgs/Imagen de WhatsApp 2024-03-20 a las 16.08.41_2d4b60ad.jpg'
-import * as antd from 'antd'
+import { Button, Spin }  from 'antd'
 import { icons } from "../../../../constants/icons/icons";
-const { Button, Spin } = antd
 
 export const LoginV2 = () => {
-    const navigate = useNavigate()
-    const dispatch = useDispatch()
-    const [loading, setLoading] = useState(false)
+    const navigate = useNavigate();
+    const [loading, setLoading] = useState(false);
+    const user = useSelector(selectUser);
+    const homePath = "/home";
+
+    useEffect(() => {
+        if (user === null) {
+            return; // No hacer nada si el usuario está en estado inicial null
+        }
+
+        if (user === false) {
+            // Usuario no autenticado, permitir quedarse en login
+            return;
+        }
+
+        // Si hay usuario o token válido, redirigir a home
+        const sessionToken = localStorage.getItem('sessionToken');
+        const sessionExpires = localStorage.getItem('sessionExpires');
+        
+        if (user || (sessionToken && sessionExpires && Date.now() < parseInt(sessionExpires))) {
+            navigate(homePath, { replace: true });
+        }
+    }, [user, navigate]);
+
     const goToHome = () => {
         navigate('/')
     }
-
-    const homePath = "/home"
 
     return (
         <Spin 
@@ -31,7 +49,6 @@ export const LoginV2 = () => {
                         <ButtonBack
                             icon={icons.arrows.arrowLeft}
                             onClick={goToHome}>
-
                             Volver atrás
                         </ButtonBack>
                         <Imagen>
@@ -41,7 +58,6 @@ export const LoginV2 = () => {
                     <Login setLoading={setLoading}/>
                 </Container>
             </Background>
-
         </Spin>
     );
 };

@@ -6,7 +6,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { selectProductStockSimple, closeProductStockSimple } from '../../../../../../../features/productStock/productStockSimpleSlice';
 import { useListenProductsStock } from '../../../../../../../firebase/warehouse/productStockService';
 import { useLocationNames } from '../../../../../../../hooks/useLocationNames';
-import { addProduct } from '../../../../../../../features/cart/cartSlice';
+import { addProduct, SelectCartData } from '../../../../../../../features/cart/cartSlice';
 
 const StyledWrapper = styled.div`
   .batch-select-button {
@@ -166,6 +166,7 @@ export function ProductBatchModal() {
     const { isOpen, productId, product } = useSelector(selectProductStockSimple);
     const [selectedBatch, setSelectedBatch] = useState(null);
     const [searchText, setSearchText] = useState('');
+    const {products} = useSelector(SelectCartData);
     
     // Obtener datos de productStock en tiempo real
     const { data: productStocks, loading } = useListenProductsStock(productId);
@@ -175,6 +176,7 @@ export function ProductBatchModal() {
         stock.batchNumberId.toString().toLowerCase().includes(searchText.toLowerCase()) ||
         stock.location.toLowerCase().includes(searchText.toLowerCase())
     );
+    
 
     useEffect(() => {
         const uniqueLocations = [...new Set(filteredBatches.map(stock => stock.location).filter(Boolean))];
@@ -184,6 +186,12 @@ export function ProductBatchModal() {
             }
         });
     }, [filteredBatches, locationNames, fetchLocationName]);
+
+    useEffect(() => {
+        if (products.length === 0) {
+            setSelectedBatch(null);
+        }
+    }, [products.length]);
 
     // Modificar la función formatLocation
     function formatLocation(locationId) {
@@ -198,7 +206,7 @@ export function ProductBatchModal() {
     const handleConfirm = () => {
         if (selectedBatch) {
             const chosenStock = productStocks.find(s => s.id === selectedBatch);
-            dispatch(addProduct({ ...product, productStockId: chosenStock?.id, batchId: chosenStock?.batchId }));
+            dispatch(addProduct({ ...product, productStockId: chosenStock?.id, batchId: chosenStock?.batchId, stock: chosenStock.quantity }));
             dispatch(closeProductStockSimple());
         }
     };
@@ -226,6 +234,7 @@ export function ProductBatchModal() {
             }
         >
             <div className="search-container">
+              {JSON.stringify(products.length)}
                 <Input
                     placeholder="Buscar por número de lote o ubicación..."
                     prefix={<SearchOutlined />}

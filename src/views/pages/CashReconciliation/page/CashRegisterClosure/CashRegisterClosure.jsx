@@ -1,19 +1,18 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import userSlice, { selectUser } from './../../../../../features/auth/userSlice'
-import { Header } from './components/Header/Header'
 import styled from 'styled-components'
+import { notification } from 'antd'
+import { selectUser } from './../../../../../features/auth/userSlice'
+import { Header } from './components/Header/Header'
 import { Body } from './components/Body/Body'
 import { Footer } from './components/Footer/Footer'
 import { PeerReviewAuthorization } from '../../../../component/modals/PeerReviewAuthorization/PeerReviewAuthorization'
 import { clearCashCount, selectCashCount } from '../../../../../features/cashCount/cashCountManagementSlice'
 import { useNavigate } from 'react-router-dom'
-import { fbAddBillToOpenCashCount } from '../../../../../firebase/cashCount/fbAddBillToOpenCashCount'
 import { fbCashCountClosed } from '../../../../../firebase/cashCount/closing/fbCashCountClosed'
 import { DateTime } from 'luxon'
 import { fbCashCountChangeState } from '../../../../../firebase/cashCount/closing/fbCashCountClosing'
 import { useFbGetCashCount } from '../../../../../firebase/cashCount/fbGetCashCount'
-import { addNotification } from '../../../../../features/notification/NotificationSlice'
 
 export const CashRegisterClosure = () => {
   const dispatch = useDispatch()
@@ -27,12 +26,12 @@ export const CashRegisterClosure = () => {
 
   const cashCountIsOpen = cashCount?.state === 'open';
   const cashCountIsClosed = cashCount?.state === 'closed';
- 
+
   useEffect(() => {
     if (cashCountIsOpen) fbCashCountChangeState(cashCount, actualUser, 'closing');
   }, [])
 
- 
+
   useEffect(() => {
     if (!cashCount?.opening?.initialized) {
       navigate('/cash-reconciliation')
@@ -41,10 +40,10 @@ export const CashRegisterClosure = () => {
 
   const handleOpenPeerReviewAuthorization = () => {
     if ((cashCount.opening.employee.id !== actualUser.uid) && actualUser.role !== "admin") {
-      dispatch(addNotification({
-        message: 'No tienes permisos para realizar esta acción',
-        type: 'error'
-      }))
+      notification.error({
+        message: 'Error',
+        description: 'No tienes permisos para realizar esta acción',
+      });
       return
     }
     setPeerReviewAuthorizationIsOpen(true)
@@ -66,7 +65,7 @@ export const CashRegisterClosure = () => {
     }
   }
 
-   const cashCountActual = useFbGetCashCount(cashCount?.id) 
+  const cashCountActual = useFbGetCashCount(cashCount?.id)
 
   return (
     <Backdrop>

@@ -15,7 +15,12 @@ import {
   where,
   onSnapshot,
   getDoc,
+  increment,
+  runTransaction,
 } from 'firebase/firestore';
+import { MovementReason, MovementType } from '../../models/Warehouse/Movement';
+import { createMovementLog } from './productMovementService';
+import { checkAndDeleteEmptyBatch } from './batchService';
 
 // Obtener referencia de la colección de productos en stock
 export const getProductStockCollectionRef = (businessID) => {
@@ -90,26 +95,160 @@ export const updateProductStock = async (user, data) => {
   }
 };
 
-// Marcar un producto en stock como eliminado
-export const deleteProductStock = async (user, id) => {
+export const deleteAllProductStocksByBatch = async ({ user, batchId, movement }) => {
   try {
-    const productStockDocRef = doc(db, 'businesses', user.businessID, 'productsStock', id);
-    await updateDoc(productStockDocRef, {
-      isDeleted: true,
-      deletedAt: serverTimestamp(),
-      deletedBy: user.uid,
+    // 1. Obtener todos los productStock del batch
+    const batchStocks = await getProductStockByBatch(user, { batchId });
+
+    // 2. Eliminar cada registro con su movimiento asociado
+    const deletionPromises = batchStocks.map(stock =>
+      deleteProductStock({
+        user,
+        productStockId: stock.id,
+        movement: {
+          ...movement,
+          quantity: stock.quantity,
+          notes: `${movement.notes || ''} - Eliminación por batch ${batchId}`
+        }
+      })
+    );
+
+    // 3. Ejecutar todas las eliminaciones en paralelo
+    const results = await Promise.all(deletionPromises);
+
+    return {
+      batchId,
+      deletedItems: results.length,
+      quantity: batchStocks.reduce((sum, stock) => sum + stock.quantity, 0)
+    };
+
+  } catch (error) {
+    console.error(`Error eliminando productStocks del batch ${batchId}:`, error);
+    throw error;
+  }
+};
+
+export const deleteProductStock = async ({ user, productStockId, movement = {} }) => {
+  if (!user?.businessID || !productStockId) {
+    throw new Error('Missing required parameters: user.businessID or productStockId');
+  }
+
+  try {
+    const { businessID, uid } = user;
+    const stockRef = doc(db, 'businesses', businessID, 'productsStock', productStockId);
+
+    // 1. Validate stock document exists
+    const stockDoc = await getDoc(stockRef);
+    if (!stockDoc.exists()) {
+      throw new Error('Stock record not found');
+    }
+
+    const stockData = stockDoc.data();
+    const {
+      batchId,
+      productId,
+      location,
+      productName,
+      batchNumberId,
+      quantity: stockQuantity
+    } = stockData;
+
+    // 2. Validate required data
+    if (!batchId || !productId) {
+      throw new Error('Invalid stock record - missing batch or product reference');
+    }
+
+    // 3. Get references
+    const batchRef = doc(db, 'businesses', businessID, 'batches', batchId);
+    const productRef = doc(db, 'businesses', businessID, 'products', productId);
+
+    // 4. Validate batch exists
+    const batchDoc = await getDoc(batchRef);
+    if (!batchDoc.exists()) {
+      throw new Error('Associated batch not found');
+    }
+
+    // 5. Validate quantity
+     const quantityToRemove = movement?.quantity || stockQuantity;
+    // if (quantityToRemove <= 0 || quantityToRemove > stockQuantity) {
+    //   throw new Error('Cantidad a eliminar inválida');
+    // }
+
+    // 6. Check if batch will be empty
+    const productStocksRef = collection(db, 'businesses', businessID, 'productsStock');
+    const stocksQuery = query(
+      productStocksRef,
+      where('batchId', '==', batchId),
+      where('isDeleted', '==', false)
+    );
+    const otherStocksSnap = await getDocs(stocksQuery);
+    const willBatchBeEmpty = otherStocksSnap.size <= 1;
+
+    // 7. Perform updates (no transacciones: cada operación es individual)
+    // 7a. Decrementa stock en el producto
+    await updateDoc(productRef, {
+      stock: increment(-quantityToRemove)
     });
-    return id;
+
+    // 7b. Decrementa stock en el batch
+    await updateDoc(batchRef, {
+      quantity: increment(-quantityToRemove)
+    });
+
+    // 7c. Marca el stock actual como eliminado
+    await updateDoc(stockRef, {
+      isDeleted: true,
+      quantity: 0,
+      deletedAt: serverTimestamp(),
+      deletedBy: uid
+    });
+
+    // 7d. Si ya no hay stock de ese batch, márcalo como eliminado
+    if (willBatchBeEmpty) {
+      await updateDoc(batchRef, {
+        isDeleted: true,
+        deletedAt: serverTimestamp(),
+        deletedBy: uid
+      });
+      await updateDoc(productRef, {
+        stock: 0
+      })
+    }
+
+    // 8. Create movement record
+    const movementId = nanoid();
+    const movementRef = doc(db, 'businesses', businessID, 'movements', movementId);
+
+    await setDoc(movementRef, {
+      id: movementId,
+      sourceLocation: location || '',
+      destinationLocation: 'deleted',
+      productId,
+      productName: productName || '',
+      quantity: quantityToRemove,
+      movementType: MovementType.Exit,
+      movementReason: movement?.reason ?? MovementReason.Adjustment,
+      batchId,
+      batchNumberId: batchNumberId || '',
+      notes: movement?.notes || 'Eliminación de stock',
+      createdAt: serverTimestamp(),
+      createdBy: uid,
+      isDeleted: false
+    });
+
+    // 9. Retorna el id del stock eliminado
+    return productStockId;
   } catch (error) {
     console.error('Error al marcar el documento como eliminado: ', error);
     throw error;
   }
 };
 
+
 // Escuchar en tiempo real todos los productos en stock filtrados por productId
 export const listenAllProductStock = (user, productId, callback) => {
-  const noOp = () => {};
-  
+  const noOp = () => { };
+
   if (!user || !productId || !callback) {
     console.warn('Missing required parameters in listenAllProductStock');
     return noOp;
@@ -147,7 +286,7 @@ export const listenAllProductStock = (user, productId, callback) => {
 
 // Escuchar en tiempo real todos los productos en stock por ubicación
 export const listenAllProductStockByLocation = (user, location, callback) => {
-  const noOp = () => {};
+  const noOp = () => { };
 
   if (!user || !location || !callback) {
     console.warn('Missing required parameters in listenAllProductStockByLocation');

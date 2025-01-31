@@ -87,11 +87,15 @@ const listenAllShelves = (user, warehouseId, callback, onError) => {
 };
 
 // Actualizar un estante
-const updateShelf = async (user, data) => {
+const updateShelf = async (user, warehouseId, data) => {
     try {
+        if (!user?.businessID || !data?.id) {
+            throw new Error('Missing required parameters for shelf update');
+        }
         const shelfDocRef = doc(db, 'businesses', user.businessID, 'shelves', data.id);
         await updateDoc(shelfDocRef, {
             ...data,
+            warehouseId, // Asegurarnos de mantener la referencia al almacén
             updatedAt: serverTimestamp(),
             updatedBy: user.uid,
         });

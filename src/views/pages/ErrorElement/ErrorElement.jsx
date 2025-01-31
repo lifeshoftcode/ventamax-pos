@@ -1,134 +1,194 @@
-
-
-import React, { useState } from 'react';
+import React from 'react';
+import PropTypes from 'prop-types';
 import styled from 'styled-components';
-import { FaBug } from 'react-icons/fa';
-import { Link, useNavigate } from 'react-router-dom';
-import ROUTES_NAME from '../../../routes/routesName';
+import { motion, AnimatePresence } from 'framer-motion';
+import { BugOutlined, HomeOutlined, WarningOutlined, RollbackOutlined } from '@ant-design/icons';
 import * as antd from 'antd';
-import { fbRecordError } from '../../../firebase/errors/fbRecordError';
-import { selectUser } from '../../../features/auth/userSlice';
-import { useSelector } from 'react-redux';
-import { selectBusinessData } from '../../../features/auth/businessSlice';
+import { useErrorHandling } from './hooks/useErrorHandling';
+import { ErrorCard } from './components/ErrorCard';
+import { ErrorDetails } from './components/ErrorDetails';
+import { MESSAGES, ANIMATIONS } from './constants';
 import { Logo } from '../../../assets/logo/Logo';
-const { Button, Spin, Typography } = antd;
 
-
+const { Button, Checkbox, Typography, Space, Alert } = antd;
+const { Title: AntTitle, Text } = Typography;
 
 export const ErrorElement = ({ errorInfo, errorStackTrace }) => {
-    const user = useSelector(selectUser)
-    const [loading, setLoading] = useState(false)
-    const [reportError, setReportError] = useState(false)
-    const { HOME } = ROUTES_NAME.BASIC_TERM
-    const handleBack = async (e) => {
-        e.preventDefault()
-        try {
-            setLoading(true)
-            if (reportError) {
+    const {
+        user,
+        loading,
+        reportError,
+        canGoBack,
+        handleBack,
+        handleGoBack,
+        handleReportChange,
+    } = useErrorHandling(errorInfo, errorStackTrace);
 
-                await fbRecordError(user, errorInfo, errorStackTrace)
-                antd.notification.success({
-                    message: 'Error reportado',
-                    description: 'El error ha sido reportado con éxito. Gracias por tu colaboración.'
-                })
-
-            }
-
-            setLoading(false)
-            window.location.href = HOME
-
-        } catch (error) {
-            setLoading(false)
-            console.log('error', error)
-        }
-    }
     return (
-        <Spin
-            spinning={loading}
+        <Container
+            variants={ANIMATIONS.container}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
         >
+            <ErrorCard>
+                <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                    <AnimatePresence>
+                        <LogoWrapper
+                            variants={ANIMATIONS.logo}
+                            initial="hidden"
+                            animate="visible"
+                        >
+                            <Logo />
+                        </LogoWrapper>
 
-            <Container>
-                <Logo />
-                <br />
-                <Title color='danger'>Ups, algo salió mal</Title>
-                <br />
-                <Paragraph>
-                    Un error inesperado ha ocurrido. Por favor, intenta de nuevo más tarde.
-                </Paragraph>
+                        <StyledAlert
+                            icon={<BugOutlined className="error-icon" />}
+                            message={
+                                <AntTitle level={4} style={{ margin: 0 }}>
+                                    {MESSAGES.ERROR_TITLE}
+                                </AntTitle>
+                            }
+                            description={
+                                <Text>{MESSAGES.ERROR_DESCRIPTION}</Text>
+                            }
+                            type="error"
+                            showIcon
+                        />
 
-                <br />
-                <br />
-              
-                <antd.Checkbox onChange={(e) => setReportError(e.target.checked)}>Reportar error</antd.Checkbox>
-                <Paragraph>Si marcas esta casilla, el error sera registrado para su posterior revisión</Paragraph>
+                        <ReportSection>
+                            <Checkbox onChange={handleReportChange}>
+                                <Text strong>{MESSAGES.REPORT_ERROR}</Text>
+                            </Checkbox>
+                            <Text type="secondary" className="report-description">
+                                {MESSAGES.REPORT_DESCRIPTION}
+                            </Text>
+                        </ReportSection>
 
-                <br />
-                <Button onClick={handleBack}>Volver a Inicio</Button>
-                <br />
-               
-                {
-                    user?.role === 'dev' && (
-                        <div>
-                            <Subtitle>Detalles del error:</Subtitle>
-                         
-                            <Paragraph code copyable>
-                                {errorStackTrace}
-                            </Paragraph>
-                        </div>
-                    )
-                }
+                        <ButtonGroup>
+                            {canGoBack && (
+                                <Button
+                                    icon={<RollbackOutlined />}
+                                    onClick={handleGoBack}
+                                    size="large"
+                                    className="back-button"
+                                >
+                                    {MESSAGES.GO_BACK}
+                                </Button>
+                            )}
+                            <Button
+                                type="primary"
+                                size="large"
+                                icon={<HomeOutlined />}
+                                onClick={handleBack}
+                                loading={loading}
+                                className="home-button"
+                            >
+                                {MESSAGES.GO_HOME}
+                            </Button>
+                        </ButtonGroup>
 
-            </Container>
-        </Spin>
+                        {user?.role === 'dev' && (
+                            <ErrorDetails
+                                errorStackTrace={errorStackTrace}
+                                variants={ANIMATIONS.errorDetails}
+                            />
+                        )}
+                    </AnimatePresence>
+                </Space>
+            </ErrorCard>
+        </Container>
     );
 };
 
-const Container = styled.div`
-    display: grid;
-    justify-items: center;
+ErrorElement.propTypes = {
+    errorInfo: PropTypes.string,
+    errorStackTrace: PropTypes.string,
+};
 
-  overflow-y: auto;
-  padding: 1em;
-  height: 100vh;
-  background-color: #f8f8f8;
+const Container = styled(motion.div)`
+    min-height: 100vh;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: linear-gradient(145deg, var(--color-background-light) 0%, var(--color-background-dark) 100%);
+    overflow: hidden;
 `;
 
-const Icon = styled(FaBug)`
-  font-size: 6rem;
-  color: #E53E3E; // Rojo para indicar error
-  margin-bottom: 2rem;
+const LogoWrapper = styled(motion.div)`
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2.5rem;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
 `;
 
-const Title = styled.h1`
-  font-size: 2rem;
-  font-weight: 700;
-  margin: 0;
-  color: #333;
-  text-align: center;
+const StyledAlert = styled(Alert)`
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 0, 0, 0.1);
+    margin: 1em 0;
+    
+    .error-icon {
+        font-size: 28px;
+        color: #ff4d4f;
+    }
+
+    .ant-alert-message {
+        margin-bottom: 8px;
+    }
 `;
 
-const Subtitle = styled.p`
-  font-size: 1rem;
-  margin: 1rem 0 3rem;
-  color: #555;
-  text-align: center;
+const ReportSection = styled(Space)`
+    padding: 1.5rem;
+    background: var(--color-background-light);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    
+    .report-description {
+        font-size: 0.9rem;
+        opacity: 0.85;
+        padding-left: 24px;
+    }
+
+    .ant-checkbox-wrapper:hover {
+        opacity: 0.8;
+    }
 `;
 
-// const Button = styled(Link)`
-//   font-size: 1.2rem;
-//   background-color: #3182ce; // Color de tu elección
-//   color: #fff;
-//   border: none;
-//   padding: 0.5em 1.5em;
-//   border-radius: 0.25em;
-//   cursor: pointer;
-//   text-decoration: none; // Remover subrayado del enlace
-//   transition: background-color 0.2s;
+const ButtonGroup = styled(Space)`
+    width: 100%;
+    justify-content: center;
+    gap: 16px !important;
+    margin-top: 1rem;
+    
+    .back-button {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        &:hover {
+            transform: translateX(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+    }
+    
+    .home-button {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+    }
 
-//   &:hover {
-//     background-color: #63b3ed; // Oscurecer al pasar el ratón
-//   }
-// `;
-const Paragraph = styled(Typography.Paragraph)`
-    font-size: 1rem;
-    `;
+    button {
+        height: 44px;
+        padding: 0 24px;
+        border-radius: 8px;
+    }
+`;
+
+export default ErrorElement;

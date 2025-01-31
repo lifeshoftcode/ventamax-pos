@@ -21,7 +21,7 @@ const getSegmentCollectionRef = (businessId) => {
 };
 
 // Crear un nuevo segmento
-const createSegment = async (user, warehouseId, shelfId, rowShelfId, segmentData) => {
+const createSegment = async ({ user, segmentData }) => {
     const id = nanoid();
     try {
         console.log(segmentData)
@@ -34,9 +34,6 @@ const createSegment = async (user, warehouseId, shelfId, rowShelfId, segmentData
         await setDoc(segmentDocRef, {
             ...segmentData,
             id,
-            warehouseId,
-            shelfId,
-            rowShelfId,
             createdAt: serverTimestamp(),
             createdBy: user.uid,
             updatedAt: serverTimestamp(),
@@ -94,7 +91,7 @@ const listenAllSegments = (user, warehouseId, shelfId, rowShelfId, callback) => 
 };
 
 // Actualizar un segmento específico
-const updateSegment = async (user, warehouseId, shelfId, rowShelfId, data) => {
+const updateSegment = async (user, data) => {
     try {
         const segmentDocRef = doc(db, 'businesses', user.businessID, 'segments', data.id);
         await updateDoc(segmentDocRef, {

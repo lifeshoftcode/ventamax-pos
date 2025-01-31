@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux';
 import { onSnapshot, doc } from 'firebase/firestore';
 import { db } from '../../../firebaseconfig';
 import { login, logout } from '../../../../features/auth/userSlice';
+import { addUserData } from '../../../../features/auth/userSlice';
 
 export function useUserDocListener(userId) {
     const dispatch = useDispatch();
@@ -13,11 +14,19 @@ export function useUserDocListener(userId) {
                 if (userSnapshot.exists()) {
                     const userData = userSnapshot.data().user;
                     const username = userData?.realName ? userData?.realName : userData?.name;
+                    
+                    // Actualizar datos de perfil
                     dispatch(login({
                         uid: userSnapshot.id,
                         displayName: username,
                         realName: userData?.realName,
                         username: userData?.name,
+                    }));
+
+                    // Actualizar datos de negocio y rol
+                    dispatch(addUserData({
+                        businessID: userData?.businessID,
+                        role: userData?.role
                     }));
                 } else {
                     dispatch(logout());

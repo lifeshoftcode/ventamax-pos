@@ -43,10 +43,16 @@ const updatePurchaseWarehouseStock = async (user, purchase, defaultWarehouse) =>
     // Create batch and update stock for each product
     for (const key in productBatches) {
         const batch = productBatches[key];
-        console.log("batch ", batch);
-        console.log("purchase", purchase)
         const totalStock = batch.items.reduce((acc, item) => acc + item.quantity, 0);
         const batchId = `${purchase.id}_${batch.productId}_${new Date(batch.expirationDate).getTime()}`;
+
+        const productRef = doc(db, "businesses", user.businessID, "products", batch.productId);
+
+        await updateDoc(productRef, {   
+            stock: totalStock,
+            updatedAt: serverTimestamp(),
+            updatedBy: user.uid
+        });
 
         // Create batch for this product
         const batchData = await createBatch(user, {

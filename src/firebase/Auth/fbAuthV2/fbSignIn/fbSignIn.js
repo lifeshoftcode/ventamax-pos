@@ -1,13 +1,19 @@
-import { getDocs, updateDoc, where, collection, query, setDoc, doc, increment } from "firebase/firestore";
+import { getDocs, updateDoc, where, collection, query, setDoc, doc, increment, deleteDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { hash, compare } from 'bcryptjs';
 import { db } from "../../../firebaseconfig";
 import { login } from "../../../../features/auth/userSlice";
+import { SESSION_DURATION, TOKEN_CLEANUP_AGE } from '../../../../constants/sessionConfig';
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCK_TIME = 2 * 60 * 60 * 1000; // 2 hours
 
 function generateSessionToken(user) {
-    return `${user.name}_${Date.now()}`;
+    const currentTime = Timestamp.now();
+    const expiresAt = Timestamp.fromMillis(currentTime.toMillis() + SESSION_DURATION);
+    return {
+        token: `${user.name}_${currentTime.toMillis()}`,
+        expiresAt
+    };
 }
 
 async function getUserFromFirestore(user) {
@@ -48,10 +54,42 @@ async function updateLoginAttempts(userDoc, userData, correctPassword, currentTi
     await updateDoc(userDoc.ref, updates);
 }
 
+async function cleanupOldTokens(userId) {
+    try {
+        const tokensRef = collection(db, 'sessionTokens');
+        const q = query(tokensRef, where("userId", "==", userId));
+        const tokenSnapshots = await getDocs(q);
+        
+        const cleanupDate = Timestamp.fromMillis(Timestamp.now().toMillis() - TOKEN_CLEANUP_AGE);
+
+        const deletePromises = tokenSnapshots.docs
+            .filter(doc => {
+                const tokenData = doc.data();
+                return !tokenData.expiresAt || tokenData.expiresAt.toMillis() < cleanupDate.toMillis();
+            })
+            .map(doc => deleteDoc(doc.ref));
+
+        await Promise.all(deletePromises);
+    } catch (error) {
+        console.error('Error limpiando tokens antiguos:', error);
+    }
+}
+
 async function storeSessionToken(user, userDoc) {
-    const sessionToken = generateSessionToken(user);
-    await setDoc(doc(db, 'sessionTokens', sessionToken), { userId: userDoc.id });
-    localStorage.setItem('sessionToken', sessionToken);
+    const currentTime = Timestamp.now();
+    const expiresAt = Timestamp.fromMillis(currentTime.toMillis() + SESSION_DURATION);
+    const token = `${user.name}_${currentTime.toMillis()}`;
+    
+    await cleanupOldTokens(userDoc.id);
+    
+    await setDoc(doc(db, 'sessionTokens', token), { 
+        userId: userDoc.id,
+        expiresAt,
+        createdAt: serverTimestamp()
+    });
+    
+    localStorage.setItem('sessionToken', token);
+    localStorage.setItem('sessionExpires', expiresAt.toMillis().toString());
 }
 
 async function updateAppState(dispatch, userData, userDoc) {

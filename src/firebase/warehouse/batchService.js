@@ -15,9 +15,10 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { selectUser } from '../../features/auth/userSlice';
 import { useSelector } from 'react-redux';
+import { deleteAllProductStocksByBatch } from './productStockService';
 
 // Obtener referencia de la colección de batches para un negocio específico
-const getBatchCollectionRef = (businessID) => 
+const getBatchCollectionRef = (businessID) =>
   collection(db, 'businesses', businessID, 'batches');
 
 // Crear un nuevo batch
@@ -31,12 +32,10 @@ export const createBatch = async (user, batchData) => {
       ...batchData,
       id,
       isDeleted: false,
-      audit: {
-        createdAt: serverTimestamp(),
-        createdBy: user.uid,
-        updatedAt: serverTimestamp(),
-        updatedBy: user.uid,
-      },
+      createdAt: serverTimestamp(),
+      createdBy: user.uid,
+      updatedAt: serverTimestamp(),
+      updatedBy: user.uid,
     };
 
     await setDoc(batchDocRef, batch);
@@ -51,7 +50,7 @@ export const createBatch = async (user, batchData) => {
 // Obtener un batch por su ID
 export const getBatchById = async (user, batchId) => {
   try {
-    if(!batchId)  return null;
+    if (!batchId) return null;
     const batchDocRef = doc(db, 'businesses', user.businessID, 'batches', batchId);
     const snapshot = await getDoc(batchDocRef);
     if (snapshot.exists()) {
@@ -138,13 +137,13 @@ export const listenAllBatchesByIds = (user, batchIDs = [], callback) => {
     // Verificar que user y user.businessID estén definidos
     if (!user || !user.businessID) {
       console.error('User o user.businessID no están definidos');
-      return () => {}; // Retorna una función de limpieza vacía
+      return () => { }; // Retorna una función de limpieza vacía
     }
 
     // Verificar que batchIDs es un array válido y no está vacío
     if (!Array.isArray(batchIDs) || batchIDs.length === 0) {
       console.warn('No se proporcionaron batch IDs para escuchar');
-      return () => {};
+      return () => { };
     }
 
     const unsubscribeFuncs = [];
@@ -207,10 +206,9 @@ export const updateBatch = async (user, data) => {
     const batchDocRef = doc(db, 'businesses', user.businessID, 'batches', data.id);
     await updateDoc(batchDocRef, {
       ...data,
-      audit: {
-        updatedAt: serverTimestamp(),
-        updatedBy: user.uid,
-      },
+      updatedAt: serverTimestamp(),
+      updatedBy: user.uid,
+
     });
     return data;
   } catch (error) {
@@ -220,17 +218,24 @@ export const updateBatch = async (user, data) => {
 };
 
 // Marcar un batch como eliminado
-export const deleteBatch = async (user, batchID) => {
+export const deleteBatch = async ({ user, batchId, movement }) => {
   try {
-    const batchDocRef = doc(db, 'businesses', user.businessID, 'batches', batchID);
+    const batchDocRef = doc(db, 'businesses', user.businessID, 'batches', batchId);
+    const batchSnap = await getDoc(batchDocRef);
+
+    if (!batchSnap.exists()) throw new Error('Lote no encontrado');
+
+    const batchData = batchSnap.data();
+
+    const deletionResult = await deleteAllProductStocksByBatch({ user, batchId, movement });
+
     await updateDoc(batchDocRef, {
       isDeleted: true,
-      audit: {
-        deletedAt: serverTimestamp(),
-        deletedBy: user.uid,
-      },
+      deletedAt: serverTimestamp(),
+      deletedBy: user.uid,
     });
-    return batchID;
+
+    return { ...batchData, deletionDetails: deletionResult };
   } catch (error) {
     console.error('Error al marcar el batch como eliminado:', error);
     throw error;
@@ -281,4 +286,65 @@ export const useListenBatchesByIds = (batchIDs = []) => {
   }, [memorizedUser, memorizedBatchIDs]);
 
   return { data, loading, error };
+};
+
+export const checkAndDeleteEmptyBatch = async ({ user, batchId, transaction }) => {
+  try {
+    const batchDocRef = doc(db, 'businesses', user.businessID, 'batches', batchId);
+    
+    // Obtener documento usando transacción si está disponible
+    const batchSnap = transaction 
+      ? await transaction.get(batchDocRef)
+      : await getDoc(batchDocRef);
+
+    if (!batchSnap.exists()) {
+      throw new Error('Lote no encontrado');
+    }
+
+    const batchData = batchSnap.data();
+
+    // Consultar stocks asociados
+    const productStocksRef = collection(db, 'businesses', user.businessID, 'productStocks');
+    const q = query(
+      productStocksRef, 
+      where('batchId', '==', batchId),
+      where('isDeleted', '==', false)
+    );
+
+    // Obtener documentos con/sin transacción
+    const productStocksSnap = transaction 
+      ? await transaction.get(q)
+      : await getDocs(q);
+
+    if (productStocksSnap.empty) {
+      const updateData = {
+        isDeleted: true,
+        deletedAt: serverTimestamp(),
+        deletedBy: user.uid,
+      };
+
+      // Usar transacción si está disponible
+      if (transaction) {
+        transaction.update(batchDocRef, updateData);
+      } else {
+        await updateDoc(batchDocRef, updateData);
+      }
+
+      return {
+        success: true,
+        message: 'Batch eliminado automáticamente por no tener stock',
+        batchData
+      };
+    }
+
+    return {
+      success: false,
+      message: 'El batch aún tiene productos en stock',
+      remainingStocks: productStocksSnap.size
+    };
+    
+  } catch (error) {
+    console.error('Error al verificar y eliminar batch:', error);
+    throw error;
+  }
 };

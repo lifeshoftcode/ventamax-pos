@@ -21,7 +21,7 @@ function ProviderCell({ value }) {
 function ActionButtons({ purchaseData }) {
     const navigate = useNavigate();
 
-    const { PURCHASES_UPDATE,  PURCHASES_COMPLETE } = ROUTES.PURCHASE_TERM;
+    const { PURCHASES_UPDATE, PURCHASES_COMPLETE } = ROUTES.PURCHASE_TERM;
 
     const handleCompletePurchase = () => {
         const path = replacePathParams(PURCHASES_COMPLETE, purchaseData.id);
@@ -33,35 +33,42 @@ function ActionButtons({ purchaseData }) {
         navigate(path);
     };
 
-    return (
-        <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            borderRadius: '8px',
-        }}>
-            <ActionIcon
-                icon={<ShoppingCartOutlined />}
-                tooltip="Completar compra"
-                color="#555"
-                hoverColor="#52c41a"
-                onClick={handleCompletePurchase}
-            />
-            <ActionIcon
-                icon={<EditOutlined />}
-                tooltip="Editar"
-                color="#555"
-                hoverColor="#faad14"
-                onClick={handleUpdatePurchase}
-            />
-            <ActionIcon
-                icon={<DeleteOutlined />}
-                tooltip="Cancelar compra"
-                color="#555"
-                hoverColor="#ff4d4f"
-                onClick={purchaseData.onCancel}
-            />
-        </div>
-    );
+    // If status is completed, don't render any buttons
+    if (purchaseData.status === 'completed') {
+        return null;
+    }
+    if (purchaseData.status === 'pending') {
+
+        return (
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                borderRadius: '8px',
+            }}>
+                <ActionIcon
+                    icon={<ShoppingCartOutlined />}
+                    tooltip="Completar compra"
+                    color="#555"
+                    hoverColor="#52c41a"
+                    onClick={handleCompletePurchase}
+                />
+                <ActionIcon
+                    icon={<EditOutlined />}
+                    tooltip="Editar"
+                    color="#555"
+                    hoverColor="#faad14"
+                    onClick={handleUpdatePurchase}
+                />
+                <ActionIcon
+                    icon={<DeleteOutlined />}
+                    tooltip="Cancelar compra"
+                    color="#555"
+                    hoverColor="#ff4d4f"
+                    onClick={purchaseData.onCancel}
+                />
+            </div>
+        );
+    }
 }
 
 export const columns = [

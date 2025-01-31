@@ -21,30 +21,38 @@ export const createMovementLog = async (
     productName,
     quantity,
     movementType,
-    movementReason,  // NEW
-    batchId,         // NEW
-    notes            // NEW
-  }
+    movementReason,
+    batchId,
+    notes
+  },
+  transaction = null
 ) => {
   // Usa una colección "movements" para almacenar
   const movementId = nanoid();
   const movementRef = doc(db, 'businesses', user.businessID, 'movements', movementId);
 
-  await setDoc(movementRef, {
+  const movementData = {
     id: movementId,
     createdAt: serverTimestamp(),
     createdBy: user.uid,
     productId,
     productName,
-    batchId,          // NEW
+    batchId,
     sourceLocation,
     destinationLocation,
-    movementType,        // Tipo de movimiento (Entrada/Salida)
-    movementReason,    // NEW
+    movementType,
+    movementReason,
     quantity,
-    notes,            // NEW
+    notes,
     isDeleted: false
-  });
+  };
+  // Usar transacción si está disponible, de lo contrario usar setDoc normal
+  if (transaction) {
+    transaction.set(movementRef, movementData);
+  } else {
+    await setDoc(movementRef, movementData);
+  }
+  return movementId;
 };
 
 export const getMovementsByLocation = async (user, locationId) => {
@@ -118,10 +126,10 @@ export const moveProduct = async ({
 
   // 3. Update source
   const updatedSource = { ...sourceDoc, quantity: sourceDoc.quantity - quantityToMove };
-  updatedSource.quantity === 0 
-  ? await deleteProductStock(user, updatedSource.id)
-  : await updateProductStock(user, updatedSource);
- 
+  updatedSource.quantity === 0
+    ? await deleteProductStock(user, updatedSource.id)
+    : await updateProductStock(user, updatedSource);
+
 
   // Registrar movimiento
   await createMovementLog(user, {
@@ -131,7 +139,7 @@ export const moveProduct = async ({
     productName: sourceDoc.productName,
     quantity: quantityToMove,
     movementType: MovementType.Exit,
-    movementReason: MovementReason.Transfer, 
+    movementReason: MovementReason.Transfer,
     batchId,
     notes: ''
   });
@@ -211,7 +219,7 @@ export const useListenMovementsByLocation = (user, locationId, currentLocationId
     setLoading(true);
     const movementsRef = collection(db, 'businesses', user.businessID, 'movements');
 
-     const q = query(
+    const q = query(
       movementsRef,
       and(
         or(

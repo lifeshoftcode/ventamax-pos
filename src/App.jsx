@@ -1,47 +1,34 @@
 import { scan } from 'react-scan'; // import this BEFORE react
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect } from 'react';
 
 //importando componentes de react-router-dom
-import { createBrowserRouter, RouterProvider, BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 
 //redux config
 import { useDispatch, useSelector } from 'react-redux'
-
-// todo ***user*********
-import { selectUser } from './features/auth/userSlice'
-
-import { AuthStateChanged } from './firebase/firebaseconfig'
-
+import { selectUser, logout } from './features/auth/userSlice'
 import { GenericLoader } from './views/templates/system/loader/GenericLoader';
 import { ReloadImageHiddenSetting } from './features/setting/settingSlice';
 import { useCheckForInternetConnection } from './hooks/useCheckForInternetConnection';
-
 import { useFullScreen } from './hooks/useFullScreen';
-
-import useGetUserData from './firebase/Auth/useGetUserData';
-import { fbGetTaxReceipt } from './firebase/taxReceipt/fbGetTaxReceipt';
 import { fbAutoCreateDefaultTaxReceipt } from './firebase/taxReceipt/fbAutoCreateDefaultReceipt';
-
 import { useBusinessDataConfig } from './features/auth/useBusinessDataConfig';
 import { routes } from './routes/routes';
 import { useAbilities } from './hooks/abilities/useAbilities';
-import { useAutomaticLogin } from './firebase/Auth/fbAuthV2/fbSignIn/checkSession';
 import { ModalManager } from './views';
 import { AnimatePresence } from 'framer-motion';
 import { usefbTaxReceiptToggleStatus } from './firebase/Settings/taxReceipt/fbGetTaxReceiptToggleStatus';
 import { useUserDocListener } from './firebase/Auth/fbAuthV2/fbSignIn/updateUserData';
 import { useCurrentCashDrawer } from './firebase/cashCount/useCurrentCashDrawer';
-import { useTaxReceiptEnabledToCart } from './features/cart/thunk';
 import useInitializeBillingSettings from './firebase/billing/useInitializeBillingSettings';
 import SEO from './Seo/Seo';
-import { PageTransition } from './components/PageTransition';
+import { Modal } from 'antd';
+import { SessionManager } from './views/templates/system/SessionManager';
+import { useAutoStockSync } from './firebase/warehouse/stockSyncService';
 
 function App() {
   const dispatch = useDispatch();
-
   const user = useSelector(selectUser);
-
-  useAutomaticLogin();
 
   useEffect(() => {
     dispatch(ReloadImageHiddenSetting())
@@ -49,16 +36,12 @@ function App() {
 
   useInitializeBillingSettings()
 
-  // useTaxReceiptEnabledToCart();
-
   scan({
     enabled: true,
     log: true, // logs render info to console (default: false)
   });
 
   useUserDocListener(user?.uid); // escucha los cambios en el documento del usuario actual
-
-  useGetUserData(user?.uid) // obtiene los datos del usuario actual
 
   useCurrentCashDrawer();// obtiene el cajón actual
 
@@ -74,14 +57,14 @@ function App() {
 
   useCheckForInternetConnection()// verifica la conexión a internet
 
-  if (user === false) { return <GenericLoader /> }
+  useAutoStockSync();// sincroniza el stock de los productos
 
   return (
     <Fragment>
       <Router>
+        <SessionManager />
         <SEO />
         <AnimatePresence mode="wait">
-          {/* <PageTransition> */}
             <Routes>
               {routes.map((route, index) => (
                 <Route key={index} path={route.path} element={route.element}>
@@ -95,7 +78,6 @@ function App() {
                 </Route>
               ))}
             </Routes>
-          {/* </PageTransition> */}
         </AnimatePresence>
         <AnimatePresence>
           <ModalManager />

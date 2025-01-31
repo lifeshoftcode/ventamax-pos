@@ -11,7 +11,7 @@ import { useCheckForInternetConnection } from '../../../../../hooks/useCheckForI
 import useImageFallback from '../../../../../hooks/image/useImageFallback'
 import { motion } from 'framer-motion'
 import { getTotalPrice } from '../../../../../utils/pricing'
-import { notification } from 'antd'
+import { message, notification } from 'antd'
 import { selectTaxReceiptEnabled } from '../../../../../features/taxReceipt/taxReceiptSlice'
 import { openProductExpirySelector } from '../../../../../features/warehouse/productExpirySelectionSlice'
 import { useFormatNumber } from '../../../../../hooks/useFormatNumber'
@@ -33,12 +33,11 @@ export const Product = ({ product, }) => {
     const [isImageLoaded, setImageLoaded] = useState(false);
 
     const isConnected = useCheckForInternetConnection();
-    // const productCheckInCart = isProductSelected(ProductsSelected, product.id);
     const [imageFallback] = useImageFallback(product?.image, noImg);
 
     const { status: isProductInCart, product: productInCart } = useProductInCart(product.id);
 
-    const { isLowStock, isOutOfStock } = useProductStockStatus(product, productInCart)
+    const { isLowStock, isOutOfStock } = useProductStockStatus(productInCart, product);
 
     const price = useMemo(() => getTotalPrice(product, taxReceiptEnabled), [product, taxReceiptEnabled]);
 
@@ -48,18 +47,25 @@ export const Product = ({ product, }) => {
         if (isLowStock) {
             notification.warning({
                 message: 'Alerta de Stock Bajo',
-                description: `El stock de ${product.name} está por debajo del umbral de 20 unidades\nStock actual: ${product?.stock} unidades`,
+                description: `El stock de ${product.name} está por debajo del umbral de 20 unidades\nStock`,
             });
         }
         if (isOutOfStock) {
             notification.warning({
                 message: 'Alerta de Stock Agotado',
-                description: `El stock de ${product.name} está agotado\nStock actual: ${product?.stock} unidades`,
+                description: `El stock de ${product.name} está agotado\n`,
             });
             return;
         }
 
         const productStocks = await checkProductStock(product);
+        if (productStocks.length === 0) {
+            notification.info({
+                message: 'Stock no disponible',
+                description: `Para vender ${product.name} necesitas realizar una compra primero para tener stock disponible.`,
+            });
+            return;
+        }
         if (Array.isArray(productStocks) && productStocks.length > 1) {
             dispatch(openProductStockSimple(product));
             return;
@@ -83,6 +89,8 @@ export const Product = ({ product, }) => {
     }
 
     const isDisabled = isOutOfStock || isLowStock
+    const stock = productInCart?.stock || product.stock;
+
     return (
         <Fragment>
             <Container
@@ -122,12 +130,9 @@ export const Product = ({ product, }) => {
                             />
                         )}
                     </Header>
-                    {/* <Body>
-                        
-                    </Body> */}
                     <Footer imageHiddenRef={imageHiddenRef} isSelected={isProductInCart}>
                         <Group>
-                            <AmountToBuy isDisabled={isDisabled} >{isProductInCart && `${useFormatNumber(productInCart?.amountToBuy)} / `} {useFormatNumber(product.stock)}</AmountToBuy>
+                            <AmountToBuy isDisabled={isDisabled} >{isProductInCart && `${useFormatNumber(productInCart?.amountToBuy)} / `} {useFormatNumber(stock)}</AmountToBuy>
                         </Group>
                         <Group>
                             {
@@ -144,7 +149,7 @@ export const Product = ({ product, }) => {
                 </Content>
 
             </Container>
-            {/* <ProductWeightEntryModal
+{/* <ProductWeightEntryModal
                 isVisible={productWeightEntryModal}
                 product={product}
                 onAdd={() => {
@@ -369,4 +374,4 @@ left: 0;
     width: 100%;
     border-radius: 7px;
     transition: background 400ms ease-in-out;
-`
+`;

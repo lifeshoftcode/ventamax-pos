@@ -1,5 +1,10 @@
 import { collection, writeBatch, doc, getDoc, getDocs, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebaseconfig";
+import { nanoid } from "nanoid";
+import { getDefaultWarehouse } from "../warehouse/warehouseService";
+import { getNextID } from "../Tools/getNextID";
+import { BatchStatus } from "../../models/Warehouse/Batch";
+import { MovementReason, MovementType } from "../../models/Warehouse/Movement";
 
 // Función para subir productos, categorías e ingredientes activos a Firestore en lotes
 export const fbAddProducts = async (user, products, maxProducts = 10000) => {
@@ -86,6 +91,69 @@ export const fbAddProducts = async (user, products, maxProducts = 10000) => {
             operationCount++;
           }
         }
+
+        // Nuevo: creación de batch, stock y movimiento
+        const baseFields = {
+          createdAt: serverTimestamp(),
+          createdBy: user.uid,
+          updatedAt: serverTimestamp(),
+          updatedBy: user.uid,
+          deletedAt: null,
+          deletedBy: null,
+          isDeleted: false
+        };
+        
+        const defaultWarehouse = await getDefaultWarehouse(user);
+        const batchNumber = await getNextID(user, "batches", 1);
+        const batchObj = {
+          ...baseFields,
+          id: nanoid(10),
+          productId: product.id,
+          productName: product.name,
+          numberId: batchNumber,
+          status: BatchStatus.Active,
+          receivedDate: serverTimestamp(),
+          providerId: null,
+          quantity: product.stock || 0,
+          initialQuantity: product.stock || 0,
+        };
+        const batchDocRef = doc(db, "businesses", user.businessID, "batches", batchObj.id);
+        batch.set(batchDocRef, batchObj);
+        operationCount++;
+
+        const stockObj = {
+          ...baseFields,
+          id: nanoid(10),
+          batchId: batchObj.id,
+          productName: product.name,
+          batchNumberId: batchNumber,
+          location: defaultWarehouse?.id || null,
+          expirationDate: null,
+          productId: product.id,
+          quantity: product.stock || 0,
+          initialQuantity: product.stock || 0,
+        };
+        const stockRef = doc(db, "businesses", user.businessID, "productsStock", stockObj.id);
+        batch.set(stockRef, stockObj);
+        operationCount++;
+
+        const movementObj = {
+          ...baseFields,
+          id: nanoid(10),
+          batchId: batchObj.id,
+          productName: product.name,
+          batchNumberId: batchNumber,
+          destinationLocation: defaultWarehouse?.id || null,
+          sourceLocation: null,
+          productId: product.id,
+          quantity: product.stock || 0,
+          movementType: MovementType.Entry,
+          movementReason: MovementReason.InitialStock,
+        };
+        const movementRef = doc(db, "businesses", user.businessID, "movements", movementObj.id);
+        batch.set(movementRef, movementObj);
+        operationCount++;
+        // Fin creación de batch, stock y movimiento
 
         // Manejo de categorías
         if (product.category) {

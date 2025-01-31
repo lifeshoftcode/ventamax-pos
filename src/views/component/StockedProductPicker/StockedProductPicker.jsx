@@ -1,12 +1,11 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import styled from 'styled-components'
 import { TbPlus } from 'react-icons/tb'
+import { notification } from 'antd'
 import { ProductFilter } from '../ProductFilter/ProductFilter'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { Button } from '../../templates/system/Button/Button'
-import { Tooltip } from '../../templates/system/Button/Tooltip'
 import { useEffect } from 'react'
-import { addNotification } from '../../../features/notification/NotificationSlice'
 import { useFormatPrice } from '../../../hooks/useFormatPrice';
 import { InputV4 } from '../../templates/system/Inputs/GeneralInput/InputV4'
 
@@ -31,27 +30,24 @@ export const StockedProductPicker = ({ addProduct, selectedProduct, selectProduc
 
     const AddToProductList = () => {
         if (selectedProduct.productName === '') {
-            dispatch(addNotification({
-                title: 'Error',
-                message: ` Antes de continuar, por favor seleccioné un producto`,
-                type: 'error'
-            }))
+            notification.error({
+                message: 'Error',
+                description: 'Antes de continuar, por favor seleccioné un producto'
+            });
             return
         }
         if (newStock <= 0) {
-            dispatch(addNotification({
-                title: 'Error',
-                message: ` Antes de continuar, por favor introduzca la cantidad de producto que desea agregar. `,
-                type: 'error'
-            }))
+            notification.error({
+                message: 'Error',
+                description: 'Antes de continuar, por favor introduzca la cantidad de producto que desea agregar.'
+            });
             return
         }
         if (!initialCost) {
-            dispatch(addNotification({
-                title: 'Error',
-                message: ` Antes de continuar, por favor introduzca el costo inicial del producto. `,
-                type: 'error'
-            }))
+            notification.error({
+                message: 'Error',
+                description: 'Antes de continuar, por favor introduzca el costo inicial del producto.'
+            });
             return
         }
         if (selectedProduct) {
@@ -61,17 +57,26 @@ export const StockedProductPicker = ({ addProduct, selectedProduct, selectProduc
 
     useEffect(() => {
         if ((selectedProduct.productName) && Number(initialCost) > Number(cost)) {
-            dispatch(addNotification({ title: 'Advertencia', message: 'El costo inicial es mayor al costo unitario', type: 'error' }))
+            notification.error({
+                message: 'Advertencia',
+                description: 'El costo inicial es mayor al costo unitario'
+            });
         }
     }, [initialCost])
 
     useEffect(() => {
         if (selectedProduct?.productName === "" && initialCost > 0) {
-            dispatch(addNotification({ title: 'Advertencia', message: 'Antes de continuar, por favor seleccioné un producto', type: 'error' }))
+            notification.error({
+                message: 'Advertencia',
+                description: 'Antes de continuar, por favor seleccioné un producto'
+            });
             setShowProductList(true)
         }
         if (selectedProduct?.productName === "" && newStock > 0) {
-            dispatch(addNotification({ title: 'Advertencia', message: 'Antes de continuar, por favor seleccioné un producto', type: 'warning' }))
+            notification.warning({
+                message: 'Advertencia',
+                description: 'Antes de continuar, por favor seleccioné un producto'
+            });
             setShowProductList(true)
         }
     }, [initialCost, newStock])

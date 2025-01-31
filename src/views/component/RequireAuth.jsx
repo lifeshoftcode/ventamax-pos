@@ -10,7 +10,7 @@ export const RequireAuth = ({ children}) => {
     const navigate = useNavigate();
     const sessionToken = localStorage.getItem('sessionToken'); 
     useEffect(() => {
-        if (!user) {
+        if (user === null) {
             navigate('/', { replace: true }); // Redirige al usuario a la ruta principal si no está autenticado
         } else {
             children

@@ -165,29 +165,35 @@ const Sidebar = ({ onSelectNode, items, productItems = [] }) => {
 
   const handleWarehouseNodeClick = (node, level) => {
     const path = findPathToNode(items, node.id);
+    console.log("Node: ", node);
+    console.log("Level: ", level);
+    console.log("Path: ", path);
 
-    if (node.data && path) {
+    console.log("segment", replacePathParams(SEGMENT, [path[0]?.id, path[1]?.id, path[2]?.id, node?.id]))
+
+    if (node && path) {
       switch (level) {
         case 0: // Warehouse level
+          console.log("warehouse", replacePathParams(WAREHOUSE, node.id));
           navigate(replacePathParams(WAREHOUSE, node.id));
           break;
         case 1: // Shelf level
+          console.log("shelf", replacePathParams(SHELF, [path[0].id, node.id]));
           navigate(replacePathParams(SHELF, [path[0].id, node.id]));
           break;
         case 2: // Row level
+          console.log("row", replacePathParams(ROW, [path[0].id, path[1].id, node.id]));
           navigate(replacePathParams(ROW, [path[0].id, path[1].id, node.id]));
           break;
         case 3: // Segment level
-          if (path.length >= 3) {
-            navigate(replacePathParams(SEGMENT, [
-              path[0].id,
-              path[1].id,
-              path[2].id,
-              node.id
-            ]));
-          } else {
-            message.error("Camino al nodo incompleto para segmento");
-          }
+          console.log("segment", replacePathParams(SEGMENT, [path[0].id, path[1].id, path[2].id, node.id]))
+          navigate(replacePathParams(SEGMENT, [
+            path[0].id,
+            path[1].id,
+            path[2].id,
+            node.id
+          ]));
+
           break;
         default:
           message.error("Nivel de nodo desconocido");
@@ -216,7 +222,7 @@ const Sidebar = ({ onSelectNode, items, productItems = [] }) => {
   const handleTabChange = (key) => {
     setActiveTab(key);
     setSearch(''); // Limpiar búsqueda al cambiar de tab
-    
+
     if (key === "productos") {
       navigate('/inventory/warehouses/products-stock');
     } else if (key === "almacenes") {
@@ -411,8 +417,8 @@ const Sidebar = ({ onSelectNode, items, productItems = [] }) => {
                   handleUpdateShelf(node);
                 } else if (level === 2 && actions.edit === "Editar Fila") {
                   handleUpdateRowShelf(node);
-                } else {
-                  alert(`${actions.edit}: ${node.name}`);
+                } else if (level === 3 && actions.edit === "Editar Segmento") {
+                  handleUpdateSegment(node);
                 }
               },
             },

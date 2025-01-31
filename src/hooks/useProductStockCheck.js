@@ -16,7 +16,6 @@ export const useProductStockCheck = () => {
 
             // Si hay más de una ubicación para el mismo producto
             if (stockData.length > 1) {
-                alert('Este producto tiene múltiples ubicaciones. Por favor, seleccione una ubicación.');
                 dispatch(openProductStockSimple(product));
                 return stockData;
             }

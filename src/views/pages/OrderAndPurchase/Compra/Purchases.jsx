@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react'
 import styled from 'styled-components'
+import { useLocation } from 'react-router-dom'
 import { PurchaseTable } from './components/PurchasesTable/PurchasesTable'
 import { MenuApp } from '../../../'
 import { PurchasesReport } from './components/PurchasesReport/PurchasesReport'
@@ -8,8 +9,12 @@ import createFilterConfig from './config/filterConfig'
 import { useFbGetProviders } from '../../../../firebase/provider/useFbGetProvider'
 import useFilter from '../../../../hooks/search/useSearch'
 import { useListenPurchases } from '../../../../hooks/usePurchases'
+import PurchaseCompletionSummary from '../../../../components/Purchase/PurchaseCompletionSummary'
 
 export const Purchases = () => {
+  const location = useLocation();
+  const [showSummary, setShowSummary] = useState(location.state?.showSummary || false);
+  const [completedPurchase, setCompletedPurchase] = useState(location.state?.completedPurchase || null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterState, setFilterState] = useState(() => {
     const config = createFilterConfig();
@@ -18,6 +23,7 @@ export const Purchases = () => {
       isAscending: config.defaultSort?.isAscending ?? true
     };
   });
+
   const { providers = [], loading } = useFbGetProviders();
 
   const dataConfig = useMemo(() => ({
@@ -39,13 +45,20 @@ export const Purchases = () => {
     setFilterState(newFilterState)
   }, [])
 
+  const handleCloseSummary = useCallback(() => {
+    setShowSummary(false);
+    setCompletedPurchase(null);
+    // Limpiar el estado de la navegación
+    window.history.replaceState({}, document.title);
+  }, []);
+
   const { purchases, isLoading } = useListenPurchases(filterState)
 
   const filteredPurchases = useFilter(purchases, searchTerm)
 
   return (
     <Container>
-      <MenuApp sectionName={'Compras'} />
+      <MenuApp   sectionName={'Compras'} />
       <ContentArea>
         <FilterBar
           config={filterConfig}
@@ -60,6 +73,11 @@ export const Purchases = () => {
         />
       </ContentArea>
       <PurchasesReport />
+      <PurchaseCompletionSummary 
+        visible={showSummary}
+        onClose={handleCloseSummary}
+        purchase={completedPurchase}
+      />
     </Container>
   )
 }

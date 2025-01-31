@@ -82,9 +82,9 @@ const BatchList = () => {
 
   const handleBatchSwitch = async (checked) => {
     dispatch(ChangeProductData({ product: { hasBatch: checked } }));
-    try{
-      await fbUpdateProduct({...product, hasBatch: checked}, dispatch, user);
-    }catch(error){
+    try {
+      await fbUpdateProduct({ ...product, hasBatch: checked }, dispatch, user);
+    } catch (error) {
       console.error("Error al cambiar el estado de la fecha de expiración:", error);
     }
   };
@@ -101,46 +101,34 @@ const BatchList = () => {
           style={{ marginRight: 8 }}
         />
       </Form.Item> */}
-      
+
       {/* {product.hasBatch && ( */}
-        <div>
-          <Header>
-            <StyledTitle>Lista de Lotes</StyledTitle>
-            <BatchForm
-            />
-          </Header>
-          <List
-            dataSource={batches}
-            renderItem={item => (
-              <List.Item
-                key={item.key}
-                actions={[
-                  <BatchForm
-                    mode="update"
-                    initialData={item}
-                    justIcon={true}
-                  />,
-                  <Button
-                    danger
-                    icon={<DeleteOutlined />}
-                    onClick={() => handleDelete(item.id)}
-                  />
-                ]}
-              >
-                <List.Item.Meta
-                  title={<strong>Lote #{item.numberId}</strong>}
-                  description={
-                    <>
-                      <div>Cantidad: <Tag color="blue">{item.quantity}</Tag></div>
-                      {/* <div>Fecha de Expiración: {DateTime.fromISO(item.expirationDate).toLocaleString(DateTime.DATE_MED)}</div> */}
-                    </>
-                  }
-                />
-              </List.Item>
-            )}
-          />
-        </div>
-       {/* )} */}
+      <div>
+        <Header>
+          <StyledTitle>Lista de Lotes</StyledTitle>
+
+        </Header>
+        <List
+          dataSource={batches}
+          renderItem={item => (
+            <List.Item
+              key={item.key}
+
+            >
+              <List.Item.Meta
+                title={<strong>Lote #{item.numberId}</strong>}
+                description={
+                  <>
+                    <div>Cantidad: <Tag color="blue">{item.quantity}</Tag></div>
+                    <div>Fecha de Expiración: {DateTime.fromISO(item.expirationDate).toLocaleString(DateTime.DATE_MED)}</div>
+                  </>
+                }
+              />
+            </List.Item>
+          )}
+        />
+      </div>
+      {/* )} */}
     </StyledContainer>
   );
 };

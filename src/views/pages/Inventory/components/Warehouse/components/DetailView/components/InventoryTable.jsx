@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Add this import
 import styled from 'styled-components';
-import { Button, Input, DatePicker, Form } from 'antd';
-import { EyeOutlined, EditOutlined, DeleteOutlined, SwapOutlined, ClearOutlined, SearchOutlined } from "@ant-design/icons";
+import { Button, Input, DatePicker, Form, Dropdown } from 'antd';
+import { DeleteOutlined, SwapOutlined, ClearOutlined, SearchOutlined, UnorderedListOutlined, EllipsisOutlined, SortAscendingOutlined } from "@ant-design/icons";
 import { useListenProductsStockByLocation } from '../../../../../../../../firebase/warehouse/productStockService';
 import DateUtils from '../../../../../../../../utils/date/dateUtils';
 import { ProductMovementModal } from './ProductMovementModal';
 import { AdvancedTable } from '../../../../../../../templates/system/AdvancedTable/AdvancedTable';
+import { useDispatch } from 'react-redux';
+import { openDeleteModal } from '../../../../../../../../features/productStock/deleteProductStockSlice';
 
 const Container = styled.div`
   margin-bottom: 24px;
@@ -29,7 +32,7 @@ const TitleSection = styled.div`
 
 const SearchContainer = styled(Form)`
   display: grid;
-  grid-template-columns: min-content min-content min-content;
+  grid-template-columns: min-content min-content min-content min-content;
   align-items: end;
   gap: 16px;
   /* margin-bottom: 24px; */
@@ -59,21 +62,54 @@ const ClearButton = styled(Button)`
   }
 `;
 
-const DateRangeLabel = styled.label`
-  font-weight: 600;
-`;
-
 const ActionContainer = styled.div`
   display: flex;
   justify-content: flex-end;
+  gap: 6px;
+`;
+
+const ActionButton = styled(Button)`
+  &.ant-btn {
+    padding: 4px 8px;
+    
+    &:hover {
+      background-color: #f5f5f5;
+    }
+  }
+`;
+
+const MenuItemContent = styled.div`
+  display: flex;
+  align-items: center;
   gap: 8px;
+  padding: 2px 0;
+  
+  .anticon {
+    font-size: 14px;
+  }
+`;
+
+const SortButton = styled(Button)`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  .anticon {
+    font-size: 14px;
+  }
 `;
 
 export const InventoryTable = ({ currentNode, searchTerm, setSearchTerm, setDateRange, location, warehouseData }) => {
+  const navigate = useNavigate(); // Add this hook
+  const dispatch = useDispatch();
   const { data: productsStock, loading } = useListenProductsStockByLocation(location);
   const [moveModalVisible, setMoveModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [dateFilter, setDateFilter] = useState(null);
+  const [sortConfig, setSortConfig] = useState({
+    field: null,
+    order: null
+  });
 
   const handleMove = (record) => {
     setSelectedProduct(record); // Pass the entire record instead of just the product name
@@ -95,6 +131,118 @@ export const InventoryTable = ({ currentNode, searchTerm, setSearchTerm, setDate
     setSearchTerm('');
     setDateFilter(null);
     setDateRange(null);
+  };
+
+  const handleViewProductStock = (productId) => {
+    navigate(`/inventory/warehouses/products-stock/${productId}`);
+  };
+
+  const handleDeleteBatch = (record) => {
+    console.log(record)
+    dispatch(openDeleteModal({
+      productStockId: record.id,
+      batchId: record.batchId,
+      actionType: 'productStock',
+    }));
+  };
+
+  const getActionMenu = (record) => ({
+    items: [
+      {
+        key: 'view-stock',
+        label: (
+          <MenuItemContent>
+            <UnorderedListOutlined />
+            Ver todas las ubicaciones
+          </MenuItemContent>
+        ),
+        onClick: () => handleViewProductStock(record.productId)
+      },
+      {
+        key: 'move',
+        label: (
+          <MenuItemContent>
+            <SwapOutlined />
+            Mover producto
+          </MenuItemContent>
+        ),
+        onClick: () => handleMove(record)
+      },
+      {
+        key: 'delete',
+        danger: true,
+        label: (
+          <MenuItemContent>
+            <DeleteOutlined />
+            Eliminar batch
+          </MenuItemContent>
+        ),
+        onClick: () => handleDeleteBatch(record)
+      }
+    ]
+  });
+
+  const sortOptions = [
+    {
+      key: 'productName-asc',
+      label: 'Nombre de Producto (A-Z)',
+      onClick: () => handleSort('productName', 'asc')
+    },
+    {
+      key: 'productName-desc',
+      label: 'Nombre de Producto (Z-A)',
+      onClick: () => handleSort('productName', 'desc')
+    },
+    {
+      key: 'batchNumberId-asc',
+      label: 'Número de Lote (Ascendente)',
+      onClick: () => handleSort('batchNumberId', 'asc')
+    },
+    {
+      key: 'expirationDate-asc',
+      label: 'Fecha de Vencimiento (Próximos)',
+      onClick: () => handleSort('expirationDate', 'asc')
+    },
+    {
+      key: 'expirationDate-desc',
+      label: 'Fecha de Vencimiento (Lejanos)',
+      onClick: () => handleSort('expirationDate', 'desc')
+    },
+    {
+      key: 'createdAt-desc',
+      label: 'Más recientes primero',
+      onClick: () => handleSort('createdAt', 'desc')
+    },
+    {
+      key: 'createdAt-asc',
+      label: 'Más antiguos primero',
+      onClick: () => handleSort('createdAt', 'asc')
+    }
+  ];
+
+  const handleSort = (field, order) => {
+    setSortConfig({ field, order });
+  };
+
+  const getSortedData = (data) => {
+    if (!sortConfig.field) return data;
+
+    return [...data].sort((a, b) => {
+      const aValue = a[sortConfig.field];
+      const bValue = b[sortConfig.field];
+
+      if (aValue === null || aValue === undefined) return 1;
+      if (bValue === null || bValue === undefined) return -1;
+
+      let comparison = 0;
+      if (sortConfig.field === 'expirationDate' || sortConfig.field === 'createdAt') {
+        comparison = aValue - bValue;
+      } else {
+        comparison = String(aValue).localeCompare(String(bValue));
+      }
+
+      return sortConfig.order === 'desc' ? -comparison : comparison;
+    });
   };
 
   const columns = [
@@ -123,20 +271,26 @@ export const InventoryTable = ({ currentNode, searchTerm, setSearchTerm, setDate
       Header: "Acciones",
       accessor: "actions",
       align: "right",
-      minWidth: "150px",
+      minWidth: "80px",
       cell: ({ value }) => (
         <ActionContainer>
-          <Button icon={<SwapOutlined />} size="small" onClick={() => handleMove(value)} />
-          {/* <Button icon={<EyeOutlined />} size="small" />
-          <Button icon={<EditOutlined />} size="small" /> */}
-          {/* <Button icon={<DeleteOutlined />} size="small" /> */}
+          <Dropdown
+            menu={getActionMenu(value)}
+            placement="bottomRight"
+            trigger={['click']}
+          >
+            <ActionButton
+              icon={<EllipsisOutlined />}
+              size="small"
+            />
+          </Dropdown>
         </ActionContainer>
       ),
     },
   ];
 
   const inventoryData = productsStock
-    ? productsStock
+    ? getSortedData(productsStock
       .filter(stock => {
         // Filtro por término de búsqueda
         if (searchTerm) {
@@ -149,10 +303,10 @@ export const InventoryTable = ({ currentNode, searchTerm, setSearchTerm, setDate
         if (dateFilter && dateFilter[0] && dateFilter[1]) {
           const startDate = dateFilter[0].startOf('day').valueOf();
           const endDate = dateFilter[1].endOf('day').valueOf();
-          
+
           // Si no hay fecha de vencimiento y hay filtro de fechas, no mostrar
           if (!stock.expirationDate) return false;
-          
+
           const expirationDate = stock.expirationDate;
           return expirationDate >= startDate && expirationDate <= endDate;
         }
@@ -166,11 +320,12 @@ export const InventoryTable = ({ currentNode, searchTerm, setSearchTerm, setDate
         productId: stock.productId || '',
         quantity: stock.quantity || 0,
         batch: stock.batchNumberId || 'N/A',
+        batchId: stock.batchId || null,
         actions: stock, // Pass the entire stock object
         expiryDate: stock?.expirationDate ? DateUtils.convertMillisToISODate(stock?.expirationDate) : 'N/A',
         // Incluir todos los campos originales que necesitemos
         ...stock  // Opcionalmente, incluir todos los campos originales
-      }))
+      })))
     : [];
 
 
@@ -185,7 +340,7 @@ export const InventoryTable = ({ currentNode, searchTerm, setSearchTerm, setDate
           <Form.Item>
             <SearchInput
               prefix={<SearchOutlined />}
-              placeholder="Buscar por Producto o Batch"
+              placeholder="Buscar por Producto"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               allowClear
@@ -200,9 +355,19 @@ export const InventoryTable = ({ currentNode, searchTerm, setSearchTerm, setDate
             />
           </Form.Item>
           <Form.Item>
-            <ClearButton 
+            <Dropdown menu={{ items: sortOptions }} placement="bottomRight">
+              <SortButton icon={<SortAscendingOutlined />}>
+                Ordenar por
+              </SortButton>
+            </Dropdown>
+          </Form.Item>
+          <Form.Item>
+            <ClearButton
               icon={<ClearOutlined />}
-              onClick={handleClearFilters}
+              onClick={() => {
+                handleClearFilters();
+                setSortConfig({ field: null, order: null });
+              }}
               title="Limpiar filtros"
             >
               Limpiar

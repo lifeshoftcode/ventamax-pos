@@ -1,5 +1,5 @@
-//esta funcion revisara en la coleicon de producto 
-// todo esos producto que no tienen batch y productStock y le creara
+//esta funcion revisara en la coleccion de producto 
+// todos esos productos que no tienen batch y productStock y les creara
 // un batch y un productStock con la cantidad de stock que tiene el producto
 
 import { fbGetProducts } from "./fbGetProducts";
@@ -9,18 +9,19 @@ import { getNextID } from "../Tools/getNextID";
 import { nanoid } from "nanoid";
 import { serverTimestamp } from "firebase/firestore";
 import { BatchStatus } from "../../models/Warehouse/Batch";
-import { collection, addDoc, getDocs, writeBatch, doc } from "firebase/firestore";
+import { collection, getDocs, writeBatch, doc } from "firebase/firestore";
 import { db } from "../firebaseconfig";
 import { MovementReason, MovementType } from "../../models/Warehouse/Movement";
 
-const BATCH_SIZE = 400; // Tamaño seguro para procesamiento por lotes
+const BATCH_SIZE = 166; // Tamaño seguro para procesamiento por lotes
 
 async function processBatchOfProducts(products, user, defaultWarehouse, baseRefs, onProgress, startIndex) {
     const batch = writeBatch(db);
     const createdDocs = [];
     const { batchRef, stockRef, movementRef } = baseRefs;
 
-
+    // Reservar bloque de IDs para todo el lote
+    const startBatchNumber = await getNextID(user, 'batches', products.length);
 
     for (let i = 0; i < products.length; i++) {
         const product = products[i];
@@ -43,25 +44,26 @@ async function processBatchOfProducts(products, user, defaultWarehouse, baseRefs
             isDeleted: false
         };
 
-        const batchNumber = await getNextID(user, 'batches');
+        // Asignación secuencial desde el bloque reservado
+        const batchNumber = startBatchNumber + i;
         
-        // Crear documentos pero aún no escribirlos
+        // Crear documentos
         const batchDoc = {
             ...baseFields,
-            id: nanoid(10),
+            id: nanoid(),
             productId: product.id,
             productName: product.name,
             numberId: batchNumber,
             status: BatchStatus.Active,
-            receivedDate: new Date(),
-            providerId: "defaultProvider",
+            receivedDate: serverTimestamp(),
+            providerId: null,
             quantity: product.stock,
             initialQuantity: product.stock,
         };
 
         const stockDoc = {
             ...baseFields,
-            id: nanoid(10),
+            id: nanoid(),
             batchId: batchDoc.id,
             productName: product.name,
             batchNumberId: batchNumber,
@@ -74,7 +76,7 @@ async function processBatchOfProducts(products, user, defaultWarehouse, baseRefs
 
         const movementDoc = {
             ...baseFields,
-            id: nanoid(10),
+            id: nanoid(),
             batchId: batchDoc.id,
             productName: product.name,
             batchNumberId: batchNumber,
@@ -86,7 +88,6 @@ async function processBatchOfProducts(products, user, defaultWarehouse, baseRefs
             movementReason: MovementReason.InitialStock,
         };
 
-        // Añadir al batch de escritura
         createdDocs.push({ batchDoc, stockDoc, movementDoc });
     }
 
@@ -97,15 +98,13 @@ async function processBatchOfProducts(products, user, defaultWarehouse, baseRefs
         batch.set(doc(movementRef, docs.movementDoc.id), docs.movementDoc);
     }
 
-    // Commit el batch
     await batch.commit();
 }
 
 export async function fbInitializedProductInventory(user, onProgress) {
     try {
         validateUser(user);
-        // const { businessID } = user;
-        const businessID = 'RPvpimCiUO4UW4tt50qn';
+        const { businessID } = user;
 
         const baseRefs = {
             batchRef: collection(db, "businesses", businessID, "batches"),

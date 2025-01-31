@@ -25,6 +25,10 @@ function ActionButtons({ order }) {
     navigate(path);
   };
 
+  if(order.status !== 'pending' ){
+    return null;
+  }
+
   return (
     <div style={{
       display: 'flex',
@@ -33,7 +37,7 @@ function ActionButtons({ order }) {
     }}>
       <ActionIcon
         icon={<ShoppingCartOutlined />}
-        tooltip="Completar compra"
+        tooltip="Completar compra 2"
         color="#555"
         hoverColor="#52c41a"
         onClick={handleCompletePurchase}

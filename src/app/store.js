@@ -48,6 +48,7 @@ import productExpirySelectorReducer from "../features/warehouse/productExpirySel
 import activeIngredientsReducer from "../features/activeIngredients/activeIngredientsSlice";
 import fileReducer from '../features/files/fileSlice';
 import productStockSimpleReducer from '../features/productStock/productStockSimpleSlice';
+import deleteProductStockReducer from '../features/productStock/deleteProductStockSlice';
 
 export const store = configureStore({
   reducer: {
@@ -112,6 +113,7 @@ export const store = configureStore({
     productStock: productStockReducer,
     productExpirySelector: productExpirySelectorReducer,
     productStockSimple: productStockSimpleReducer,
+    deleteProductStock: deleteProductStockReducer,
     
     // Utilities
     barcodePrintModal: barcodePrintModalReducer,

@@ -55,7 +55,24 @@ export function WarehouseForm() {
   const handleSubmit = async () => {
     try {
       await form.validateFields(); // Validate form fields
-      const data = form.getFieldsValue(); // Get form values
+      let data = form.getFieldsValue(); // Get form values
+      
+      // Sanitize the data before sending to Firebase
+      data = {
+        name: data.name || '',
+        shortName: data.shortName || '',
+        description: data.description || '',
+        owner: data.owner || '',
+        location: data.location || '',
+        address: data.address || '',
+        dimension: {
+          length: data.dimension?.length || 0,
+          width: data.dimension?.width || 0,
+          height: data.dimension?.height || 0
+        },
+        capacity: data.capacity || 0
+      };
+
       dispatch(setWarehouseLoading(true));
       if (formData && formData.id) {
         await updateWarehouse(user, formData.id, data); // Update warehouse

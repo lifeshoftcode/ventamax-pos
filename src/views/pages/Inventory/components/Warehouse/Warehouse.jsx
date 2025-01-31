@@ -28,7 +28,7 @@ export const Warehouse = () => {
 
   const path = makePathFromParams(params)
 
-
+console.log('data', data)
   useListenProductsStockByLocation(path)
 
   const dispatch = useDispatch()

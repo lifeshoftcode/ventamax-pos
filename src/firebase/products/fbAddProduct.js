@@ -1,13 +1,13 @@
-import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { doc, serverTimestamp, runTransaction } from "firebase/firestore";
 import { nanoid } from "nanoid";
 import { db } from "../firebaseconfig";
 import { BatchStatus } from "../../models/Warehouse/Batch";
 import { getDefaultWarehouse } from "../warehouse/warehouseService";
-import { getNextID } from "../Tools/getNextID";
+import { getNextID, } from "../Tools/getNextID";
 import { MovementReason, MovementType } from "../../models/Warehouse/Movement";
 
 export const fbAddProduct = (data, dispatch, user) => {
-    if (!user && !user.businessID) return
+    if (!user?.businessID) return;
 
     const baseFields = {
         createdAt: serverTimestamp(),
@@ -25,69 +25,70 @@ export const fbAddProduct = (data, dispatch, user) => {
     }
 
     return new Promise(async (resolve, reject) => {
-        const productRef = doc(db, "businesses", user.businessID, "products", product.id);
-        const batchRef = collection(db, "businesses", user.businessID, "batches");
-        const movementRef = collection(db, "businesses", user.businessID, "movements");
-        const stockRef = collection(db, "businesses", user.businessID, "productsStock");
-        const defaultWarehouse = await getDefaultWarehouse(user);
-        const batchNumber = await getNextID(user, 'batches');
         try {
-            await setDoc(productRef, product);
-            console.log('Product document written', product);
+            await runTransaction(db, async (transaction) => {
 
-            const batch = {
-                ...baseFields,
-                id: nanoid(10),
-                productId: product.id,
-                productName: product.name,
-                numberId: batchNumber,
-                status: BatchStatus.Active,
-                receivedDate: new Date(),
-                providerId: "defaultProvider",
-                quantity: product.stock,
-                initialQuantity: product.stock,
-            };
+                const defaultWarehouse = await getDefaultWarehouse(user, transaction);
+                if (!defaultWarehouse?.id) throw new Error("No se pudo obtener almacén predeterminado");
 
-            const batchDoc = await addDoc(batchRef, batch);
-            console.log('Batch document written', batch);
+                const batchNumber = await getNextID(user, "batches", 1, transaction);
+                if (!batchNumber) throw new Error("Error al generar número de lote");
 
-            const stock = {
-                ...baseFields,
-                id: nanoid(10),
-                batchId: batchDoc.id,
-                productName: product.name,
-                batchNumberId: batchNumber,
-                location: defaultWarehouse.id,
-                expirationDate: null,
-                productId: product.id,
-                quantity: product.stock,
-                initialQuantity: product.stock,
-            };
+                const productRef = doc(db, "businesses", user.businessID, "products", product.id);
+                transaction.set(productRef, product);
 
-            await addDoc(stockRef, stock);
-            console.log('Stock document written', stock);
+                const batch = {
+                    ...baseFields,
+                    id: nanoid(10),
+                    productId: product.id,
+                    productName: product.name,
+                    numberId: batchNumber,
+                    status: BatchStatus.Active,
+                    receivedDate: serverTimestamp(),
+                    providerId: null,
+                    quantity: product.stock,
+                    initialQuantity: product.stock,
+                };
+                const batchRef = doc(db, "businesses", user.businessID, "batches", batch.id);
+                transaction.set(batchRef, batch);
 
-            const movement = {
-                ...baseFields,
-                id: nanoid(10),
-                batchId: batchDoc.id,
-                productName: product.name,
-                batchNumberId: batchNumber,
-                destinationLocation: defaultWarehouse.id,
-                sourceLocation: null,
-                productId: product.id,
-                quantity: product.stock,
-                movementType: MovementType.Entry,
-                movementReason: MovementReason.InitialStock,
-            };
+                const stock = {
+                    ...baseFields,
+                    id: nanoid(10),
+                    batchId: batch.id,
+                    productName: product.name,
+                    batchNumberId: batchNumber,
+                    location: defaultWarehouse.id,
+                    expirationDate: null,
+                    productId: product.id,
+                    quantity: product.stock,
+                    initialQuantity: product.stock,
+                };
 
-            await addDoc(movementRef, movement);
-            console.log('Movement document written', movement);
+                const stockRef = doc(db, "businesses", user.businessID, "productsStock", stock.id);
+                transaction.set(stockRef, stock);
 
+                const movement = {
+                    ...baseFields,
+                    id: nanoid(10),
+                    batchId: batch.id,
+                    productName: product.name,
+                    batchNumberId: batchNumber,
+                    destinationLocation: defaultWarehouse.id,
+                    sourceLocation: null,
+                    productId: product.id,
+                    quantity: product.stock,
+                    movementType: MovementType.Entry,
+                    movementReason: MovementReason.InitialStock,
+                };
+
+                const movementRef = doc(db, "businesses", user.businessID, "movements", movement.id);
+                transaction.set(movementRef, movement);
+            });
             resolve();
         } catch (error) {
-            console.log('Error adding document:', error);
-            reject();
+            console.error('Error en fbAddProduct:', error); // Más descriptivo
+            reject(error);
         }
     });
 }

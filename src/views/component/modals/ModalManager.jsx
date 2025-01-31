@@ -35,7 +35,7 @@ import { ProductEditorModal } from "./ProductForm/ProductEditorModal"
 import { InvoiceForm } from "../../component/modals/InvoiceForm/InvoiceForm"
 import { FileListModal } from "./FileListModal/FileListModal"
 import { BarcodePrintModal } from "./BarcodePrintModal/BarcodePrintModal"
-import { selectCurrentNotification } from "../../../features/notification/NotificationSlice"
+import { selectCurrentNotification } from "../../../features/notification/notificationSlice"
 import { SignUpModal } from "../../pages/setting/subPage/Users/components/UserForm"
 import { InvoicePreview } from "../../pages/Registro/InvoicePreview/InvoicePreview"
 import { PaymentForm } from "../forms/PaymentForm/PaymentForm"
@@ -49,6 +49,7 @@ import ActiveIngredientModal from "./ActiveIngredients/ActiveIngredientModal"
 import { WarehouseForm } from "../../pages/Inventory/components/Warehouse/forms/WarehouseForm/WarehouseForm"
 import ARSummaryModal from "./ARInfoModal/ARSummaryModal"
 import EvidenceUploadDrawer from "../../pages/OrderAndPurchase/PurchaseManagement/components/EvidenceUploadDrawer/EvidenceUploadDrawer"
+import { DeleteProductStockModal } from "../../pages/Inventory/components/Warehouse/components/DeleteProductStock/DeleteProductStockModal"
 
 export const ModalManager = () => {
 
@@ -155,7 +156,8 @@ export const ModalManager = () => {
           />
         )}
 
-<EvidenceUploadDrawer />
+        <EvidenceUploadDrawer />
+        <DeleteProductStockModal />
       </AnimatePresence>
       <NoteModal />
       <Loader />

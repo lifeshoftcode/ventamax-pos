@@ -7,7 +7,7 @@ import { selectUser } from '../../../../../../../../features/auth/userSlice';
 import { useListenMovementsByLocation } from '../../../../../../../../firebase/warehouse/productMovementService';
 import { useNavigate } from 'react-router-dom';
 import { AdvancedTable } from '../../../../../../../templates/system/AdvancedTable/AdvancedTable';
-import { Link } from 'react-router-dom';
+import { MovementReason } from '../../../../../../../../models/Warehouse/Movement';
 
 const StyledCard = styled.div`
   margin-top: 16px;
@@ -130,13 +130,13 @@ const ReasonBadge = styled.span`
   
   ${({ reasonType }) => {
     switch (reasonType) {
-      case 'purchase':
+      case MovementReason.Purchase:
         return `
           background: rgba(25, 118, 210, 0.1);
           color: #1976D2;
           border: 1px solid rgba(25, 118, 210, 0.2);
         `;
-      case 'sale':
+      case MovementReason.Sale:
         return `
           background: rgba(76, 175, 80, 0.1);
           color: #388E3C;
@@ -146,7 +146,7 @@ const ReasonBadge = styled.span`
         return `
           background: rgba(255, 152, 0, 0.1);
           color: #F57C00;
-          border: 1px solid rgba(255, 152, 0, 0.2);
+          border: 1px solid rgba(255, 152, 0.2);
         `;
       case 'return':
         return `
@@ -166,6 +166,24 @@ const ReasonBadge = styled.span`
           color: #5C6BC0;
           border: 1px solid rgba(121, 134, 203, 0.2);
         `;
+      case 'damaged':
+        return `
+          background: rgba(244, 67, 54, 0.1);
+          color: #D32F2F;
+          border: 1px solid rgba(244, 67, 54, 0.2);
+        `;
+      case 'expired':
+        return `
+          background: rgba(121, 85, 72, 0.1);
+          color: #5D4037;
+          border: 1px solid rgba(121, 85, 72, 0.2);
+        `;
+      case 'lost':
+        return `
+          background: rgba(96, 125, 139, 0.1);
+          color: #455A64;
+          border: 1px solid rgba(96, 125, 139, 0.2);
+        `;
       default:
         return `
           background: rgba(158, 158, 158, 0.1);
@@ -178,6 +196,12 @@ const ReasonBadge = styled.span`
 
 // Add this helper function before generateRoute
 const getExternalLocationText = (movement) => {
+  // Para casos especiales que no tienen ubicación de origen/destino
+  const specialCases = ['damaged', 'expired', 'lost', 'other'];
+  if (specialCases.includes(movement.movementReason)) {
+    return 'Baja de Inventario';
+  }
+
   switch (movement.movementReason) {
     case 'purchase':
       return 'Proveedor Externo';
@@ -195,6 +219,12 @@ const getExternalLocationText = (movement) => {
 };
 
 const getLocationDisplay = (movement) => {
+  // Para casos especiales que no tienen ubicación de origen/destino
+  const specialCases = ['damaged', 'expired', 'lost', 'other'];
+  if (specialCases.includes(movement.movementReason)) {
+    return 'Baja de Inventario';
+  }
+
   const isEntry = movement.movementType === 'in';
   const locationName = isEntry ? movement.sourceLocationName : movement.destinationLocationName;
   const location = isEntry ? movement.sourceLocation : movement.destinationLocation;
@@ -213,7 +243,11 @@ const formatMovementReason = (reason) => {
     'adjustment': 'Ajuste',
     'return': 'Devolución',
     'initial_stock': 'Stock Inicial',
-    'transfer': 'Transferencia'
+    'transfer': 'Transferencia',
+    'damaged': 'Dañado',
+    'expired': 'Expirado',
+    'lost': 'Perdido',
+    'other': 'Otro'
   };
   return reasonMap[reason] || 'Desconocido';
 };
@@ -225,7 +259,7 @@ const generateRoute = (isEntry, location) => {
   
   const segments = loc.split('/');
   console.log('segments:..........................................................................................', segments);
-  let route = '/inventory/warehouse';
+  let route = '/inventory/warehouses/warehouse';
 
   if (segments[0]) {
     route += `/${segments[0]}`;

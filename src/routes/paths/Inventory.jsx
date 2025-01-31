@@ -4,14 +4,9 @@ import ROUTES_NAME from "../routesName";
 import { ProductOutflow } from "../../views/pages/Inventario/pages/ProductOutflow/ProductOutflow";
 import { ProductForm } from "../../views/pages/Inventario/pages/ProductForm/ProductForm";
 import { Warehouse } from "../../views/pages/Inventory/components/Warehouse/Warehouse";
-import WarehouseContent from "../../views/pages/Inventory/components/Warehouse/components/WarehouseContent";
-import ShelfContent from "../../views/pages/Inventory/components/Warehouse/components/ShelfContent";
-import RowShelfContent from "../../views/pages/Inventory/components/Warehouse/components/RowShelfContent";
-import SegmentContent from "../../views/pages/Inventory/components/Warehouse/components/SegmentContent";
-import WarehouseLayout from "../../views/pages/Inventory/components/Warehouse/components/WarehouseLayout";
 import ProductView from "../../views/component/modals/Product/ProductView";
 import DetailView from "../../views/pages/Inventory/components/Warehouse/components/DetailView/DetailView";
-import ProductStockOverview from "../../views/pages/Inventory/components/Warehouse/components/ProductStockOverview";
+import ProductStockOverview from "../../views/pages/Inventory/components/Warehouse/components/ProductStockOverview/ProductStockOverview";
 
 const {
     INVENTORY_ITEMS,

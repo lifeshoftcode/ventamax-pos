@@ -16,6 +16,7 @@ import { useListenOrder } from '../../../../hooks/useOrders'; // Import the hook
 import Loader from '../../../component/Loader/Loader'
 import { fbUpdatePurchase } from '../../../../firebase/purchase/fbUpdatePurchase'
 import { fbCompletePurchase } from '../../../../firebase/purchase/fbCompletePurchase'
+import PurchaseCompletionSummary from '../../../../components/Purchase/PurchaseCompletionSummary'
 
 const Container = styled.div`
   display: grid;
@@ -75,6 +76,9 @@ const PurchaseManagement = () => {
   const { purchase: fetchedPurchase, isLoading: purchaseLoading } = useListenPurchase(id); // Use the hook
   const { order: fetchedOrder, isLoading: orderLoading } = useListenOrder(id); // Use the hook
 
+  const [showSummary, setShowSummary] = useState(false);
+  const [completedPurchase, setCompletedPurchase] = useState(null);
+
   const updatePurchaseState = useCallback((updates) => {
     dispatch(setPurchase(updates));
   }, [dispatch]);
@@ -124,11 +128,15 @@ const PurchaseManagement = () => {
       message.error('Por favor complete todos los campos requeridos');
       return;
     }
+    if (purchaseData?.replenishments?.length === 0) {
+      message.error('Agrega un producto a la compra');
+      return;
+    }
 
     setLoading(true);
     try {
       const submitData = sanitizeData(purchaseData, defaultsMap);
-      
+
       switch (mode) {
         case 'create':
           await addPurchase({ user, purchase: submitData, localFiles });
@@ -138,15 +146,18 @@ const PurchaseManagement = () => {
           break;
         case 'complete':
           await fbCompletePurchase({ user, purchase: submitData, localFiles });
+          navigate(PURCHASES, { state: { completedPurchase: submitData, showSummary: true } });
           break;
         case 'convert':
-          await addPurchase({ user, purchase: submitData, localFiles }); // Assuming conversion logic is similar to completion
+          await addPurchase({ user, purchase: submitData, localFiles });
           break;
       }
 
       message.success('Compra guardada exitosamente');
       dispatch(cleanPurchase());
-      navigate(PURCHASES);
+      if (mode !== 'complete') {
+        navigate(PURCHASES);
+      }
     } catch (error) {
       console.error("Error al guardar la compra:", error);
       message.error('Error al guardar la compra');
@@ -155,18 +166,33 @@ const PurchaseManagement = () => {
     }
   }, [dispatch, navigate, user, purchaseData, localFiles, validateFields, PURCHASES, mode]);
 
+  const handleCloseSummary = useCallback(() => {
+    setShowSummary(false);
+    dispatch(cleanPurchase());
+    navigate(PURCHASES);
+  }, [dispatch, navigate, PURCHASES]);
+
   const handleCancel = useCallback(() => {
     dispatch(cleanPurchase());
     navigate(PURCHASES);
   }, [dispatch, navigate, PURCHASES]);
 
+  // Limpiar datos al montar el componente si estamos en modo crear
+  useEffect(() => {
+    if (mode === 'create') {
+      dispatch(cleanPurchase());
+    }
+  }, [dispatch, mode]);
+
   return (
     <Container>
-      <MenuApp sectionName={
-        mode === 'create' ? 'Nueva Compra' : 
-        mode === 'complete' ? 'Completar Compra' : 
-        mode === 'convert' ? 'Convertir a Compra' :
-        'Editar Compra'
+      <MenuApp 
+      showBackButton={false}
+      sectionName={
+        mode === 'create' ? 'Nueva Compra' :
+          mode === 'complete' ? 'Completar Compra' :
+            mode === 'convert' ? 'Convertir a Compra' :
+              'Editar Compra'
       } />
       <Loader loading={purchaseLoading} minHeight="200px" >
         <Body>
@@ -189,6 +215,11 @@ const PurchaseManagement = () => {
           Guardar
         </Button>
       </ButtonsContainer>
+      <PurchaseCompletionSummary
+        visible={showSummary}
+        onClose={handleCloseSummary}
+        purchase={completedPurchase}
+      />
     </Container>
   )
 }

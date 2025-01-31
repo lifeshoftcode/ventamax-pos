@@ -25,34 +25,23 @@ export default function SegmentForm() {
 
   const handleFinish = async (values) => {
     try {
-      const newSegment = {
+      const segmentData = {
         ...formData,
         ...values,
-        capacity: parseInt(values.capacity, 10), // Convertir la capacidad a entero
+        capacity: parseInt(values.capacity, 10),
+        warehouseId: path[0]?.id,
+        shelfId: path[1]?.id,
+        rowShelfId: path[2]?.id,
       };
 
       if (formData?.id) {
-        await updateSegment(
-          user, // Usuario y negocio
-          path[0]?.id, // ID del almacén
-          path[1]?.id, // ID del estante
-          path[2]?.id, // ID de la fila de estante
-          formData?.id,
-          newSegment
-        );
+        await updateSegment(user, segmentData);
         message.success("Segmento actualizado con éxito.");
       } else {
-        // Crear un nuevo segmento
-        const warehouseId = path[0]?.id; // Utilizar 'path' para obtener el ID del almacén
-        const shelfId = path[1]?.id; // Utilizar 'path' para obtener el ID del estante
-        const rowShelfId = path[2]?.id; // Utilizar 'path' para obtener el ID de la fila de estante
-        await createSegment(
+        await createSegment({
           user,
-          warehouseId,
-          shelfId,
-          rowShelfId,
-          newSegment
-        );
+          segmentData
+        });
         message.success("Segmento creado con éxito.");
       }
 

@@ -10,7 +10,17 @@ import { icons } from '../../../constants/icons/icons'
 import { GoBackButton } from '../system/Button/GoBackButton'
 import { Input } from 'antd';
 
-export const MenuApp = ({ data, sectionName, sectionNameIcon, borderRadius, setSearchData, searchData, displayName = "" }) => {
+export const MenuApp = ({ 
+  data, 
+  sectionName, 
+  sectionNameIcon, 
+  borderRadius, 
+  setSearchData, 
+  searchData, 
+  displayName = "",
+  showBackButton = true, // Nueva prop para controlar si se muestra el botón
+  onBackClick          // Nueva prop para manejar el click personalizado
+}) => {
   const dispatch = useDispatch();
   const ref = useRef(null)
 
@@ -32,7 +42,7 @@ export const MenuApp = ({ data, sectionName, sectionNameIcon, borderRadius, setS
       <Container borderRadius={borderRadius} ref={ref} isOpen={isOpenMenu ? true : false}>
         <Group>
           <OpenMenuButton isOpen={isOpenMenu} onClick={handledMenu} />
-          <GoBackButton />
+          {showBackButton && <GoBackButton onClick={onBackClick} />}
           {sectionName && (
             <SectionName>{sectionNameIcon}{sectionName}</SectionName>
           )}

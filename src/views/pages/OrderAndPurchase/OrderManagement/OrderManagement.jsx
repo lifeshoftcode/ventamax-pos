@@ -134,9 +134,16 @@ const OrderManagement = () => {
     navigate(ORDERS);
   }, [dispatch, navigate, ORDERS]);
 
+  // Limpiar datos al montar el componente si estamos en modo crear
+  useEffect(() => {
+    if (mode === 'create') {
+      dispatch(cleanOrder());
+    }
+  }, [dispatch, mode]);
+
   return (
     <Container>
-      <MenuApp sectionName={mode === 'create' ? 'Nuevo Pedido' : 'Editar Pedido'} />
+      <MenuApp showBackButton={false} sectionName={mode === 'create' ? 'Nuevo Pedido' : 'Editar Pedido'} />
       <Loader loading={orderLoading} minHeight="200px" >
         <Body>
           <Form layout='vertical'>
