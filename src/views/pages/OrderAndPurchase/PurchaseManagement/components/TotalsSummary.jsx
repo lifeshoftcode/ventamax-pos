@@ -43,12 +43,12 @@ const TotalsSummary = ({ replenishments }) => {
   const calculateTotals = () => {
     return replenishments.reduce(
         (acc, item) => {
-            const baseCostTotal = Number(item.baseCost) * Number(item.quantity);
+            const baseCostTotal = Number(item.baseCost) ;
             const taxPercentage = Number(item.taxPercentage) || 0; // Use provided tax percentage
             const itemITBIS = (baseCostTotal * taxPercentage) / 100; // Calculate ITBIS (tax)
             const shippingCost = Number(item.freight) || 0; // Use provided freight or default to 0
             const otherCosts = Number(item.otherCosts) || 0; // Use provided other costs or default to 0
-            const subTotal = baseCostTotal + itemITBIS + shippingCost + otherCosts;
+            const subTotal = (baseCostTotal + itemITBIS + shippingCost + otherCosts) * Number(item?.purchaseQuantity || item?.quantity);
 
             return {
                 totalProducts: acc.totalProducts + Number(item.quantity),

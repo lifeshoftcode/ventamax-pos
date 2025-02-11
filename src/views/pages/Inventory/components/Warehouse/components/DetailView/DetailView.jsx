@@ -8,6 +8,7 @@ import { MovementsTable } from './components/MovementsTable';
 import { openProductStock } from "../../../../../../../features/productStock/productStockSlice";
 import { Button } from "antd";
 import { useParams } from "react-router-dom";
+import InventoryMenu from "./InventoryMenu";
 
 const DetailContainer = styled.div`
   flex: 1;
@@ -57,6 +58,7 @@ export const DetailView = () => {
   return (
     <div style={{ maxWidth: "1200px", width: '100%', margin: "0 auto", padding: " 0px 24px" }}>
       <BreadcrumbNav breadcrumbs={breadcrumbs} />
+  
 
       {!currentNode ? (
         <DetailContent>Selecciona un elemento para ver los productos</DetailContent>

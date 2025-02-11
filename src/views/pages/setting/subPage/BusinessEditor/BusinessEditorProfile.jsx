@@ -128,7 +128,8 @@ const BusinessProfileEditor = () => {
       const businessData = {
         ...business,
         ...values,
-        logoUrl: imageUrl,
+        logoUrl: imageUrl || '',
+        logo: values.logo || '',
         country: values.country || '',
         province: values.province || '',
         tel: values.tel || '',

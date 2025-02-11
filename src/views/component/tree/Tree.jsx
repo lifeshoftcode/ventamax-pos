@@ -20,7 +20,8 @@ const Container = styled.div`
   resize: horizontal;
   overflow: hidden;
   min-width: 250px;
-  max-width: 800px;
+  max-width: 400px;
+  padding: 8px; 
 `;
 
 const Tree = memo(({ data = [], config = {}, selectedId }) => {

@@ -3,6 +3,7 @@ import styled from 'styled-components'
 import { Button } from '../../../system/Button/Button';
 import { IoIosArrowBack } from 'react-icons/io';
 import { MenuLink } from '../MenuLink';
+import { Group, MenuLinkList } from '../SideBar';
 
 
 export const SubMenu = ({ isOpen, item, MenuItemsLink, showSubMenu }) => {
@@ -14,7 +15,7 @@ export const SubMenu = ({ isOpen, item, MenuItemsLink, showSubMenu }) => {
         return acc;
     }, {});
     return (
-        <Container isOpen={isOpen}>        
+        <Container isOpen={isOpen}>
             <Header>
                 <Button
                     startIcon={<IoIosArrowBack />}
@@ -26,18 +27,20 @@ export const SubMenu = ({ isOpen, item, MenuItemsLink, showSubMenu }) => {
             </Header>
             <Body>
 
-            {
-                 isOpen ? (
-                    Object.keys(groupedSubmenus).map(group => (
-                        <Group key={group}>
-                            {/* <GroupTitle>{group}</GroupTitle>  */}
-                            {groupedSubmenus[group].map((submenu, index) => (
-                                <MenuLink item={submenu} key={index}></MenuLink>
-                            ))}
-                        </Group>
-                    ))
-                ) : null
-            }
+                {
+                    isOpen ? (
+                        Object.keys(groupedSubmenus).map(group => (
+                            <Group key={group}>
+                                {/* <GroupTitle>{group}</GroupTitle>  */}
+                                <MenuLinkList>
+                                    {groupedSubmenus[group].map((submenu, index) => (
+                                        <MenuLink item={submenu} key={index}></MenuLink>
+                                    ))}
+                                </MenuLinkList>
+                            </Group>
+                        ))
+                    ) : null
+                }
             </Body>
         </Container>
     )
@@ -45,12 +48,9 @@ export const SubMenu = ({ isOpen, item, MenuItemsLink, showSubMenu }) => {
 const GroupTitle = styled.h3`
     /* Estilos para el título del grupo */
 `;
-const Group = styled.div`
-    background-color: white;
-    border-radius: var(--border-radius);
-    overflow: hidden;
-    border: 1px solid rgb(0, 0, 0, 0.1);
-`
+// const Group = styled.div`
+//     overflow: hidden;
+// `
 const Body = styled.div`
     /* position: relative; */
     background-color: var(--color2);

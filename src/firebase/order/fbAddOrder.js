@@ -1,14 +1,14 @@
-import { Timestamp, doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { Timestamp, doc, getDoc, setDoc, updateDoc, serverTimestamp, writeBatch } from "firebase/firestore";
 import { db } from "../firebaseconfig";
 import { nanoid } from "nanoid";
 import { getNextID } from "../Tools/getNextID";
 import { fbUploadFiles } from "../img/fbUploadFileAndGetURL";
-import { updateLocalAttachmentsWithRemoteURLs } from "../purchase/fbAddPurchase";
+import { safeTimestamp, updateLocalAttachmentsWithRemoteURLs } from "../purchase/fbAddPurchase";
 
 export const fbAddOrder = async (user, value, fileList = []) => {
     try {
         if (!user || !user.businessID) return;
-        const nextID = await getNextID(user, 'lastOrdersId');
+        const nextID  = await getNextID(user, 'lastOrdersId');
         let data = {
             ...value,
             id: nanoid(12),
@@ -34,14 +34,11 @@ export const fbAddOrder = async (user, value, fileList = []) => {
 }
 
 export async function addOrder({ user, order, localFiles = [], setLoading = () => { } }) {
+    if (!user || !user.businessID) return;
     try {
         const id = nanoid();
-        const numberId = await getNextID(user, 'lastPurchaseNumberId');
-
-
+        const numberId = await getNextID(user, 'lastOrdersId');
         const ordersRef = doc(db, "businesses", user.businessID, "orders", id);
-
-
 
         let uploadedFiles = [];
         // Solo intentar subir archivos si hay archivos locales
@@ -61,14 +58,6 @@ export async function addOrder({ user, order, localFiles = [], setLoading = () =
             uploadedFiles
         );
 
-        // Safely convert dates to timestamps
-        const safeTimestamp = (date) => {
-            if (!date) return serverTimestamp();
-            const milliseconds = typeof date === 'number' ? date : new Date(date).getTime();
-            if (isNaN(milliseconds)) return serverTimestamp();
-            return Timestamp.fromMillis(milliseconds);
-        };
-
         const data = {
             ...order,
             id,
@@ -80,6 +69,31 @@ export async function addOrder({ user, order, localFiles = [], setLoading = () =
             completedAt: order.completedAt ? safeTimestamp(order.completedAt) : null,
             attachmentUrls: updatedAttachments
         };
+
+        // Manejo de backorders en la orden
+        if (order.replenishments) {
+            const replenishmentsWithBackOrders = order.replenishments.filter(item =>
+                item.selectedBackOrders && item.selectedBackOrders.length > 0
+            );
+
+            if (replenishmentsWithBackOrders.length > 0) {
+                const writeBatchOp = writeBatch(db);
+
+                for (const replenishment of replenishmentsWithBackOrders) {
+                    for (const backOrder of replenishment.selectedBackOrders) {
+                        const backOrderRef = doc(db, "businesses", user.businessID, "backOrders", backOrder.id);
+                        writeBatchOp.update(backOrderRef, {
+                            status: 'reserved',
+                            reservedBy: user.uid,
+                            orderId: id, // Relacionado con el ID de la orden
+                            updatedAt: serverTimestamp(),
+                            updatedBy: user.uid
+                        });
+                    }
+                }
+                await writeBatchOp.commit();
+            }
+        }
 
         await setDoc(ordersRef, data);
         setLoading(false);

@@ -174,7 +174,6 @@ export const ModalManager = () => {
       <ImageViewer />
       <SmallNotification />
       <ConfirmationDialog />
-
     </Fragment>
   )
 

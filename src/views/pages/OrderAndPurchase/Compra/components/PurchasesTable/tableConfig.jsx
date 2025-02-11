@@ -33,12 +33,10 @@ function ActionButtons({ purchaseData }) {
         navigate(path);
     };
 
-    // If status is completed, don't render any buttons
-    if (purchaseData.status === 'completed') {
+    if (purchaseData.status === 'completed' ) {
         return null;
     }
     if (purchaseData.status === 'pending') {
-
         return (
             <div style={{
                 display: 'flex',

@@ -29,15 +29,15 @@ const inventory = [
                 group: 'inventoryItems'
             },
             {
-                title: 'Categoría',
-                icon: icons.menu.unSelected.category,
-                route: CATEGORIES,
+                title: 'Almacenes',
+                route: WAREHOUSE,
+                icon: icons.inventory.warehouse,
                 group: 'inventoryItems'
             },
             {
-                title: 'Almacenes',
-                route: WAREHOUSE,
-                icon: null,
+                title: 'Categoría',
+                icon: icons.menu.unSelected.category,
+                route: CATEGORIES,
                 group: 'inventoryItems'
             },
             {
@@ -46,18 +46,18 @@ const inventory = [
                 icon: icons.inventory.multimediaManager,
                 group: 'inventoryItems'
             },
-            {
-                title: 'Administrar Servicios',
-                route: INVENTORY_SERVICES,
-                icon: icons.inventory.services,
-                group: 'inventoryServices'
-            },
-            {
-                title: 'Salidas de Productos',
-                route: PRODUCT_OUTFLOW,
-                icon: icons.inventory.productOutFlow,
-                group: 'inventoryItems'
-            }
+            // {
+            //     title: 'Administrar Servicios',
+            //     route: INVENTORY_SERVICES,
+            //     icon: icons.inventory.services,
+            //     group: 'inventoryServices'
+            // },
+            // {
+            //     title: 'Salidas de Productos',
+            //     route: PRODUCT_OUTFLOW,
+            //     icon: icons.inventory.productOutFlow,
+            //     group: 'inventoryItems'
+            // }
         ]
     },
 ]

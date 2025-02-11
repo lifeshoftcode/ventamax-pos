@@ -44,6 +44,23 @@ const ButtonsContainer = styled.div`
   margin-top: auto;
 `
 
+export function getBackOrderAssociationId({ mode, purchaseId, orderId, operationType }) {
+  if (!mode) throw new Error('Mode is required');
+  if (mode === 'create') return null; // Mover al inicio
+  if (!purchaseId && operationType === 'purchase') return null;
+  if (!orderId && operationType === 'order') return null;
+
+  switch (operationType) {
+    case 'purchase':
+      return mode === 'convert' ? orderId : purchaseId;
+    case 'order':
+      return mode === 'update' ? orderId : null;
+    default:
+      throw new Error(`Invalid operationType: ${operationType}`);
+  }
+}
+
+
 const PurchaseManagement = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -60,6 +77,13 @@ const PurchaseManagement = () => {
 
   const user = useSelector(selectUser)
   const { purchase: purchaseData } = useSelector(selectPurchaseState);
+
+  const backOrderAssociationId = getBackOrderAssociationId({
+    mode,
+    purchaseId: id,
+    orderId: purchaseData?.orderId,
+    operationType: 'purchase',
+  });
 
 
   const { PURCHASES } = ROUTES_PATH.PURCHASE_TERM;
@@ -124,6 +148,7 @@ const PurchaseManagement = () => {
   }, [mode, fetchedPurchase, fetchedOrder, dispatch]);
 
   const handleSubmit = useCallback(async () => {
+
     if (!validateFields()) {
       message.error('Por favor complete todos los campos requeridos');
       return;
@@ -186,14 +211,14 @@ const PurchaseManagement = () => {
 
   return (
     <Container>
-      <MenuApp 
-      showBackButton={false}
-      sectionName={
-        mode === 'create' ? 'Nueva Compra' :
-          mode === 'complete' ? 'Completar Compra' :
-            mode === 'convert' ? 'Convertir a Compra' :
-              'Editar Compra'
-      } />
+      <MenuApp
+        showBackButton={false}
+        sectionName={
+          mode === 'create' ? 'Nueva Compra' :
+            mode === 'complete' ? 'Completar Compra' :
+              mode === 'convert' ? 'Convertir a Compra' :
+                'Editar Compra'
+        } />
       <Loader loading={purchaseLoading} minHeight="200px" >
         <Body>
           <Form layout='vertical'>
@@ -203,6 +228,7 @@ const PurchaseManagement = () => {
               onAddFiles={handleAddFiles}
               onRemoveFiles={handleRemoveFile}
               errors={errors}
+              backOrderAssociationId={backOrderAssociationId}
             />
           </Form>
         </Body>

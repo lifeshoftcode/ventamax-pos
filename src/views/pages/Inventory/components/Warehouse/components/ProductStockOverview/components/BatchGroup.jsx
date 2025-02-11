@@ -1,12 +1,13 @@
 import React from 'react';
 import styled from 'styled-components';
-import { DeleteOutlined, CalendarOutlined } from '@ant-design/icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBoxes } from '@fortawesome/free-solid-svg-icons';
 import { Button } from 'antd';
+import { DeleteOutlined } from '@ant-design/icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { CalendarOutlined } from '@ant-design/icons';
+import { faBoxes } from '@fortawesome/free-solid-svg-icons';
 import ProductStock from './ProductStock';
 
-const StyledBatchGroup = styled.div`
+const BatchContainer = styled.div`
   background: #ffffff;
   border-radius: 12px;
   padding: 16px 0;
@@ -93,16 +94,16 @@ const DeleteButton = styled(Button)`
   }
 `;
 
-const BatchGroup = ({
-  group,
-  handleDeleteBatch,
-  handleDeleteProductStock,
+const BatchGroup = ({ 
+  group, 
+  getStockStatus, 
+  handleDeleteBatch, 
+  handleDeleteProductStock, 
   handleLocationClick,
-  locationNames,
-  getStockStatus
+  locationNames 
 }) => {
   return (
-    <StyledBatchGroup $status={getStockStatus(group.total)}>
+    <BatchContainer $status={getStockStatus(group.total)}>
       <div className="batch-header">
         <div className="batch-info">
           <div className="batch-number">
@@ -139,7 +140,7 @@ const BatchGroup = ({
       <div className="locations-grid">
         {group.items.map((stock, index) => (
           <ProductStock
-            key={stock.id || index}
+            key={stock.id}
             getStockStatus={getStockStatus}
             handleDeleteProductStock={handleDeleteProductStock}
             handleLocationClick={handleLocationClick}
@@ -149,7 +150,7 @@ const BatchGroup = ({
           />
         ))}
       </div>
-    </StyledBatchGroup>
+    </BatchContainer>
   );
 };
 

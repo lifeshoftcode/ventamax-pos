@@ -127,7 +127,7 @@ export const moveProduct = async ({
   // 3. Update source
   const updatedSource = { ...sourceDoc, quantity: sourceDoc.quantity - quantityToMove };
   updatedSource.quantity === 0
-    ? await deleteProductStock(user, updatedSource.id)
+    ? await updateProductStock(user, { ...updatedSource, status: 'inactive' })
     : await updateProductStock(user, updatedSource);
 
 
@@ -153,9 +153,11 @@ export const moveProduct = async ({
   const destinationDoc = destinationStocks[0];
 
   if (destinationDoc) {
+    const updatedQuantity = destinationDoc.quantity + quantityToMove;
     await updateProductStock(user, {
       ...destinationDoc,
-      quantity: destinationDoc.quantity + quantityToMove
+      quantity: updatedQuantity,
+      status: updatedQuantity > 0 ? 'active' : 'inactive',
     });
   } else {
     const newDestData = {
@@ -166,7 +168,6 @@ export const moveProduct = async ({
       productId,
       productName
     };
-
     await createProductStock(user, newDestData);
   }
 
@@ -206,8 +207,6 @@ export const getLocationName = async (user, locationId) => {
 export const useListenMovementsByLocation = (user, locationId, currentLocationId) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  console.log('useListenMovementsByLocation:', { locationId, currentLocationId });
 
   useEffect(() => {
     if (!user || !locationId) {

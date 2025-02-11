@@ -29,14 +29,19 @@ import { useFbGetProviders } from '../../../../../../firebase/provider/useFbGetP
 import { onSnapshot, doc } from 'firebase/firestore'
 import { db } from '../../../../../../firebase/firebaseconfig'
 import { selectUser } from '../../../../../../features/auth/userSlice'
+import BackOrdersModal from "../../../PurchaseManagement/components/BackOrdersModal";
+import { useBackOrdersByProduct } from "../../../../../../firebase/warehouse/backOrderService";
 
-const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors }) => {
+const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors, mode, backOrderAssociationId }) => {
     const dispatch = useDispatch();
     const user = useSelector(selectUser);
     const [selectedProvider, setSelectedProvider] = useState(null);
     const [providerSearch, setProviderSearch] = useState('');
     const unsubscribeRef = useRef(null);
     const { providers = [], loading: providersLoading } = useFbGetProviders();
+    const [isBackOrderModalVisible, setIsBackOrderModalVisible] = useState(false);
+    const [selectedProductForBackorders, setSelectedProductForBackorders] = useState(null);
+    const { backOrders = [] } = useBackOrdersByProduct(selectedProductForBackorders?.id);
 
     const {
         numberId,
@@ -47,7 +52,6 @@ const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors 
         paymentAt,
         note
     } = useSelector(selectOrder);
-    const { data: orders = [], loading: orderLoading } = useFbGetPendingOrdersByProvider(providerId);
 
     const conditionData = getTransactionConditionById(condition);
     const conditionItems = transactionConditions.map((item) => ({
@@ -66,8 +70,8 @@ const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors 
         dispatch(updateProduct({ value: updatedValues, index }));
     };
 
-    const handleRemoveProduct = (index) => {
-        dispatch(deleteProductFromOrder({ id: replenishments[index].id }));
+    const handleRemoveProduct = (productId) => {
+        dispatch(deleteProductFromOrder({ id: productId }));
     };
 
     const handleDateChange = (field, value) => {
@@ -158,12 +162,57 @@ const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors 
 
     const handleEditProvider = (provider) => {
         dispatch(toggleProviderModal({ mode: OPERATION_MODES.UPDATE.id, data: provider }));
+    }; 
+
+    const handleQuantityClick = async (record) => {
+        const fullProduct = replenishments.find(p => p.id === record.id);
+        if (!fullProduct) {
+            console.error('No se encontró el producto completo:', record);
+            return false;
+        }
+        setSelectedProductForBackorders(fullProduct);
+        if (fullProduct.selectedBackOrders?.length > 0) {
+            setIsBackOrderModalVisible(true);
+            return true;
+        }
+        const existingBackorders = backOrders.filter(bo => bo.productId === fullProduct.id);
+        if (existingBackorders.length > 0) {
+            setIsBackOrderModalVisible(true);
+            return true;
+        }
+        const updatedValues = {
+            purchaseQuantity: fullProduct.quantity || 0,
+            selectedBackOrders: []
+        };
+        handleProductUpdate({ index: fullProduct.key, ...updatedValues });
+        return false;
+    };
+
+    const handleBackOrderModalConfirm = (backOrderData) => {
+        console.log("back order =>", backOrderData)
+        const totalBackOrderQuantity = backOrderData.selectedBackOrders.reduce((sum, bo) => sum + bo.quantity, 0);
+        const purchaseQuantity = backOrderData.purchaseQuantity;
+        const quantity = Math.max(0, purchaseQuantity - totalBackOrderQuantity);
+        const updatedValues = {
+            ...backOrderData,
+            selectedBackOrders: backOrderData.selectedBackOrders,
+            purchaseQuantity,
+            quantity
+        };
+        handleProductUpdate({ ...updatedValues });
+        setIsBackOrderModalVisible(false);
+        setSelectedProductForBackorders(null);
+    };
+
+    const handleBackOrderModalCancel = () => {
+        setIsBackOrderModalVisible(false);
+        setSelectedProductForBackorders(null);
     };
 
     return (
         <>
-
             <InvoiceDetails>
+         
                 <ProviderSelector
                     validateStatus={errors?.provider ? "error" : ""}
                     help={errors?.provider ? "El proveedor es requerido" : ""}
@@ -175,6 +224,7 @@ const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors 
                 />
             </InvoiceDetails>
             <AddProductForm
+            mode={mode}
                 onSave={handleProductSave}
                 onClear={clearAddProductForm}
             />
@@ -182,6 +232,7 @@ const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors 
                 products={replenishments}
                 onEditProduct={handleProductUpdate}
                 removeProduct={handleRemoveProduct}
+                onQuantityClick={handleQuantityClick}  // NEW: pass the backorder click handler 
             />
             <TotalsSummary
                 replenishments={replenishments}
@@ -230,8 +281,20 @@ const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors 
                     onRemoveFiles={onRemoveFiles}
                 />
             </div>
-
-
+            {selectedProductForBackorders && (
+                <BackOrdersModal
+                    backOrders={backOrders}
+                    isVisible={isBackOrderModalVisible}
+                    onCancel={handleBackOrderModalCancel}
+                    onConfirm={handleBackOrderModalConfirm}
+                    initialSelectedBackOrders={selectedProductForBackorders.selectedBackOrders || []}
+                    initialPurchaseQuantity={selectedProductForBackorders.purchaseQuantity || 0}
+                    productId={selectedProductForBackorders.id}
+                    backOrderAssociationId={backOrderAssociationId}
+                    mode={mode}
+                    purchaseId={numberId} // Pasamos el ID de la orden/compra
+                />
+            )}
         </>
     );
 }

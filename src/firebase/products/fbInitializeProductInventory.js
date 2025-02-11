@@ -44,16 +44,109 @@ async function processBatchOfProducts(products, user, defaultWarehouse, baseRefs
             isDeleted: false
         };
 
-        // Asignación secuencial desde el bloque reservado
-        const batchNumber = startBatchNumber + i;
-        
-        // Crear documentos
+        // Si el stock es negativo, crear un backorder
+        if (product.stock < 0) {
+            const backOrderDoc = {
+                ...baseFields,
+                id: nanoid(),
+                productId: product.id,
+                productName: product.name,
+                initialQuantity: Math.abs(product.stock),
+                pendingQuantity: Math.abs(product.stock),
+                status: 'pending',
+                requestedAt: serverTimestamp()
+            };
+            
+            batch.set(doc(collection(db, "businesses", user.businessID, "backOrders"), backOrderDoc.id), backOrderDoc);
+
+            // Si es negativo, crear batch y productStock con cantidad 0
+            const batchDoc = {
+                ...baseFields,
+                id: nanoid(),
+                productId: product.id,
+                productName: product.name,
+                numberId: startBatchNumber + i,
+                status: BatchStatus.Inactive,
+                receivedDate: serverTimestamp(),
+                providerId: null,
+                quantity: 0,
+                initialQuantity: 0,
+                backOrderId: backOrderDoc.id
+            };
+
+            const stockDoc = {
+                ...baseFields,
+                id: nanoid(),
+                batchId: batchDoc.id,
+                productName: product.name,
+                batchNumberId: startBatchNumber + i,
+                location: defaultWarehouse.id,
+                status: BatchStatus.Inactive,
+                expirationDate: null,
+                productId: product.id,
+                quantity: 0,
+                initialQuantity: 0,
+                backOrderId: backOrderDoc.id
+            };
+
+            // Actualizar el producto a stock 0
+            batch.update(doc(db, "businesses", user.businessID, "products", product.id), {
+                stock: 0,
+                status: 'inactive',
+                updatedAt: serverTimestamp(),
+                updatedBy: user.uid
+            });
+
+            createdDocs.push({ batchDoc, stockDoc });
+            continue;
+        }
+
+        // Si el stock es 0, solo crear batch y productStock inactivos
+        if (product.stock === 0) {
+            const batchDoc = {
+                ...baseFields,
+                id: nanoid(),
+                productId: product.id,
+                productName: product.name,
+                numberId: startBatchNumber + i,
+                status: BatchStatus.Inactive,
+                receivedDate: serverTimestamp(),
+                providerId: null,
+                quantity: 0,
+                initialQuantity: 0
+            };
+
+            const stockDoc = {
+                ...baseFields,
+                id: nanoid(),
+                batchId: batchDoc.id,
+                productName: product.name,
+                batchNumberId: startBatchNumber + i,
+                location: defaultWarehouse.id,
+                status: BatchStatus.Inactive,
+                expirationDate: null,
+                productId: product.id,
+                quantity: 0,
+                initialQuantity: 0
+            };
+
+            batch.update(doc(db, "businesses", user.businessID, "products", product.id), {
+                status: 'inactive',
+                updatedAt: serverTimestamp(),
+                updatedBy: user.uid
+            });
+
+            createdDocs.push({ batchDoc, stockDoc });
+            continue;
+        }
+
+        // Stock positivo - lógica original
         const batchDoc = {
             ...baseFields,
             id: nanoid(),
             productId: product.id,
             productName: product.name,
-            numberId: batchNumber,
+            numberId: startBatchNumber + i,
             status: BatchStatus.Active,
             receivedDate: serverTimestamp(),
             providerId: null,
@@ -66,8 +159,9 @@ async function processBatchOfProducts(products, user, defaultWarehouse, baseRefs
             id: nanoid(),
             batchId: batchDoc.id,
             productName: product.name,
-            batchNumberId: batchNumber,
+            batchNumberId: startBatchNumber + i,
             location: defaultWarehouse.id,
+            status: BatchStatus.Active,
             expirationDate: null,
             productId: product.id,
             quantity: product.stock,
@@ -79,7 +173,7 @@ async function processBatchOfProducts(products, user, defaultWarehouse, baseRefs
             id: nanoid(),
             batchId: batchDoc.id,
             productName: product.name,
-            batchNumberId: batchNumber,
+            batchNumberId: startBatchNumber + i,
             destinationLocation: defaultWarehouse.id,
             sourceLocation: null,
             productId: product.id,
@@ -95,7 +189,9 @@ async function processBatchOfProducts(products, user, defaultWarehouse, baseRefs
     for (const docs of createdDocs) {
         batch.set(doc(batchRef, docs.batchDoc.id), docs.batchDoc);
         batch.set(doc(stockRef, docs.stockDoc.id), docs.stockDoc);
-        batch.set(doc(movementRef, docs.movementDoc.id), docs.movementDoc);
+        if (docs.movementDoc) {
+            batch.set(doc(movementRef, docs.movementDoc.id), docs.movementDoc);
+        }
     }
 
     await batch.commit();

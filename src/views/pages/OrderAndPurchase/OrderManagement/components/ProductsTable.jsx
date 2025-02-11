@@ -16,6 +16,7 @@ const EditableCell = ({
   onCloseEdit,
   setDateModalVisible,
   setSelectedRecord,
+  onCellClick,
   ...restProps
 }) => {
   const getInput = () => {
@@ -41,7 +42,7 @@ const EditableCell = ({
   return (
     <td
       {...restProps}
-      onClick={handleDateCellClick} // Mover el onClick aquí
+      onClick={onCellClick || handleDateCellClick} // Mover el onClick aquí
       style={{ cursor: 'pointer' }} // Opcional: Cambiar cursor al pasar sobre la celda
     >
       {editing ? (
@@ -70,7 +71,7 @@ const EditableCell = ({
   );
 };
 
-const ProductsTable = ({ products, removeProduct, onEditProduct }) => {
+const ProductsTable = ({ products, removeProduct, onEditProduct, onQuantityClick }) => {
   const [editingCell, setEditingCell] = useState({ row: '', col: '' });
   const [dateModalVisible, setDateModalVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
@@ -97,6 +98,18 @@ const ProductsTable = ({ products, removeProduct, onEditProduct }) => {
       : value;
 
     const newData = { ...record, [dataIndex]: finalValue };
+    if (dataIndex === 'quantity') {
+      if (!record.selectedBackOrders || record.selectedBackOrders.length === 0) {
+        newData.quantity = Number(finalValue) || 0;
+        newData.purchaseQuantity = Number(finalValue) || 0;
+      } else {
+        const backordersQuantity = record.selectedBackOrders.reduce((sum, bo) => sum + bo.quantity, 0);
+        newData.quantity = Number(finalValue) || 0;
+        newData.purchaseQuantity = (Number(finalValue) || 0) + backordersQuantity;
+      }
+    } else {
+      newData[dataIndex] = finalValue;
+    }
     onEditProduct({ ...newData, index: record.key });
     setEditingCell({ row: '', col: '' });
   };
@@ -161,11 +174,10 @@ const ProductsTable = ({ products, removeProduct, onEditProduct }) => {
             justifyContent: 'end'
           }}
         >
-
           <Button
             icon={<DeleteOutlined />}
             danger
-            onClick={() => removeProduct(record.index)}
+            onClick={() => removeProduct(record.id)}
           />
         </div>
       ),
@@ -186,7 +198,22 @@ const ProductsTable = ({ products, removeProduct, onEditProduct }) => {
         title: col.title,
         editing: isEditing(record, col.dataIndex),
         onSave: handleSave,
-        onClick: () => edit(record, col.dataIndex),
+        // For cantidad column: if backorders exist, run onQuantityClick; otherwise, edit inline.
+        ...(col.dataIndex === 'quantity'
+          ? {
+              onCellClick: () => {
+                if (
+                  onQuantityClick &&
+                  record.selectedBackOrders &&
+                  record.selectedBackOrders.length > 0
+                ) {
+                  onQuantityClick(record);
+                } else {
+                  edit(record, col.dataIndex);
+                }
+              }
+            }
+          : { onClick: () => edit(record, col.dataIndex) }),
         onCloseEdit: () => setEditingCell({ row: '', col: '' }),
         setDateModalVisible,
         setSelectedRecord,

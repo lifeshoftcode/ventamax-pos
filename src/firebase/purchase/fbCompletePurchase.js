@@ -1,4 +1,4 @@
-import { doc, getDoc, updateDoc, serverTimestamp, collection, addDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, serverTimestamp, collection, addDoc, writeBatch, setDoc } from "firebase/firestore";
 import { db } from "../firebaseconfig";
 import { fbUploadFiles } from '../img/fbUploadFileAndGetURL';
 import { deleteRemovedFiles, findRemovedAttachments } from "./fbUpdatePurchase";
@@ -23,9 +23,6 @@ const updatePurchaseWarehouseStock = async (user, purchase, defaultWarehouse) =>
         isDeleted: false
     };
 
-    // const defaultWarehouse = getDefaultWarehouse(user);
-
-
     // Group replenishments by product and expiration date
     for (const replenishment of purchase.replenishments) {
         const key = `${replenishment.id}_${replenishment.expirationDate}`;
@@ -48,11 +45,18 @@ const updatePurchaseWarehouseStock = async (user, purchase, defaultWarehouse) =>
 
         const productRef = doc(db, "businesses", user.businessID, "products", batch.productId);
 
-        await updateDoc(productRef, {   
+        // If stock is 0, update product status to inactive
+        const updateProductData = {
             stock: totalStock,
             updatedAt: serverTimestamp(),
             updatedBy: user.uid
-        });
+        };
+
+        if (totalStock === 0) {
+            updateProductData.status = 'inactive';
+        }
+
+        await updateDoc(productRef, updateProductData);
 
         // Create batch for this product
         const batchData = await createBatch(user, {
@@ -62,7 +66,7 @@ const updatePurchaseWarehouseStock = async (user, purchase, defaultWarehouse) =>
             numberId: await getNextID(user, 'batches'),
             shortName: `${batch.productName}_${new Date(batch.expirationDate).toISOString().split('T')[0]}`,
             batchNumber: batchId,
-            status: 'active',
+            status: totalStock === 0 ? 'inactive' : 'active',
             receivedDate: new Date(),
             providerId: purchase.provider,
             quantity: totalStock,
@@ -78,17 +82,18 @@ const updatePurchaseWarehouseStock = async (user, purchase, defaultWarehouse) =>
             productId: batch.productId,
             productName: batch.productName,
             quantity: totalStock,
+            status: totalStock === 0 ? 'inactive' : 'active',
             initialQuantity: totalStock,
             expirationDate: batch?.expirationDate ? new Date(batch.expirationDate) : null,
         };
 
         await createProductStock(user, productStockData);
 
-        // Create movement
-        const movementRef = collection(db, "businesses", user.businessID, "movements");
+        const movementId = nanoid(); // Genera
+        const movementRef = doc(db, "businesses", user.businessID, "movements", movementId);
         const movement = {
             ...baseFields,
-            id: nanoid(),
+            id: movementId,
             batchId: batchData.id,
             productName: batch.productName,
             batchNumberId: batchData.numberId,
@@ -100,8 +105,34 @@ const updatePurchaseWarehouseStock = async (user, purchase, defaultWarehouse) =>
             movementReason: MovementReason.Purchase,
         };
 
-        await addDoc(movementRef, movement);
-        console.log('Movement document written', movement);
+        await setDoc(movementRef, movement);
+   
+
+        // Update back orders if any
+        const replenishmentsWithBackOrders = batch.items.filter(item => 
+            item.selectedBackOrders && item.selectedBackOrders.length > 0
+        );
+
+        if (replenishmentsWithBackOrders.length > 0) {
+            const writeBatchOp = writeBatch(db);
+
+            for (const replenishment of replenishmentsWithBackOrders) {
+                for (const backOrder of replenishment.selectedBackOrders) {
+                    const backOrderRef = doc(db, "businesses", user.businessID, "backOrders", backOrder.id);
+                    writeBatchOp.update(backOrderRef, {
+                        status: 'completed',
+                        completedAt: serverTimestamp(),
+                        completedBy: user.uid,
+                        completedWithPurchaseId: purchase.id,
+                        updatedAt: serverTimestamp(),
+                        updatedBy: user.uid,
+                        pendingQuantity: 0
+                    });
+                }
+            }
+
+            await writeBatchOp.commit();
+        }
     }
 };
 

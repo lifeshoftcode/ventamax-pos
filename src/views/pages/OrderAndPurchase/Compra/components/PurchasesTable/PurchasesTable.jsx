@@ -7,35 +7,24 @@ import { fbCancelPurchase } from '../../../../../../firebase/purchase/fbCancelPu
 import { useSelector } from 'react-redux'
 import { selectUser } from '../../../../../../features/auth/userSlice'
 import { DateTime } from 'luxon'
+import { useDialog } from '../../../../../../Context/Dialog/DialogContext'  // Nuevo import
+import { message } from 'antd' // Nuevo import
 
 export function PurchaseTable({ purchases, loadingPurchases }) {
-  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
-  const [selectedPurchase, setSelectedPurchase] = useState(null)
+  const { setDialogConfirm } = useDialog(); // Nuevo hook
   const user = useSelector(selectUser)
 
-  const handleOpenCancelModal = (purchase) => {
-    setSelectedPurchase(purchase)
-    setIsCancelModalOpen(true)
-  }
-
-  const handleCloseCancelModal = () => {
-    setIsCancelModalOpen(false)
-    setSelectedPurchase(null)
-  }
-
-  const handleConfirmCancel = async (reason) => {
-    await fbCancelPurchase(user, selectedPurchase?.id, reason);
-    handleCloseCancelModal()
-  }
-
-  const modalConfig = {
-    title: "¿Está seguro de cancelar la compra?",
-    confirmButtonText: "Cancelar Compra",
-    cancelButtonText: "Cerrar",
-    requireConfirmationCode: true,
-    showTextArea: true,
-    alertMessage: "Una vez cancelada la compra, esta acción no se podrá deshacer",
-    alertType: "error"
+  const handleCancelPurchase = (purchase) => {
+    setDialogConfirm({
+      title: 'Cancelar compra',
+      isOpen: true,
+      type: 'error',
+      message: '¿Está seguro que desea cancelar esta compra?',
+      onConfirm: async () => {
+        await fbCancelPurchase(user, purchase.id)
+      },
+      successMessage: 'Compra cancelada exitosamente'
+    });
   }
 
   const data = purchases || []; // Asegura que data es un array aunque purchases sea undefined
@@ -55,7 +44,7 @@ export function PurchaseTable({ purchases, loadingPurchases }) {
       total: (data?.replenishments || []).reduce((acc, { subtotal }) => acc + subtotal, 0),
       action: {
         ...data,
-        onCancel: () => handleOpenCancelModal(data)
+        onCancel: () => handleCancelPurchase(data)
       },
       dateGroup: DateTime.fromMillis(data?.createdAt).toLocaleString(DateTime.DATE_FULL)
     }))
@@ -68,12 +57,6 @@ export function PurchaseTable({ purchases, loadingPurchases }) {
         data={mappedData}
         loading={loadingPurchases}
         groupBy={'dateGroup'}
-      />
-      <CancelModal
-        isOpen={isCancelModalOpen}
-        onClose={handleCloseCancelModal}
-        onConfirm={handleConfirmCancel}
-        config={modalConfig}
       />
     </>
   )

@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid';
-import { Timestamp, doc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import { Timestamp, doc, serverTimestamp, setDoc, updateDoc, writeBatch } from "firebase/firestore";
 import { db } from "../firebaseconfig";
 import { fbUploadFiles } from '../img/fbUploadFileAndGetURL';
 import { getNextID } from '../Tools/getNextID';
@@ -26,6 +26,97 @@ export const updateLocalAttachmentsWithRemoteURLs = (localAttachments, uploadedF
         return attachment;
     });
 };
+
+
+
+export const safeTimestamp = (date) => {
+    if (!date) return Timestamp.now(); // Changed from serverTimestamp()
+    const milliseconds = typeof date === 'number' ? date : new Date(date).getTime();
+    if (isNaN(milliseconds)) return Timestamp.now(); // Changed from serverTimestamp()
+    return Timestamp.fromMillis(milliseconds);
+};
+
+export async function addPurchase({ user, purchase, localFiles = [], setLoading = () => { } }) {
+    try {
+        const id = nanoid();
+        const numberId = await getNextID(user, 'lastPurchaseNumberId');
+        const purchasesRef = doc(db, "businesses", user.businessID, "purchases", id);
+
+        if (purchase.orderId) {
+            const ordersRef = doc(db, "businesses", user.businessID, "orders", purchase.orderId);
+            await updateDoc(ordersRef, { status: 'completed' });
+        }
+
+        let uploadedFiles = [];
+        if (localFiles && localFiles.length > 0) {
+            const files = localFiles.map(({ file }) => file);
+            uploadedFiles = await fbUploadFiles(user, "purchaseAndOrderFiles", files, {
+                customMetadata: {
+                    type: "purchase_attachment",
+                },
+            });
+        }
+
+        const existingAttachments = purchase.attachmentUrls || [];
+        const updatedAttachments = updateLocalAttachmentsWithRemoteURLs(
+            existingAttachments,
+            uploadedFiles
+        );
+
+        // Update replenishments and handle back orders
+        const updatedReplenishments = purchase.replenishments?.map(item => ({
+            ...item,
+            expirationDate: item.expirationDate ? Timestamp.fromMillis(new Date(item.expirationDate).getTime()) : null
+        })) || [];
+
+        // Update back orders status to reserved
+        const replenishmentsWithBackOrders = updatedReplenishments.filter(item => 
+            item.selectedBackOrders && item.selectedBackOrders.length > 0
+        );
+
+        if (replenishmentsWithBackOrders.length > 0) {
+            const writeBatchOp = writeBatch(db);
+
+            for (const replenishment of replenishmentsWithBackOrders) {
+                for (const backOrder of replenishment.selectedBackOrders) {
+                    const backOrderRef = doc(db, "businesses", user.businessID, "backOrders", backOrder.id);
+                    writeBatchOp.update(backOrderRef, {
+                        status: 'reserved',
+                        reservedBy: user.uid,
+                        reservedAt: serverTimestamp(),
+                        purchaseId: id,
+                        updatedAt: serverTimestamp(),
+                        updatedBy: user.uid
+                    });
+                }
+            }
+
+            await writeBatchOp.commit();
+        }
+
+        const data = {
+            ...purchase,
+            id,
+            numberId,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            deliveryAt: safeTimestamp(purchase.deliveryAt),
+            paymentAt: safeTimestamp(purchase.paymentAt),
+            completedAt: purchase.completedAt ? safeTimestamp(purchase.completedAt) : null,
+            attachmentUrls: updatedAttachments,
+            replenishments: updatedReplenishments
+        };
+      
+
+        await setDoc(purchasesRef, data);
+        setLoading(false);
+        return data;
+    } catch (error) {
+        setLoading(false);
+        console.error("Error in addPurchase:", error);
+        throw error;
+    }
+}
 
 export const fbAddPurchase = async (user, purchase, fileList = [], setLoading) => {
     try {
@@ -71,69 +162,3 @@ export const fbAddPurchase = async (user, purchase, fileList = [], setLoading) =
         throw error;
     }
 };
-
-export const safeTimestamp = (date) => {
-    if (!date) return Timestamp.now(); // Changed from serverTimestamp()
-    const milliseconds = typeof date === 'number' ? date : new Date(date).getTime();
-    if (isNaN(milliseconds)) return Timestamp.now(); // Changed from serverTimestamp()
-    return Timestamp.fromMillis(milliseconds);
-};
-
-export async function addPurchase({ user, purchase, localFiles = [], setLoading = () => { } }) {
-    try {
-        const id = nanoid();
-        const numberId = await getNextID(user, 'lastPurchaseNumberId');
-        const purchasesRef = doc(db, "businesses", user.businessID, "purchases", id);
-
-        if (purchase.orderId) {
-            const ordersRef = doc(db, "businesses", user.businessID, "orders", purchase.orderId);
-            await updateDoc(ordersRef, { status: 'completed' });
-        }
-
-        let uploadedFiles = [];
-        // Solo intentar subir archivos si hay archivos locales
-        if (localFiles && localFiles.length > 0) {
-            const files = localFiles.map(({ file }) => file);
-            uploadedFiles = await fbUploadFiles(user, "purchaseAndOrderFiles", files, {
-                customMetadata: {
-                    type: "purchase_attachment",
-                },
-            });
-        }
-
-        const existingAttachments = purchase.attachmentUrls || [];
-
-        const updatedAttachments = updateLocalAttachmentsWithRemoteURLs(
-            existingAttachments,
-            uploadedFiles
-        );
-
-        // Update replenishments with safe timestamp conversion
-        const updatedReplenishments = purchase.replenishments?.map(item => ({
-            ...item,
-            expirationDate: item.expirationDate ? Timestamp.fromMillis(new Date(item.expirationDate).getTime()) : null
-        })) || [];
-
-        const data = {
-            ...purchase,
-            id,
-            numberId,
-            createdAt: serverTimestamp(), // These are fine as they're not in arrays
-            updatedAt: serverTimestamp(),
-            deliveryAt: safeTimestamp(purchase.deliveryAt),
-            paymentAt: safeTimestamp(purchase.paymentAt),
-            completedAt: purchase.completedAt ? safeTimestamp(purchase.completedAt) : null,
-            attachmentUrls: updatedAttachments,
-            replenishments: updatedReplenishments
-        };
-        console.log("purchase pending",data)
-
-        await setDoc(purchasesRef, data);
-        setLoading(false);
-        return data;
-    } catch (error) {
-        setLoading(false);
-        console.error("Error in addPurchase:", error);
-        throw error;
-    }
-}

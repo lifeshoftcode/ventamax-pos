@@ -121,10 +121,12 @@ const migrateOldSession = async (oldSession, dispatch) => {
     await cleanupOldTokens(oldUserData.uid, null);
     
     const { token, expiresAt } = generateNewSessionToken(oldUserData.uid);
+    // Usando serverTimestamp para createdAt
     await setDoc(doc(db, 'sessionTokens', token), { 
         userId: oldUserData.uid,
         expiresAt,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        lastActivity: serverTimestamp() // Agregando lastActivity con serverTimestamp
     });
     
     localStorage.setItem('sessionToken', token);
@@ -168,6 +170,11 @@ const verifyAndUpdateSession = async (sessionToken, sessionExpires, dispatch, na
         dispatch(logout());
         return;
     }
+
+    // Actualizar lastActivity en Firebase usando serverTimestamp
+    await setDoc(doc(db, 'sessionTokens', sessionToken), {
+        lastActivity: serverTimestamp()
+    }, { merge: true });
 
     const sessionData = sessionSnapshot.data();
     const firebaseExpiresAt = sessionData.expiresAt;

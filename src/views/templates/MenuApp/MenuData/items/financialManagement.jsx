@@ -16,9 +16,9 @@ const financialManagement = [
     {
         title: 'Compras y Pedidos',
         icon: icons.menu.unSelected.purchase,
-        submenuIconOpen: icons.arrows.chevronLeft,
-        submenuIconClose: icons.arrows.chevronRight,
-        group: 'financialManagement',
+        submenuIconOpen: ChevronLeft, 
+        submenuIconClose: ChevronRight,
+        group: 'inventory',
         submenu: [
             {
                 title: 'Pedidos',

@@ -2,38 +2,81 @@ import { Form, Input, InputNumber, DatePicker, Statistic, Button, message, Toolt
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { icons } from '../../../../../constants/icons/icons';
-import { SelectProduct, selectProductSelected } from '../../../../../features/addOrder/addOrderSlice';
+import { SelectProduct, selectProductSelected, setSelectedBackOrders, setPurchaseQuantity, clearSelectedBackOrders, selectOrder } from '../../../../../features/addOrder/addOrderSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import ProductModal from './ProductModal';
-import { formatMoney } from '../../../../../utils/formatters';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSpinner } from '@fortawesome/free-solid-svg-icons';
 
-function AddProductForm({ onSave, onClear }) {
+import { formatMoney } from '../../../../../utils/formatters';
+import BackOrdersModal from '../../PurchaseManagement/components/BackOrdersModal';
+import { getBackOrdersByProduct } from '../../../../../firebase/warehouse/backOrderService';
+import { selectUser } from '../../../../../features/auth/userSlice';
+
+function AddProductForm({ onSave, onClear, mode }) {
     const dispatch = useDispatch();
 
+    const user = useSelector(selectUser);
+
+    const { id } = useSelector(selectOrder);
     const [form] = Form.useForm();
     const [unitCost, setUnitCost] = useState(0);
     const [subtotal, setSubtotal] = useState(0);
     const [calculatedITBIS, setCalculatedITBIS] = useState(0);
+    const [isBackOrderModalVisible, setIsBackOrderModalVisible] = useState(false);
+    const [tempSelectedProduct, setTempSelectedProduct] = useState(null);
+    const [productBackOrders, setProductBackOrders] = useState([]);
+    const [isLoadingBackOrders, setIsLoadingBackOrders] = useState(false);
+    const [isBackOrderChecked, setIsBackOrderChecked] = useState(false);
+    const [checkedProducts, setCheckedProducts] = useState(new Set());
 
     const selectedProduct = useSelector(selectProductSelected);
+
     const isProductSelected = !!selectedProduct?.name || !!selectedProduct?.id;
-    const onSelectProduct = (product) => dispatch(SelectProduct(product));
+
+    const onSelectProduct = (product) => {
+        dispatch(SelectProduct(product));
+        setIsBackOrderChecked(false);
+        // Reset checked state when selecting a new product
+        if (!product?.id) {
+            setCheckedProducts(new Set());
+        }
+    };
 
     const calculateCosts = () => {
-        const { baseCost = 0, taxPercentage, freight = 0, otherCosts = 0, quantity = 0 } = form.getFieldsValue();
-        const taxPercent = taxPercentage || 0; // Manejar undefined como cero
+        const values = form.getFieldsValue();
+        const baseCost = Number(values.baseCost) || 0;
+        const taxPercent = Number(values.taxPercentage) || 0;
+        const freight = Number(values.freight) || 0;
+        const otherCosts = Number(values.otherCosts) || 0;
+
         const calculatedTax = (baseCost * taxPercent) / 100;
         setCalculatedITBIS(calculatedTax);
-        const unitCost = baseCost + calculatedTax + freight + otherCosts;
-        setUnitCost(unitCost);
-        setSubtotal(unitCost * quantity);
+
+        const newUnitCost = baseCost + calculatedTax + freight + otherCosts;
+        setUnitCost(newUnitCost);
+
+        const quantity = selectedProduct?.purchaseQuantity || 0;
+        setSubtotal(newUnitCost * quantity);
     };
 
     const handleSubmit = async () => {
         try {
             const values = await form.validateFields();
-            onSave({ ...values, unitCost, subtotal, calculatedITBIS });
+            onSave({
+                ...values,
+                unitCost,
+                subtotal,
+                calculatedITBIS,
+                selectedBackOrders: selectedProduct.selectedBackOrders,
+                quantity: selectedProduct.quantity,
+                purchaseQuantity: selectedProduct.purchaseQuantity,
+            });
             form.resetFields();
+            dispatch(clearSelectedBackOrders());
+            setIsBackOrderChecked(false);
+            // Clear checked products after saving
+            setCheckedProducts(new Set());
             message.success('Producto agregado correctamente');
         } catch (error) {
             const errorFields = error.errorFields || [];
@@ -49,21 +92,63 @@ function AddProductForm({ onSave, onClear }) {
         form.resetFields();
         onClear();
         onSelectProduct({});
+        // Clear checked products when deleting
+        setCheckedProducts(new Set());
     };
 
-    useEffect(() => {
+    const handleQuantityClick = async () => {
+        if (!selectedProduct?.id || !user?.businessID) return;
+        
+        // If we've already checked this product and found no back orders, don't check again
+        if (checkedProducts.has(selectedProduct.id)) {
+            return;
+        }
+
+        setIsLoadingBackOrders(true);
+        try {
+            const data = await getBackOrdersByProduct(user.businessID, selectedProduct.id);
+            if (data?.length > 0) {
+                setProductBackOrders(data);
+                setTempSelectedProduct(selectedProduct);
+                setIsBackOrderModalVisible(true);
+            } else {
+                dispatch(clearSelectedBackOrders());
+                setIsBackOrderChecked(true);
+                // Add this product to the checked set since it has no back orders
+                setCheckedProducts(new Set([...checkedProducts, selectedProduct.id]));
+            }
+        } finally {
+            setIsLoadingBackOrders(false);
+        }
+    };
+
+    const handleBackOrderModalConfirm = (backOrderData) => {
+        dispatch(SelectProduct(tempSelectedProduct));
+        dispatch(setSelectedBackOrders(backOrderData));
+        setIsBackOrderModalVisible(false);
+        setTempSelectedProduct(null);
+        calculateCosts();
+    };
+
+    const handleBackOrderModalCancel = () => {
+        setIsBackOrderModalVisible(false);
+        setTempSelectedProduct(null);
+        dispatch(clearSelectedBackOrders());
+    };
+
+    const handleQuantityChange = (value) => {
         form.validateFields().then(calculateCosts).catch(() => { });
-    }, [form]);
+    };
 
     useEffect(() => {
         if (selectedProduct) {
             form.setFieldsValue({
                 name: selectedProduct.name,
-                // otros campos que quieras pre-llenar
+                quantity: selectedProduct.quantity,
             });
             calculateCosts();
         }
-    }, [selectedProduct, form]);
+    }, [selectedProduct]);
 
     return (
         <RowContainer>
@@ -92,10 +177,15 @@ function AddProductForm({ onSave, onClear }) {
                         >
                             <InputNumber
                                 controls={false}
-                                disabled={!isProductSelected}
+                                disabled={!isProductSelected || isLoadingBackOrders}
                                 placeholder="Cantidad"
-                                style={{ width: '100%' }}
-                                onChange={calculateCosts}
+                                value={selectedProduct?.quantity}
+                                onChange={handleQuantityChange}
+                                onClick={handleQuantityClick}
+                                style={{ cursor: isProductSelected && !isLoadingBackOrders ? 'pointer' : 'not-allowed', width: '100%' }}
+                                addonAfter={isLoadingBackOrders && (
+                                    <FontAwesomeIcon icon={faSpinner} spin style={{ color: '#1890ff' }} />
+                                )}
                             />
                         </StyledFormItem>
                     </Tooltip>
@@ -148,6 +238,17 @@ function AddProductForm({ onSave, onClear }) {
                     </ActionContainer>
                 </FieldsRow>
             </Form>
+            <BackOrdersModal
+                isVisible={isBackOrderModalVisible}
+                onCancel={handleBackOrderModalCancel}
+                onConfirm={handleBackOrderModalConfirm}
+                initialSelectedBackOrders={selectedProduct.selectedBackOrders}
+                initialPurchaseQuantity={selectedProduct.purchaseQuantity}
+                productId={selectedProduct.id}
+                backOrders={productBackOrders}
+                mode={mode}
+                orderId={id}
+            />
         </RowContainer>
     );
 };
@@ -222,5 +323,4 @@ const StyledFormItem = styled(Form.Item)`
         flex-direction: column;
     }
 
-
-`;
+`

@@ -16,8 +16,7 @@ const updateProductsStockFromReplenishments = async (user, newPurchase, previous
     // Maps para los reabastecimientos de la nueva y la versión anterior de la compra
     const newReplenishmentsMap = new Map(newPurchase.replenishments.map(item => [item.id, item]));
     const previousReplenishmentsMap = previousPurchase ? new Map(previousPurchase.replenishments.map(item => [item.id, item])) : new Map();
-    console.log("newPurchase:", newPurchase);
-    console.log("previousPurchase:", previousPurchase);
+
     for (const [productId, newReplenishment] of newReplenishmentsMap) {
         console.log("newReplenishment being processed:", newReplenishment);
         if (previousReplenishmentsMap.has(productId)) {

@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
-import { Input, Empty, Spin, Modal, Button } from 'antd'; // Añadido Button
-import { SearchOutlined, CalendarOutlined, DeleteOutlined } from '@ant-design/icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBoxes, faMapMarkerAlt, faArrowRight, faExclamationTriangle, faCheckCircle, faTimesCircle, faWarehouse, faLayerGroup, faTable, faBox } from '@fortawesome/free-solid-svg-icons';
+import { Input, Empty, Spin } from 'antd';
+import { SearchOutlined } from '@ant-design/icons';
+import { faTimesCircle, faExclamationTriangle, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
 import { useListenProductsStock } from '../../../../../../../firebase/warehouse/productStockService';
 import { useLocationNames } from '../../../../../../../hooks/useLocationNames';
-import ProductStock from './components/ProductStock';
+import BatchGroup from './components/BatchGroup';
 import StockSummary from './components/StockSummary';
 import { openDeleteModal } from '../../../../../../../features/productStock/deleteProductStockSlice';
 import { useDispatch } from 'react-redux';
@@ -18,6 +17,32 @@ const Container = styled.div`
   max-width: 1400px;
   margin: 0 auto;
   background: #ffffff;
+  display: grid;
+  gap: 24px;
+  align-items: start;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const MainContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const SideContent = styled.div`
+  position: sticky;
+  top: 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  @media (max-width: 1200px) {
+    position: relative;
+    top: 0;
+  }
 `;
 
 const getStockStatus = (quantity) => {
@@ -41,73 +66,6 @@ const getStockStatus = (quantity) => {
   };
 };
 
-const BatchGroup = styled.div`
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 16px 0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-  margin-bottom: 0px;
-  
-  .batch-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #f1f5f9;
-
-    .batch-info {
-      .batch-number {
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: #0f172a;
-        margin-bottom: 6px;
-        letter-spacing: -0.01em;
-      }
-
-      .batch-meta {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        color: #64748b;
-        font-size: 0.85rem;
-
-        .meta-item {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 4px 0;
-        }
-      }
-    }
-
-    .batch-total {
-      padding: 6px 12px;
-      border-radius: 30px;
-      font-weight: 600;
-      font-size: 0.9rem;
-      letter-spacing: 0.01em;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: ${props => props.$status.background}50;
-      color: ${props => props.$status.color};
-      border: 1px solid ${props => props.$status.color}20;
-
-      .status-icon {
-        font-size: 0.9rem;
-      }
-    }
-  }
-
-  .locations-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
-    gap: 12px;
-    padding: 0px;
-  }
-`;
-
 const SearchBar = styled(Input)`
   margin-bottom: 24px;
   border-radius: 8px;
@@ -129,26 +87,6 @@ const SearchBar = styled(Input)`
   &:hover, &:focus {
     border-color: #cbd5e1;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04);
-  }
-`;
-
-const BatchActions = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const DeleteButton = styled(Button)`
-  &.ant-btn {
-    border: none;
-    background: transparent;
-    color: #64748b;
-    padding: 4px 8px;
-    
-    &:hover {
-      color: #dc2626;
-      background: #fee2e2;
-    }
   }
 `;
 
@@ -215,12 +153,11 @@ const ProductStockOverview = ({ }) => {
   }, []);
 
   const handleDeleteBatch = (group) => {
-       console.log(group)
-       dispatch(openDeleteModal({
-         productStockId: null,
-         batchId: group.batchId,
-         actionType: 'batch',
-       }));
+    dispatch(openDeleteModal({
+      productStockId: null,
+      batchId: group.batchId,
+      actionType: 'batch',
+    }));
   };
 
   const handleDeleteProductStock = (stock) => {
@@ -231,31 +168,34 @@ const ProductStockOverview = ({ }) => {
     }));
   };
 
-  const renderContent = () => {
-    if (!productId) {
-      return <Empty description="No se ha seleccionado ningún producto" />;
-    }
+  if (!productId) {
+    return (
+      <Container>
+        <Empty description="No se ha seleccionado ningún producto" />
+      </Container>
+    );
+  }
 
-    if (loading) {
-      return (
+  if (loading) {
+    return (
+      <Container>
         <div style={{ textAlign: 'center', padding: '40px' }}>
           <Spin size="large" />
         </div>
-      );
-    }
+      </Container>
+    );
+  }
 
-    return (
-      <>
-        <StockSummary
-          filteredStock={filteredStock}
-        />
+  return (
+    <Container>
+      <MainContent>
+        <StockSummary filteredStock={filteredStock} productId={productId} />
         <SearchBar
           placeholder="Buscar por ubicación o número de lote..."
           prefix={<SearchOutlined />}
           value={searchText}
           onChange={e => setSearchText(e.target.value)}
         />
-
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {filteredStock.length === 0 ? (
             <Empty description="No hay stock disponible para este producto" />
@@ -263,65 +203,21 @@ const ProductStockOverview = ({ }) => {
             Object.values(groupStockByBatch(filteredStock)).map((group) => (
               <BatchGroup
                 key={group.batchId || 'sin-lote'}
-                $status={getStockStatus(group.total)}
-              >
-                <div className="batch-header">
-                  <div className="batch-info">
-                    <div className="batch-number">
-                      {group.batchNumberId ? `Lote #${group.batchNumberId}` : 'Sin lote asignado'}
-                    </div>
-                    <div className="batch-meta">
-                      {group.expirationDate && (
-                        <span className="meta-item">
-                          <CalendarOutlined />
-                          Vence: {new Date(group.expirationDate.seconds * 1000).toLocaleDateString()}
-                        </span>
-                      )}
-                      <span className="meta-item">
-                        <FontAwesomeIcon icon={faBoxes} />
-                        {group.items.length} ubicaciones
-                      </span>
-                    </div>
-                  </div>
-                  <BatchActions>
-                    <DeleteButton
-                      icon={<DeleteOutlined />}
-                      onClick={() => handleDeleteBatch(group)}
-                      title="Eliminar batch completo"
-                    />
-                    <div className="batch-total">
-                      <FontAwesomeIcon
-                        icon={getStockStatus(group.total).icon}
-                        className="status-icon"
-                      />
-                      {group.total} unidades
-                    </div>
-                  </BatchActions>
-                </div>
-                <div className="locations-grid">
-                  {group.items.map((stock, index) => (
-                    <ProductStock
-                      getStockStatus={getStockStatus}
-                      handleDeleteProductStock={handleDeleteProductStock}
-                      handleLocationClick={handleLocationClick}
-                      index={index}
-                      locationNames={locationNames}
-                      stock={stock}
-
-                    />
-                  ))}
-                </div>
-              </BatchGroup>
+                group={group}
+                getStockStatus={getStockStatus}
+                handleDeleteBatch={handleDeleteBatch}
+                handleDeleteProductStock={handleDeleteProductStock}
+                handleLocationClick={handleLocationClick}
+                locationNames={locationNames}
+              />
             ))
           )}
         </div>
-      </>
-    );
-  };
-
-  return (
-    <Container>
-      {renderContent()}
+      </MainContent>
+      
+      <SideContent>
+        {/* BackOrderList se moverá a StockSummary */}
+      </SideContent>
     </Container>
   );
 };

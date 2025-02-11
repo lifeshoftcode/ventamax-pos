@@ -28,13 +28,15 @@ const EmptyProduct = {
     name: "",
     expirationDate: null,
     quantity: 0,
+    purchaseQuantity: 0, // Cantidad total a comprar
+    selectedBackOrders: [], // Solo contendrá {id, quantity}
     unitMeasurement: '',
     baseCost: 0,
     taxPercentage: 0,
     freight: 0,
     otherCosts: 0,
     unitCost: 0,
-    subtotal: 0, // Cambiado de subTotal a subtotal
+    subtotal: 0
 }
 
 const initialState = {
@@ -64,13 +66,15 @@ export const addPurchaseSlice = createSlice({
                 name: product.name,
                 expirationDate: "",
                 quantity: 0,
+                purchaseQuantity: 0, // Cantidad total a comprar
+                selectedBackOrders: [], // BackOrders seleccionados
                 unitMeasurement: '',
                 baseCost: product.pricing?.cost || 0,
                 taxPercentage: 0,
                 freight: 0,
                 otherCosts: 0,
                 unitCost: 0,
-                subtotal: 0 // Cambiado de subTotal a subtotal
+                subtotal: 0
             }
             const findProduct = state.purchase.replenishments.find((item) => item.id === productData.id);
             if (findProduct) {
@@ -84,15 +88,25 @@ export const addPurchaseSlice = createSlice({
                     duration: 0,
                 });
             }
-            state.productSelected = productData
+            
+            // Calcular costos iniciales
+            productData.unitCost = calculateUnitCost(productData);
+            productData.subtotal = calculateSubTotal(productData);
+            
+            state.productSelected = productData;
         },
         AddProductToPurchase: (state) => {
             const findProduct = state.purchase.replenishments.find((item) => item.id === state.productSelected.id);
+            const productToAdd = {
+                ...state.productSelected,
+                // quantity ya contiene la cantidad restante
+            };
+
             if (findProduct) {
-                const index = state.purchase.replenishments.indexOf(findProduct)
-                state.purchase.replenishments[index] = state.productSelected
+                const index = state.purchase.replenishments.indexOf(findProduct);
+                state.purchase.replenishments[index] = productToAdd;
             } else {
-                state.purchase.replenishments.push(state.productSelected);
+                state.purchase.replenishments.push(productToAdd);
             }
             state.productSelected = EmptyProduct;
         },
@@ -118,13 +132,48 @@ export const addPurchaseSlice = createSlice({
             state.mode = "add"
         },
         updateProduct: (state, actions) => {
-            const { value, index } = actions.payload;
+            const { value } = actions.payload;
+            // Buscar producto por id en lugar de usar un índice entregado
+            const productIndex = state.purchase.replenishments.findIndex(item => item.id === value.id);
+            if (productIndex === -1) return; // Si no se encuentra, no se actualiza
 
-            state.purchase.replenishments[index] = {
-                ...state.purchase.replenishments[index],
+            const currentProduct = state.purchase.replenishments[productIndex];
+
+            // Mantener los backorders existentes si no se pasan nuevos
+            const selectedBackOrders = value.selectedBackOrders !== undefined 
+                ? value.selectedBackOrders 
+                : currentProduct.selectedBackOrders || [];
+            const totalBackordersQuantity = selectedBackOrders.reduce((sum, order) => sum + order.quantity, 0);
+
+            // Actualizar purchaseQuantity usando el valor proporcionado o derivado de la cantidad
+            const purchaseQuantity = value.purchaseQuantity !== undefined 
+                ? value.purchaseQuantity 
+                : value.quantity !== undefined 
+                    ? value.quantity + totalBackordersQuantity 
+                    : currentProduct.purchaseQuantity;
+            
+            // Calcular la cantidad real restando los backorders
+            const quantity = value.quantity !== undefined 
+                ? value.quantity 
+                : Math.max(0, purchaseQuantity - totalBackordersQuantity);
+
+            const updatedProduct = {
+                ...currentProduct,
                 ...value,
-                unitCost: calculateUnitCost(value),
-                subtotal: calculateSubTotal(value) // Cambiado de subTotal a subtotal
+                purchaseQuantity,
+                quantity,
+                selectedBackOrders,
+            };
+
+            // Calcular nuevos valores usando las funciones auxiliares
+            const unitCost = calculateUnitCost(updatedProduct);
+            const subtotal = calculateSubTotal(updatedProduct);
+
+            // Actualizar el producto en el estado utilizando el índice encontrado
+            state.purchase.replenishments[productIndex] = {
+                ...updatedProduct,
+                unitCost,
+                subtotal,
             };
         },
         addAttachmentToPurchase: (state, actions) => {
@@ -143,6 +192,35 @@ export const addPurchaseSlice = createSlice({
                 (item) => item.id !== id
             );
         },
+        setSelectedBackOrders: (state, action) => {
+            const { selectedBackOrders, purchaseQuantity } = action.payload;
+            const totalBackordersQuantity = selectedBackOrders.reduce((sum, order) => sum + order.quantity, 0);
+            
+            state.productSelected = {
+                ...state.productSelected,
+                selectedBackOrders, // Solo contiene {id, quantity}
+                purchaseQuantity,
+                quantity: Math.max(0, purchaseQuantity - totalBackordersQuantity)
+            };
+        },
+        setPurchaseQuantity: (state, action) => {
+            const quantity = action.payload;
+            const totalBackordersQuantity = state.productSelected.selectedBackOrders.reduce((sum, order) => sum + order.quantity, 0);
+            
+            state.productSelected = {
+                ...state.productSelected,
+                purchaseQuantity: quantity,
+                quantity: Math.max(0, quantity - totalBackordersQuantity)
+            };
+        },
+        clearSelectedBackOrders: (state) => {
+            state.productSelected = {
+                ...state.productSelected,
+                selectedBackOrders: [],
+                purchaseQuantity: state.productSelected.quantity,
+                quantity: state.productSelected.quantity
+            };
+        }
     }
 })
 
@@ -157,7 +235,8 @@ const calculateUnitCost = (product) => {
 };
 
 const calculateSubTotal = (product) => {
-    const quantity = Number(product.quantity) || 0;
+    console.log(product)
+    const quantity = Number(product.purchaseQuantity || product.quantity) || 0;
     const unitCost = calculateUnitCost(product);
     return quantity * unitCost;
 };
@@ -178,7 +257,10 @@ export const {
     addAttachmentToPurchase,
     deleteProductFromPurchase,
     deleteReceiptImageFromPurchase,
-    handleSetFilterOptions
+    handleSetFilterOptions,
+    setSelectedBackOrders,
+    setPurchaseQuantity,
+    clearSelectedBackOrders
 } = addPurchaseSlice.actions;
 
 //selectors

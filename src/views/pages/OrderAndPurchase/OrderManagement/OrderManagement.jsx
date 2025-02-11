@@ -14,6 +14,7 @@ import { selectUser } from '../../../../features/auth/userSlice'
 import { useListenOrder } from '../../../../hooks/useOrders'
 import Loader from '../../../component/Loader/Loader'
 import { fbUpdateOrder } from '../../../../firebase/order/fbUpdateOrder'
+import { getBackOrderAssociationId } from '../PurchaseManagement/PurchaseManagement'
 
 const Container = styled.div`
   display: grid;
@@ -51,6 +52,12 @@ const OrderManagement = () => {
   const { order: orderData } = useSelector(selectOrderState);
 
   const { ORDERS } = ROUTES_PATH.ORDER_TERM;
+
+  const backOrderAssociationId = getBackOrderAssociationId({
+    mode,
+    orderId: orderData.id,
+    operationType: 'order',
+  })
 
   const [localFiles, setLocalFiles] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -99,7 +106,6 @@ const OrderManagement = () => {
 
   useEffect(() => {
     if (mode === 'update' && fetchedOrder) {
-      console.log("Fetched order:--------", fetchedOrder);
       dispatch(setOrder(fetchedOrder));
     }
   }, [mode, fetchedOrder, dispatch]);
@@ -116,7 +122,7 @@ const OrderManagement = () => {
       if (mode === 'create') {
         await addOrder({ user, order: submitData, localFiles });
       } else if (mode === 'update') {
-         await fbUpdateOrder({ user, order: submitData, localFiles });
+        await fbUpdateOrder({ user, order: submitData, localFiles });
       }
       message.success('Pedido guardado exitosamente');
       dispatch(cleanOrder());
@@ -148,11 +154,13 @@ const OrderManagement = () => {
         <Body>
           <Form layout='vertical'>
             <GeneralForm
+              mode={mode}
               files={localFiles}
               attachmentUrls={orderData.attachmentUrls || []}
               onAddFiles={handleAddFiles}
               onRemoveFiles={handleRemoveFile}
               errors={errors}
+              backOrderAssociationId={backOrderAssociationId}
             />
           </Form>
         </Body>

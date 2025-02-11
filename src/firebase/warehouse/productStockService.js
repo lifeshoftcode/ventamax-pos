@@ -264,6 +264,7 @@ export const listenAllProductStock = (user, productId, callback) => {
     const q = query(
       productStockCollectionRef,
       where('productId', '==', productId),
+      where('status', '==', 'active'),
       where('isDeleted', '==', false)
     );
 
@@ -303,7 +304,8 @@ export const listenAllProductStockByLocation = (user, location, callback) => {
     const q = query(
       productStockCollectionRef,
       where('location', '==', location),
-      where('isDeleted', '==', false)
+      where('isDeleted', '==', false),
+      where('status', '==', 'active')
     );
 
     return onSnapshot(
@@ -436,7 +438,8 @@ export const getProductStockByProductId = async (
   const q = query(
     productStockCollectionRef,
     where('isDeleted', '==', false),
-    where('productId', '==', productId)
+    where('productId', '==', productId),
+    where('status', '==', 'active')
   );
 
   const snapshot = await getDocs(q);

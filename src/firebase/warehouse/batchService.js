@@ -34,6 +34,7 @@ export const createBatch = async (user, batchData) => {
       isDeleted: false,
       createdAt: serverTimestamp(),
       createdBy: user.uid,
+      status: 'active',
       updatedAt: serverTimestamp(),
       updatedBy: user.uid,
     };
@@ -74,7 +75,8 @@ export const getAllBatches = async (user, productID = null) => {
       q = query(
         batchCollectionRef,
         where('productId', '==', productID),
-        where('audit.isDeleted', '==', null)
+        where('isDeleted', '==', false),
+        where('status', '==', 'active')
       );
     } else {
       // Sin filtro de productId, obtener todos los batches no eliminados
@@ -216,6 +218,36 @@ export const updateBatch = async (user, data) => {
     throw error;
   }
 };
+
+// Función para revisar el estado del batch en función de los productStocks asociados
+export async function updateBatchStatusForProductStock(businessID, batchId, productId) {
+  // Consulta todos los productStock que pertenecen a ese batch y producto
+  const productStockQuery = query(
+    collection(db, "businesses", businessID, "productsStock"),
+    where("isDeleted", "==", false),
+    where("status", "==", "active"),
+    where("batchId", "==", batchId),
+    where("productId", "==", productId),
+    where("quantity", ">", 0)
+  );
+
+  const querySnapshot = await getDocs(productStockQuery);
+
+  let totalQuantity = 0;
+  querySnapshot.forEach((docSnap) => {
+    const data = docSnap.data();
+    totalQuantity += data.quantity || 0;
+  });
+
+  // Referencia al documento del batch
+  const batchRef = doc(db, "businesses", businessID, "batches", batchId);
+
+  if (totalQuantity <= 0) {
+    // Si en conjunto no hay stock, se marca el batch como inactivo
+    await updateDoc(batchRef, { quantity: 0, status: "inactive", updatedAt: serverTimestamp() });
+  }
+}
+
 
 // Marcar un batch como eliminado
 export const deleteBatch = async ({ user, batchId, movement }) => {

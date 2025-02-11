@@ -2,13 +2,17 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // Add this import
 import styled from 'styled-components';
 import { Button, Input, DatePicker, Form, Dropdown } from 'antd';
-import { DeleteOutlined, SwapOutlined, ClearOutlined, SearchOutlined, UnorderedListOutlined, EllipsisOutlined, SortAscendingOutlined } from "@ant-design/icons";
+import { DeleteOutlined, SwapOutlined, ClearOutlined, SearchOutlined, UnorderedListOutlined, EllipsisOutlined, SortAscendingOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { useListenProductsStockByLocation } from '../../../../../../../../firebase/warehouse/productStockService';
 import DateUtils from '../../../../../../../../utils/date/dateUtils';
 import { ProductMovementModal } from './ProductMovementModal';
 import { AdvancedTable } from '../../../../../../../templates/system/AdvancedTable/AdvancedTable';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { openDeleteModal } from '../../../../../../../../features/productStock/deleteProductStockSlice';
+import BatchViewModal from './BatchViewModal';
+import { getBatchById } from '../../../../../../../../firebase/warehouse/batchService';
+import { selectUser } from '../../../../../../../../features/auth/userSlice';
+
 
 const Container = styled.div`
   margin-bottom: 24px;
@@ -102,6 +106,7 @@ const SortButton = styled(Button)`
 export const InventoryTable = ({ currentNode, searchTerm, setSearchTerm, setDateRange, location, warehouseData }) => {
   const navigate = useNavigate(); // Add this hook
   const dispatch = useDispatch();
+  const user = useSelector(selectUser);
   const { data: productsStock, loading } = useListenProductsStockByLocation(location);
   const [moveModalVisible, setMoveModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -110,6 +115,8 @@ export const InventoryTable = ({ currentNode, searchTerm, setSearchTerm, setDate
     field: null,
     order: null
   });
+  const [batchModalVisible, setBatchModalVisible] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState(null);
 
   const handleMove = (record) => {
     setSelectedProduct(record); // Pass the entire record instead of just the product name
@@ -117,8 +124,6 @@ export const InventoryTable = ({ currentNode, searchTerm, setSearchTerm, setDate
   };
 
   const handleMoveSubmit = (values) => {
-    console.log('Movement values:', values);
-    // Implement your movement logic here
     setMoveModalVisible(false);
   };
 
@@ -144,6 +149,14 @@ export const InventoryTable = ({ currentNode, searchTerm, setSearchTerm, setDate
       batchId: record.batchId,
       actionType: 'productStock',
     }));
+  };
+
+  const handleViewBatch = async (batchId) => {
+    const batchData = await getBatchById(user, batchId);
+    if (batchData) {
+      setSelectedBatch(batchData);
+      setBatchModalVisible(true);
+    }
   };
 
   const getActionMenu = (record) => ({
@@ -261,6 +274,22 @@ export const InventoryTable = ({ currentNode, searchTerm, setSearchTerm, setDate
       Header: "Batch",
       accessor: "batch",
       minWidth: "150px",
+      cell: ({ value }) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>{"# " + value.batchNumberId || 'N/A'}</span>
+          {value.batchId && (
+            <Button
+              type="text"
+              size="small"
+              icon={<InfoCircleOutlined />}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleViewBatch(value.batchId);
+              }}
+            />
+          )}
+        </div>
+      ),
     },
     {
       Header: "Fecha de Vencimiento",
@@ -319,7 +348,7 @@ export const InventoryTable = ({ currentNode, searchTerm, setSearchTerm, setDate
         productName: stock.productName || 'Producto sin nombre', // Changed from product to productName
         productId: stock.productId || '',
         quantity: stock.quantity || 0,
-        batch: stock.batchNumberId || 'N/A',
+        batch: { batchNumberId: stock.batchNumberId || 'N/A', batchId: stock.batchId || null },
         batchId: stock.batchId || null,
         actions: stock, // Pass the entire stock object
         expiryDate: stock?.expirationDate ? DateUtils.convertMillisToISODate(stock?.expirationDate) : 'N/A',
@@ -390,6 +419,12 @@ export const InventoryTable = ({ currentNode, searchTerm, setSearchTerm, setDate
         onOk={handleMoveSubmit}
         product={selectedProduct}
         currentNode={currentNode}
+      />
+
+      <BatchViewModal
+        visible={batchModalVisible}
+        onClose={() => setBatchModalVisible(false)}
+        batchData={selectedBatch}
       />
     </>
   );

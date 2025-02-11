@@ -86,6 +86,7 @@ const PURCHASE_TERM = {
     PURCHASES_CREATE: '/purchases/create',
     PURCHASES_UPDATE: '/purchases/update/:id',
     PURCHASES_COMPLETE: '/purchases/complete/:id',
+    BACKORDERS: '/backorders',  // Añadida esta línea
 }
 const ORDER_TERM = {
     ORDERS: '/orders',

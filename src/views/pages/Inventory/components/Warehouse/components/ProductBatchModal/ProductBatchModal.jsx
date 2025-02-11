@@ -234,7 +234,6 @@ export function ProductBatchModal() {
             }
         >
             <div className="search-container">
-              {JSON.stringify(products.length)}
                 <Input
                     placeholder="Buscar por número de lote o ubicación..."
                     prefix={<SearchOutlined />}

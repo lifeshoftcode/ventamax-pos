@@ -25,6 +25,7 @@ export const PageTransition = ({ children }) => {
       initial="initial"
       animate="animate"
       exit="exit"
+      style={{ overflow: 'hidden' }}
       variants={pageTransition}
       transition={{ duration: 0.5 }}
     >

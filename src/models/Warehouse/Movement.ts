@@ -15,6 +15,7 @@ export enum MovementReason {
     Expired = 'expired',    // Nuevo
     Lost = 'lost', 
     Transfer = 'transfer',
+    BackOrder = 'backorder',
 }
 
 export interface InventoryMovement extends AuditInfo {

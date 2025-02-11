@@ -10,6 +10,7 @@ import { useDispatch } from 'react-redux'
 import { useListenProductsStockByLocation } from '../../../../../firebase/warehouse/productStockService'
 import { navigateWarehouse } from '../../../../../features/warehouse/warehouseSlice'
 import { useDefaultWarehouse } from '../../../../../firebase/warehouse/warehouseService'
+import InventoryMenu from './components/DetailView/InventoryMenu'
 
 const makePathFromParams = (params) => {
   const path = [];
@@ -28,7 +29,6 @@ export const Warehouse = () => {
 
   const path = makePathFromParams(params)
 
-console.log('data', data)
   useListenProductsStockByLocation(path)
 
   const dispatch = useDispatch()
@@ -84,6 +84,7 @@ console.log('data', data)
   return (
     <Container>
       <MenuApp sectionName={"Almacenes"} />
+      <InventoryMenu />
       <ResizableSidebar
         Sidebar={memoizedSidebar}
       >
@@ -95,7 +96,7 @@ console.log('data', data)
 
 const Container = styled.div` 
   display: grid;
-  grid-template-rows: min-content 1fr;
+  grid-template-rows: min-content min-content 1fr;
   height: 100vh;
   overflow-y: hidden; 
 `

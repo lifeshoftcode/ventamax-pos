@@ -85,7 +85,8 @@ async function storeSessionToken(user, userDoc) {
     await setDoc(doc(db, 'sessionTokens', token), { 
         userId: userDoc.id,
         expiresAt,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        lastActivity: serverTimestamp()
     });
     
     localStorage.setItem('sessionToken', token);

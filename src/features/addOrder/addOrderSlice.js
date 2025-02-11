@@ -20,12 +20,20 @@ const EmptyOrder = {
     receiptImgUrl: "",
     total: 0,
 }
+
+// Actualizar EmptyProductSelected para incluir propiedades usadas en la lógica de backorders y cálculos
 const EmptyProductSelected = {
-    name: "",
     id: "",
+    name: "",
     quantity: 0,
-    baseCost: 0,
+    purchaseQuantity: 0,        // Cantidad total a comprar
+    selectedBackOrders: [],     // Solo contendrá {id, quantity}
+    unitMeasurement: '',        // agregado
+    baseCost: 0,            // agregado
+    unitCost: 0,                // agregado
+    subtotal: 0                 // agregado
 }
+
 const initialState = {
     productSelected: EmptyProductSelected,
     order: EmptyOrder
@@ -91,14 +99,34 @@ const addOrderSlice = createSlice({
             state.order = EmptyOrder
             state.mode = "add"
         },
-        updateProduct: (state, actions) => {
-            const { value, index } = actions.payload;
-
-            state.order.replenishments[index] = {
-                ...state.order.replenishments[index],
+        updateProduct: (state, action) => {
+            const { value } = action.payload;
+            const productIndex = state.order.replenishments.findIndex(item => item.id === value.id);
+            if (productIndex === -1) return;
+            const currentProduct = state.order.replenishments[productIndex];
+            const selectedBackOrders = value.selectedBackOrders !== undefined 
+                ? value.selectedBackOrders 
+                : currentProduct.selectedBackOrders || [];
+            const totalBackordersQuantity = selectedBackOrders.reduce((sum, order) => sum + order.quantity, 0);
+            const purchaseQuantity = value.purchaseQuantity !== undefined 
+                ? value.purchaseQuantity 
+                : value.quantity !== undefined 
+                    ? value.quantity + totalBackordersQuantity 
+                    : currentProduct.purchaseQuantity;
+            const quantity = value.quantity !== undefined 
+                ? value.quantity 
+                : Math.max(0, purchaseQuantity - totalBackordersQuantity);
+            const updatedProduct = {
+                ...currentProduct,
                 ...value,
-                unitCost: calculateUnitCost(value),
-                subtotal: calculateSubTotal(value) // Cambiado de subTotal a subtotal
+                purchaseQuantity,
+                quantity,
+                selectedBackOrders
+            };
+            state.order.replenishments[productIndex] = {
+                ...updatedProduct,
+                unitCost: calculateUnitCost(updatedProduct),
+                subtotal: calculateSubTotal(updatedProduct)
             };
         },
         addAttachmentToOrder: (state, actions) => {
@@ -117,9 +145,53 @@ const addOrderSlice = createSlice({
                 (item) => item.id !== id
             );
         },
-
+        setSelectedBackOrders: (state, action) => {
+            const { selectedBackOrders, purchaseQuantity } = action.payload;
+            const totalBackordersQuantity = selectedBackOrders.reduce((sum, order) => sum + order.quantity, 0);
+            
+            state.productSelected = {
+                ...state.productSelected,
+                selectedBackOrders, // Solo contiene {id, quantity}
+                purchaseQuantity,
+                quantity: Math.max(0, purchaseQuantity - totalBackordersQuantity)
+            };
+        },
+        setPurchaseQuantity: (state, action) => {
+            const quantity = action.payload;
+            const totalBackordersQuantity = state.productSelected.selectedBackOrders.reduce((sum, order) => sum + order.quantity, 0);
+            
+            state.productSelected = {
+                ...state.productSelected,
+                purchaseQuantity: quantity,
+                quantity: Math.max(0, quantity - totalBackordersQuantity)
+            };
+        },
+        clearSelectedBackOrders: (state) => {
+            state.productSelected = {
+                ...state.productSelected,
+                selectedBackOrders: [],
+                purchaseQuantity: state.productSelected.quantity,
+                quantity: state.productSelected.quantity
+            };
+        }
     }
 })
+
+// Agregar funciones auxiliares para cálculos (idénticas a las de addPurchaseSlice)
+const calculateUnitCost = (product) => {
+    const baseCost = Number(product.baseCost) || 0;
+    const tax = (baseCost * (Number(product.taxPercentage) || 0)) / 100;
+    const freight = Number(product.freight) || 0;
+    const otherCosts = Number(product.otherCosts) || 0;
+    return baseCost + tax + freight + otherCosts;
+};
+
+const calculateSubTotal = (product) => {
+    const quantity = Number(product.purchaseQuantity || product.quantity) || 0;
+    const unitCost = calculateUnitCost(product);
+    return quantity * unitCost;
+};
+
 export const {
     setOrder,
     cleanOrder,
@@ -132,6 +204,9 @@ export const {
     getInitialCost,
     AddProductToOrder,
     setProductSelected,
+    setSelectedBackOrders,
+    setPurchaseQuantity,
+    clearSelectedBackOrders,
 } = addOrderSlice.actions
 
 export const selectProductSelected = state => state.addOrder.productSelected;

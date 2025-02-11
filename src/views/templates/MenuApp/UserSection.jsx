@@ -24,7 +24,6 @@ export const UserSection = () => {
   const handleLogout = () => {
     dispatch(logout());
     fbSignOut();
-    auth.signOut();
     navigate('/', { replace: true });
   }
 

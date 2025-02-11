@@ -1,35 +1,28 @@
 import * as antd from 'antd';
 import { useSelector } from 'react-redux';
 import { selectUser } from '../../../../features/auth/userSlice';
-import { Receipt } from '../../../pages/checkout/Receipt';
 import { useState } from 'react';
 import { ProcessViewer } from '../../../../components/ProcessViewer';
-
-// import { useGetWarehouseData } from '../../../../hooks/warehouse/useGetWarehouseData';
-// import { fbFixProductsWithoutId } from '../../../../firebase/products/fbFixProductsWithoutId';
-// import { GridVirtualizerFixed } from './ProductList';
-import PurchaseManagement from '../../../pages/OrderAndPurchase/PurchaseManagement/PurchaseManagement';
 import styled from 'styled-components';
-import FileProcessor from './RncFileUpload';
-import RncSearch from './RncSearch';
-import OrderManagement from '../../../pages/OrderAndPurchase/OrderManagement/OrderManagement';
-import { fbInitializedProductInventory } from '../../../../firebase/products/fbInitializeProductInventory';
 import { db } from '../../../../firebase/firebaseconfig';
 import { collection, getDocs, query, writeBatch } from 'firebase/firestore';
+import { fbInitializedProductInventory } from '../../../../firebase/products/fbInitializeProductInventory';
+import { fbInitializedProductInventoryForAllBusinesses } from '../../../../firebase/products/fbInitializedProductInventoryForAllBusinesses';
 
 const { FloatButton } = antd
 
 const handleDeleteProducts = async (user) => {
   try {
-    const productsRef = collection(db, `businesses/${user.businessID}/products`);
+    if (!user?.businessID) return;
+    const productsRef = collection(db, `businesses/${user?.businessID}/products`);
     const querySnapshot = await getDocs(productsRef);
-    
+
     if (querySnapshot.empty) {
       console.log("No hay productos para eliminar");
       return;
     }
 
-    const batch = writeBatch(db);
+    let batch = writeBatch(db);
     let deletedCount = 0;
     const batchLimit = 500; // Límite máximo de operaciones por batch
 
@@ -63,7 +56,8 @@ export const Prueba = () => {
   const handleSubmit = async () => {
     try {
       // await fbInitializedProductInventory(user, setProcessState);
-      await handleDeleteProducts(user);
+      await fbInitializedProductInventoryForAllBusinesses(setProcessState);
+      // await handleDeleteProducts(user);
     } catch (error) {
       console.error(error);
     } finally {
@@ -73,7 +67,7 @@ export const Prueba = () => {
 
   return (
     <Container>
-      {user.businessID}
+      {user?.businessID}
       {/* <FileProcessor />
       <RncSearch />  */}
 

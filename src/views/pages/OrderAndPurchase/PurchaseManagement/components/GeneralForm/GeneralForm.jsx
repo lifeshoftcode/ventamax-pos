@@ -1,6 +1,5 @@
 import { Form, Input, Select, DatePicker, message, Modal } from 'antd'
 import { useCallback, useMemo, useState, useEffect, useRef } from 'react'
-import debounce from 'lodash/debounce'
 import dayjs from 'dayjs'
 import styled from 'styled-components'
 import EvidenceUpload from '../EvidenceUpload/EvidenceUpload'
@@ -21,17 +20,21 @@ import { OPERATION_MODES } from '../../../../../../constants/modes'
 import { toggleProviderModal } from '../../../../../../features/modals/modalSlice'
 import { normalizeText } from '../../../../../../utils/text'
 import { selectUser } from '../../../../../../features/auth/userSlice'
+import BackOrdersModal from '../BackOrdersModal';
+import { useBackOrdersByProduct } from '../../../../../../firebase/warehouse/backOrderService';
 
 const { confirm } = Modal;
 
-const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors }) => {
+const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors, backOrderAssociationId }) => {
     const dispatch = useDispatch();
     const user = useSelector(selectUser);
     const [selectedProvider, setSelectedProvider] = useState(null);
     const [providerSearch, setProviderSearch] = useState('');
-    const [providerDrawerVisible, setProviderDrawerVisible] = useState(false);
     const unsubscribeRef = useRef(null);
     const { providers = [], loading: providersLoading } = useFbGetProviders();
+    const [isBackOrderModalVisible, setIsBackOrderModalVisible] = useState(false);
+    const [selectedProductForBackorders, setSelectedProductForBackorders] = useState(null);
+    const { backOrders = [], loading: backOrdersLoading } = useBackOrdersByProduct( selectedProductForBackorders?.id);
 
     const {
         invoiceNumber,
@@ -44,7 +47,7 @@ const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors 
         paymentAt,
         note
     } = useSelector(selectPurchase);
-    console.log('-----',providerId)
+
     const { data: orders = [], loading: orderLoading } = useFbGetPendingOrdersByProvider(providerId);
 
     const conditionData = getTransactionConditionById(condition);
@@ -94,7 +97,7 @@ const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors 
         };
     }, [selectedProvider?.id]);
 
-    const filteredProviders = useMemo(() => 
+    const filteredProviders = useMemo(() =>
         providerSearch
             ? providers.filter(({ provider }) =>
                 normalizeText(provider.name).includes(normalizeText(providerSearch)) ||
@@ -123,7 +126,7 @@ const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors 
             setSelectedProvider(null);
             dispatch(setPurchase({ provider: null }));
         }
-        setProviderDrawerVisible(false);
+     
         setProviderSearch('');
     };
 
@@ -133,7 +136,7 @@ const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors 
 
     const handleEditProvider = (provider) => {
         dispatch(toggleProviderModal({ mode: OPERATION_MODES.UPDATE.id, data: provider }));
-        setProviderDrawerVisible(false);
+      
     };
 
     const handleProductSave = (productData) => {
@@ -147,8 +150,8 @@ const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors 
         dispatch(updateProduct({ value: updatedValues, index }));
     };
 
-    const handleRemoveProduct = (index) => {
-        dispatch(deleteProductFromPurchase({ id: purchase.replenishments[index].id }));
+    const handleRemoveProduct = (productId) => {
+        dispatch(deleteProductFromPurchase({ id: productId }));
     };
 
     const handleInputChange = (field, value) => {
@@ -165,9 +168,72 @@ const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors 
         dispatch(setPurchase({ condition: value }));
     };
 
-     const handleNoteChange = useCallback((value) => {
+    const handleNoteChange = useCallback((value) => {
         dispatch(setPurchase({ note: value }));
     }, [dispatch]);
+
+    const handleQuantityClick = async (record) => {
+        
+        // Asegurarse de que el registro tenga toda la información necesaria
+        const fullProduct = replenishments.find(p => p.id === record.id);
+        if (!fullProduct) {
+            console.error('No se encontró el producto completo:', record);
+            return false;
+        }
+        
+        setSelectedProductForBackorders(fullProduct);
+        
+        // Si ya tiene backorders seleccionados, mostrar modal directamente
+        if (fullProduct.selectedBackOrders?.length > 0) {
+            setIsBackOrderModalVisible(true);
+            return true;
+        }
+
+        try {
+            const existingBackorders = backOrders.filter(bo => bo.productId === fullProduct.id);
+
+            if (existingBackorders && existingBackorders.length > 0) {
+                setIsBackOrderModalVisible(true);
+                return true;
+            }
+        } catch (error) {
+            console.error('Error al verificar backorders:', error);
+            message.error('Error al verificar backorders');
+        }
+
+
+        const updatedValues = {
+            purchaseQuantity: fullProduct.quantity || 0,
+            selectedBackOrders: []
+        };
+        handleProductUpdate({ index: fullProduct.key, ...updatedValues });
+        return false;
+    };
+
+    const handleBackOrderModalConfirm = (backOrderData) => {
+        const totalBackOrderQuantity = backOrderData.selectedBackOrders.reduce((sum, bo) => sum + bo.quantity, 0);
+
+        const purchaseQuantity = backOrderData.purchaseQuantity;
+
+        const quantity = Math.max(0, purchaseQuantity - totalBackOrderQuantity);
+
+        const updatedValues = {
+            ...backOrderData,
+            selectedBackOrders: backOrderData.selectedBackOrders,
+            purchaseQuantity: purchaseQuantity,
+            quantity: quantity
+        };
+
+        handleProductUpdate({ ...updatedValues });
+        setIsBackOrderModalVisible(false);
+        setSelectedProductForBackorders(null);
+    };
+
+    const handleBackOrderModalCancel = () => {
+        setIsBackOrderModalVisible(false);
+        setSelectedProductForBackorders(null);
+    };
+
 
     return (
         <>
@@ -198,11 +264,13 @@ const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors 
             <AddProductForm
                 onSave={handleProductSave}
                 onClear={clearAddProductForm}
+                backOrderAssociationId={backOrderAssociationId}
             />
             <ProductsTable
                 products={replenishments}
                 onEditProduct={handleProductUpdate}
                 removeProduct={handleRemoveProduct}
+                onQuantityClick={handleQuantityClick}
             />
             <TotalsSummary
                 replenishments={replenishments}
@@ -264,6 +332,19 @@ const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors 
                     onRemoveFiles={onRemoveFiles}
                 />
             </div>
+            {/* Agregar modal para edición de backorders desde la tabla */}
+            {selectedProductForBackorders && (
+                <BackOrdersModal
+                    backOrders={backOrders}
+                    isVisible={isBackOrderModalVisible}
+                    onCancel={handleBackOrderModalCancel}
+                    onConfirm={handleBackOrderModalConfirm}
+                    initialSelectedBackOrders={selectedProductForBackorders.selectedBackOrders || []}
+                    initialPurchaseQuantity={selectedProductForBackorders.purchaseQuantity || 0}
+                    productId={selectedProductForBackorders.id}
+                    backOrderAssociationId={backOrderAssociationId}
+                />
+            )}
         </>
     );
 }

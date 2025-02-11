@@ -1,9 +1,6 @@
-import { useSelector } from 'react-redux'
-import { selectUser } from '../../../../../../features/auth/userSlice'
-import { fbGetPendingOrders } from '../../../../../../firebase/order/fbGetPedingOrder'
 import { AdvancedTable } from '../../../../../templates/system/AdvancedTable/AdvancedTable'
 import { DateTime } from 'luxon';
-import { columns, filterConfig } from './tableConfig'
+import { columns } from './tableConfig'
 import { calculateOrderTotals } from '../../../OrderManagement/utils/orderCalculationsUtil';
 
 const calculatePaymentDate = (createdAt, conditionId) => {
@@ -48,12 +45,11 @@ export const calculateTotalNewStockFromReplenishments = (replenishments) => {
 
 export const OrdersTable = ({ orders = [], loading = true }) => {
 
-
-
   const data = orders.map((data) => {
     const createdAt = data?.createdAt || null;
     const paymentDate = createdAt ? calculatePaymentDate(createdAt, data?.condition) : null;
     const { grandTotal } = calculateOrderTotals(data.replenishments);
+
     return {
       number: data?.numberId,
       status: data?.status,
@@ -76,8 +72,6 @@ export const OrdersTable = ({ orders = [], loading = true }) => {
       columns={columns}
       data={data}
       loading={loading}
-    // filterUI
-    // filterConfig={filterConfig}
     />
   )
 }

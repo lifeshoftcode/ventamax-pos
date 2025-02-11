@@ -8,10 +8,15 @@ import {
 } from '@ant-design/icons';
 import { ROUTES } from "../../../../../../routes/routesName";
 import { replacePathParams } from "../../../../../../routes/replacePathParams";
-
+import { useDialog } from "../../../../../../Context/Dialog/DialogContext";
+import { useSelector } from "react-redux";
+import { selectUser } from "../../../../../../features/auth/userSlice";
+import { fbDeleteOrder } from "../../../../../../firebase/order/fbDeleteOrder";
 
 function ActionButtons({ order }) {
   const navigate = useNavigate();
+  const { setDialogConfirm } = useDialog();
+  const user = useSelector(selectUser);
 
   const { ORDERS_CONVERT, ORDERS_UPDATE } = ROUTES.ORDER_TERM
 
@@ -23,6 +28,16 @@ function ActionButtons({ order }) {
   const handleUpdatePurchase = () => {
     const path = replacePathParams(ORDERS_UPDATE, order.id);
     navigate(path);
+  };
+
+  const handleDeleteOrder = () => {
+    setDialogConfirm({
+      title: 'Cancelar pedido',
+      isOpen: true,
+      type: 'error',
+      message: '¿Está seguro que desea cancelar este pedido?',
+      onConfirm: () => fbDeleteOrder(user, order.id),
+    });
   };
 
   if(order.status !== 'pending' ){
@@ -51,10 +66,10 @@ function ActionButtons({ order }) {
       />
       <ActionIcon
         icon={<DeleteOutlined />}
-        tooltip="Cancelar compra"
+        tooltip="Cancelar pedido"
         color="#555"
         hoverColor="#ff4d4f"
-        onClick={order.onCancel}
+        onClick={handleDeleteOrder}
       />
     </div>
   );
