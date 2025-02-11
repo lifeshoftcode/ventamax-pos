@@ -1,67 +1,130 @@
-import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { ActionIcon } from "../../../../../../config/statusActionConfig";
 import { getOrderConditionByID, getOrderStateByID } from "../../../../../../constants/orderAndPurchaseState";
-import { setNote } from "../../../../../../features/noteModal/noteModalSlice";
-import { StatusIndicatorDot } from "../StatusIndicatorDot/StatusIndicatorDot";
-import { convertMillisToDate } from "../../../../../../utils/date/formatDate";
-import { DateTime } from "luxon";
-import { useFormatPrice } from "../../../../../../hooks/useFormatPrice";
-import { ActionsButtonsGroup } from "../../ListItem/ActionsButtonsGroup";
-import { Button, Tag } from "antd";
+import {
+  ShoppingCartOutlined,
+  EditOutlined,
+  DeleteOutlined,
+} from '@ant-design/icons';
+import { ROUTES } from "../../../../../../routes/routesName";
+import { replacePathParams } from "../../../../../../routes/replacePathParams";
+import { useDialog } from "../../../../../../Context/Dialog/DialogContext";
+import { useSelector } from "react-redux";
+import { selectUser } from "../../../../../../features/auth/userSlice";
+import { fbDeleteOrder } from "../../../../../../firebase/order/fbDeleteOrder";
 
-function NoteContainer({ value }) {
-  const dispatch = useDispatch();
+function ActionButtons({ order }) {
+  const navigate = useNavigate();
+  const { setDialogConfirm } = useDialog();
+  const user = useSelector(selectUser);
+
+  const { ORDERS_CONVERT, ORDERS_UPDATE } = ROUTES.ORDER_TERM
+
+  const handleCompletePurchase = () => {
+    const path = replacePathParams(ORDERS_CONVERT, order.id);
+    navigate(path);
+  };
+
+  const handleUpdatePurchase = () => {
+    const path = replacePathParams(ORDERS_UPDATE, order.id);
+    navigate(path);
+  };
+
+  const handleDeleteOrder = () => {
+    setDialogConfirm({
+      title: 'Cancelar pedido',
+      isOpen: true,
+      type: 'error',
+      message: '¿Está seguro que desea cancelar este pedido?',
+      onConfirm: () => fbDeleteOrder(user, order.id),
+    });
+  };
+
+  if(order.status !== 'pending' ){
+    return null;
+  }
+
   return (
-    <Button
-      onClick={() => dispatch(setNote({ note: value, isOpen: true }))}
-    >
-      Ver
-    </Button>
-  )
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      borderRadius: '8px',
+    }}>
+      <ActionIcon
+        icon={<ShoppingCartOutlined />}
+        tooltip="Completar compra 2"
+        color="#555"
+        hoverColor="#52c41a"
+        onClick={handleCompletePurchase}
+      />
+      <ActionIcon
+        icon={<EditOutlined />}
+        tooltip="Editar"
+        color="#555"
+        hoverColor="#faad14"
+        onClick={handleUpdatePurchase}
+      />
+      <ActionIcon
+        icon={<DeleteOutlined />}
+        tooltip="Cancelar pedido"
+        color="#555"
+        hoverColor="#ff4d4f"
+        onClick={handleDeleteOrder}
+      />
+    </div>
+  );
 }
+
 export const columns = [
   {
     Header: '#',
     accessor: 'number',
     minWidth: '50px',
     maxWidth: '50px',
+    keepWidth: true,
+    fixed: 'left',
   },
   {
-    Header: 'Est',
-    accessor: 'state',
-    minWidth: '50px',
-    maxWidth: '50px',
-    cell: ({ value }) => <StatusIndicatorDot color={value ? getOrderStateByID(value)?.color : null} />
+    Header: 'Estado',
+    accessor: 'status',
+    type: 'status',
+    maxWidth: '150px',
+    minWidth: '150px',
   },
   {
     Header: 'Proveedor',
+    minWidth: '150px',
     accessor: 'provider'
+  },
+  {
+    Header: 'Fecha Pedido',
+    accessor: 'createdAt',
+    maxWidth: '140px',
+    minWidth: '140px',
+    type: 'date'
+  },
+  {
+    Header: 'Fecha Pago',
+    accessor: 'paymentDate',
+    maxWidth: '140px',
+    minWidth: '140px',
+    type: 'dateStatus'
+  },
+  {
+    Header: 'Evidencia',
+    accessor: 'fileList',
+    maxWidth: '90px',
+    minWidth: '90px',
+    align: 'right',
+    type: 'file',
   },
   {
     Header: 'Nota',
     accessor: 'note',
-    cell: ({ value }) => (
-      <NoteContainer value={value} />
-    )
-  },
-  {
-    Header: 'F. Pedido',
-    accessor: 'createdAt',
-    cell: ({ value }) => <div>{convertMillisToDate(value)}</div>
-  },
-  {
-    Header: 'F. Entrega',
-    accessor: 'deliveryDate',
-    cell: ({ value }) => <div>{convertMillisToDate(value)}</div>
-  },
-  {
-    Header: 'F. Pago',
-    accessor: 'paymentDate',
-    cell: ({ value }) => {
-      const paymentDate = DateTime.fromMillis(value);
-      const now = DateTime.now();
-      const isDueOrPast = now >= paymentDate;
-      return (<Tag style={{ fontSize: "16px", padding: "5px" }} color={isDueOrPast ? 'error' : 'success'}>{convertMillisToDate(value)}</Tag>)
-    }
+    maxWidth: '70px',
+    minWidth: '70px',
+    keepWidth: true,
+    type: 'note',
   },
   {
     Header: 'Items',
@@ -69,7 +132,7 @@ export const columns = [
     align: 'right',
     minWidth: '80px',
     maxWidth: '80px',
-    cell: ({ value }) => <div>{value}</div>
+    type: 'badge'
   },
   {
     Header: 'Total',
@@ -77,13 +140,19 @@ export const columns = [
     align: 'right',
     minWidth: '120px',
     maxWidth: '120px',
-    cell: ({ value }) => <div>{useFormatPrice(value)}</div>
+    format: 'price',
+    type: 'badge'
   },
+
   {
     Header: 'Acción',
     accessor: 'action',
     align: 'right',
-    cell: ({ value }) => <ActionsButtonsGroup orderData={value} />,
+    keepWidth: true,
+    maxWidth: '120px',
+    minWidth: '120px',
+    fixed: 'right', // Fijamos las acciones a la derecha
+    cell: ({ value }) => <ActionButtons order={value} />,
 
   }
 ]

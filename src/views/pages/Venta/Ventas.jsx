@@ -11,7 +11,7 @@ import {
 
 import { selectCategoryGrouped } from '../../../features/setting/settingSlice'
 import { useGetProducts } from '../../../firebase/products/fbGetProducts'
-import { filterData } from '../../../hooks/search/useSearch'
+import useFilter from '../../../hooks/search/useSearch' // Cambiar importación
 import { addProduct, CancelShipping, toggleCart } from '../../../features/cart/cartSlice'
 import { useBarcodeScanner } from '../../../hooks/barcode/useBarcodeScanner'
 import { motion } from 'framer-motion'
@@ -25,6 +25,7 @@ import { clearTaxReceiptData } from '../../../features/taxReceipt/taxReceiptSlic
 import { deleteClient } from '../../../features/clientCart/clientCartSlice.js'
 import { Helmet } from 'react-helmet-async'
 import { ClientSelector } from '../../component/contact/ClientControl/ClientSelector.jsx'
+import { ProductBatchModal } from '../Inventory/components/Warehouse/components/ProductBatchModal/ProductBatchModal.jsx'
 
 export const Sales = () => {
   const [searchData, setSearchData] = useState('')
@@ -82,7 +83,7 @@ export const Sales = () => {
 
   useBarcodeScanner(products, checkBarcode);
 
-  const productFiltered = filterData(products, searchData)
+  const productFiltered = useFilter(products, searchData)
   const filterProductsByVisibility = productFiltered.filter((product) => product.isVisible !== false);
 
   useEffect(() => {
@@ -117,6 +118,7 @@ export const Sales = () => {
       </ProductContainer>
       <Cart />
       <InvoicePanel />
+      <ProductBatchModal />
     </Container>
     </>
   )

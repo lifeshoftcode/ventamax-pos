@@ -14,7 +14,7 @@ export default function RowShelfForm() {
 
   const user = useSelector(selectUser);
   const { selectedWarehouse, selectedShelf, selectedRowShelf } = useSelector(selectWarehouse);
-  const { formData, isOpen } = useSelector(selectRowShelfState);
+  const { formData, isOpen, path } = useSelector(selectRowShelfState); // Destructurar 'path' desde el estado
 
   useEffect(() => {
     if (formData) {
@@ -22,7 +22,7 @@ export default function RowShelfForm() {
     } else {
       form.resetFields(); // Limpiar el formulario si es una nueva fila de estante
     }
-  }, [formData]);
+  }, [formData, form]); // Añadir 'form' a las dependencias
 
   const handleFinish = async (values) => {
     try {
@@ -32,32 +32,35 @@ export default function RowShelfForm() {
         capacity: parseInt(values.capacity, 10), // Convertir la capacidad a entero
       };
 
-      if (selectedRowShelf?.id) {
+      if (formData?.id) {
         await updateRowShelf(
           user,
           selectedWarehouse?.id,
           selectedShelf?.id,
-          selectedRowShelf?.id,
+          formData?.id,
           newRowShelf
         );
         message.success("Fila de estante actualizada con éxito.");
       } else {
         // Crear una nueva fila de estante
+        const warehouseId = path[0]?.id; // Utilizar 'path' para obtener el ID del almacén
+        const shelfId = path[1]?.id; // Utilizar 'path' para obtener el ID del estante
         await createRowShelf(
           user,
-          selectedWarehouse?.id,
-          selectedShelf?.id,
+          warehouseId,
+          shelfId,
           newRowShelf
         );
         message.success("Fila de estante creada con éxito.");
       }
 
-     handleClose();
+      handleClose();
     } catch (error) {
       console.error("Error al guardar la fila de estante: ", error);
       message.error("Error al guardar la fila de estante."); // Mostrar mensaje de error
     }
   };
+
   const handleClose = () => {
     dispatch(clearRowShelfForm());
     dispatch(closeRowShelfForm());

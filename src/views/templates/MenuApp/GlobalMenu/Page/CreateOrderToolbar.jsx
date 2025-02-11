@@ -8,24 +8,25 @@ import routesName from '../../../../../routes/routesName'
 
 import { AddProductButton } from '../../../system/Button/AddProductButton'
 import { OPERATION_MODES } from '../../../../../constants/modes'
-export const CreateOrderToolbar = ({ side = 'left', searchData, setSearchData }) => {
-    const { PURCHASES, ORDERS, ORDERS_CREATE  } = routesName.PURCHASE_TERM;
+export const CreateOrderToolbar = ({ side = 'left' }) => {
+    const { ORDERS_CREATE } = routesName.ORDER_TERM;
+
     const matchWithCashReconciliation = useMatch(ORDERS_CREATE)
 
     const navigate = useNavigate()
     const dispatch = useDispatch()
-   
+
 
     const user = useSelector(selectUser)
     const createMode = OPERATION_MODES.CREATE.id
-    
+
     return (
         matchWithCashReconciliation ? (
             <Container>
                 {
                     side === 'right' && (
                         <ButtonGroup>
-                               <AddProductButton />
+                            <AddProductButton />
                         </ButtonGroup>
                     )
                 }

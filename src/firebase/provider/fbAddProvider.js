@@ -1,11 +1,13 @@
 import { nanoid } from "nanoid"
 import { db } from "../firebaseconfig"
-import { doc, setDoc } from "firebase/firestore"
+import { doc, setDoc, Timestamp } from "firebase/firestore"
 export const fbAddProvider = async (provider, user) => {
     if(!user || !user?.businessID) return 
     provider = {
         ...provider,
-        id: nanoid(10)
+        id: nanoid(10),
+        createdAt: Timestamp.now(),
+        status: 'active'
     }
     try {
       const providerRef = doc(db, "businesses", user.businessID, 'providers', provider.id)

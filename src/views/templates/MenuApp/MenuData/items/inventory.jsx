@@ -7,7 +7,7 @@ const {
     INVENTORY_SERVICES,
     PRODUCT_IMAGES_MANAGER, 
     PRODUCT_OUTFLOW, 
-    WAREHOUSES,
+    WAREHOUSE,
     SERVICE_OUTFLOW
 } = ROUTES_NAME.INVENTORY_TERM
 
@@ -29,35 +29,35 @@ const inventory = [
                 group: 'inventoryItems'
             },
             {
+                title: 'Almacenes',
+                route: WAREHOUSE,
+                icon: icons.inventory.warehouse,
+                group: 'inventoryItems'
+            },
+            {
                 title: 'Categoría',
                 icon: icons.menu.unSelected.category,
                 route: CATEGORIES,
                 group: 'inventoryItems'
             },
-            // {
-            //     title: 'Almacenes',
-            //     route: WAREHOUSES,
-            //     icon: null,
-            //     group: 'inventoryItems'
-            // },
             {
                 title: 'Administrador de Imágenes',
                 route: PRODUCT_IMAGES_MANAGER,
                 icon: icons.inventory.multimediaManager,
                 group: 'inventoryItems'
             },
-            {
-                title: 'Administrar Servicios',
-                route: INVENTORY_SERVICES,
-                icon: icons.inventory.services,
-                group: 'inventoryServices'
-            },
-            {
-                title: 'Salidas de Productos',
-                route: PRODUCT_OUTFLOW,
-                icon: icons.inventory.productOutFlow,
-                group: 'inventoryItems'
-            }
+            // {
+            //     title: 'Administrar Servicios',
+            //     route: INVENTORY_SERVICES,
+            //     icon: icons.inventory.services,
+            //     group: 'inventoryServices'
+            // },
+            // {
+            //     title: 'Salidas de Productos',
+            //     route: PRODUCT_OUTFLOW,
+            //     icon: icons.inventory.productOutFlow,
+            //     group: 'inventoryItems'
+            // }
         ]
     },
 ]

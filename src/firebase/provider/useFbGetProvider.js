@@ -1,26 +1,43 @@
 import { useEffect, useState } from "react"
 import { db } from "../firebaseconfig"
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore"
+import { collection, onSnapshot } from "firebase/firestore"
+import { selectUser } from "../../features/auth/userSlice";
+import { useSelector } from "react-redux";
 
-export const useFbGetProviders = (user) => {
-  const [providers, setProviders] = useState([]);
+export const useFbGetProviders = () => {
+    const [providers, setProviders] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const user = useSelector(selectUser);
 
-  useEffect(() => {
-      if (!user || !user?.businessID) return;
+    useEffect(() => {
+        if (!user || !user?.businessID) {
+            setLoading(false);
+            return;
+        }
 
-      const providersRef = collection(db, 'businesses', user.businessID, 'providers');
+        const providersRef = collection(db, 'businesses', user.businessID, 'providers');
 
-      const fetchData = async () => {
-          const unsubscribe = onSnapshot(providersRef, (snapshot) => {
-              let providersArray = snapshot.docs.map((item) => item.data());
-              setProviders(providersArray);
-          });
+        const fetchData = async () => {
+            setLoading(true); 
 
-          return () => unsubscribe(); // Limpia la suscripción cuando el componente se desmonte
-      };
+            try {
+                const unsubscribe = onSnapshot(providersRef, (snapshot) => {
+                    let providersArray = snapshot.docs.map((item) => item.data());
+                    setProviders(providersArray);
+                    setLoading(false);
+                });
 
-      fetchData();
-      
-  }, [user]);
-  return { providers };
+                return () => unsubscribe();
+            } catch (error) {
+                console.error("Error fetching providers:", error);
+                setLoading(false);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [user]);
+
+    return { providers, loading };
 }

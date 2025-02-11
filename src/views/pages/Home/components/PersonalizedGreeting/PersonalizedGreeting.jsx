@@ -5,43 +5,65 @@ import { selectUser } from '../../../../../features/auth/userSlice';
 import { selectBusinessData } from '../../../../../features/auth/businessSlice';
 import { useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
-import { generateTextFromPrompt } from '../../../../../google-ai/generaTextFromPrompt';
-
-const Greeting = styled.h1`
-  font-size: 20px;
-  color: #333;
-`;
-
-const Name = styled.span`
-  color: #007BFF;
-  font-weight: bold;
-`;
-
+import { Modal } from 'antd';
 
 const PersonalizedGreeting = ({ greetingText = 'Bienvenid@' }) => {
-  const user = useSelector(selectUser)
-  const business = useSelector(selectBusinessData)
+  const user = useSelector(selectUser);
+  const business = useSelector(selectBusinessData);
 
-  const [personalizedMessage, setPersonalizedMessage] = useState(greetingText); // Estado para el mensaje generado
-  const [loading, setLoading] = useState(false); // Estado de carga
+  const showSessionInfo = () => {
+    const sessionExpires = localStorage.getItem('sessionExpires');
+    if (!sessionExpires) {
+      Modal.info({
+        title: 'Información de Sesión',
+        content: 'No hay información de sesión disponible',
+        centered: true,
+        okText: 'Cerrar'
+      });
+      return;
+    }
+
+    const expirationTime = parseInt(sessionExpires);
+    const now = Date.now();
+    const timeLeft = expirationTime - now;
+
+    const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+
+    Modal.info({
+      title: 'Tiempo Restante de Sesión',
+      content: (
+        <div>
+          <p>Tu sesión expirará en:</p>
+          <ul>
+            <li>{days} días</li>
+            <li>{hours} horas</li>
+            <li>{minutes} minutos</li>
+          </ul>
+        </div>
+      ),
+      centered: true,
+      okText: 'Cerrar'
+    });
+  };
+
+  const [personalizedMessage, setPersonalizedMessage] = useState(greetingText);
+  const [loading, setLoading] = useState(false);
 
   const realName = user?.realName?.trim();
   const username = user?.username?.trim();
-
   const nameToDisplay = realName || username || 'Usuario';
-  
-  const capitalizedFirstName = nameToDisplay;
 
   useEffect(() => {
-    // Aquí simplemente usamos el nombre del usuario y el saludo neutral.
     const message = `${greetingText}, ${nameToDisplay}`;
     setPersonalizedMessage(message);
   }, [nameToDisplay, greetingText]);
 
   return (
-    <div>
+    <div onClick={showSessionInfo} style={{ cursor: 'pointer' }}>
       <Typography variant='h3' disableMargins>
-      {loading ? "Cargando..." : `${personalizedMessage}, `} 
+        {loading ? "Cargando..." : `${personalizedMessage}, `} 
       </Typography>
       <BusinessName>
         {business && business?.name}
@@ -51,11 +73,9 @@ const PersonalizedGreeting = ({ greetingText = 'Bienvenid@' }) => {
 };
 
 PersonalizedGreeting.propTypes = {
-  name: PropTypes.string.isRequired,
   greetingText: PropTypes.string,
 };
 
 export default PersonalizedGreeting;
-const BusinessName = styled.div`
-  
-`
+
+const BusinessName = styled.div``;

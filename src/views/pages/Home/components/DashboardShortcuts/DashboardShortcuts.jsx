@@ -28,6 +28,14 @@ export const DashboardShortcuts = () => {
 }
 const Container = styled.div`
     display: grid;
-    gap: 1.4em;
+    gap: 1em;
+    max-width: 1440px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0.6em;
     
-    `
+    @media (max-width: 768px) {
+        gap: 0.8em;
+        padding: 0.4em;
+    }
+`

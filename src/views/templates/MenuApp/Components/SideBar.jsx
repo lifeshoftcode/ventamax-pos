@@ -118,7 +118,7 @@ export const SideBar = ({ isOpen }) => {
                     <Links>
                         {Object.keys(groupedLinks).map(group => (
                             <Group key={group}>
-                                {/* {groupedLinks[group].length > 1 && <GroupTitle>{sidebarTitleGroup[group]}</GroupTitle>} */}
+                                {/* <GroupTitle>{group}</GroupTitle> */}
                                 <MenuLinkList>
                                     {groupedLinks[group].map((item, index) => (
                                         <MenuLink item={item} key={index}></MenuLink>
@@ -183,13 +183,10 @@ const Links = styled.ul`
     gap: 0.6em;
 
     `
-const Group = styled.div`
-    /* background-color: ${props => props.theme.bg.shade}; */
-    /* border-radius: var(--border-radius); */
-    /* border: 1px solid rgb(0, 0, 0, 0.1); */
+export const Group = styled.div`
     overflow: hidden;
 `
-const MenuLinkList = styled.div`
+export const MenuLinkList = styled.div`
     background-color: ${props => props.theme.bg.shade};
     border-radius: var(--border-radius);
     padding: 0.2em;
@@ -218,4 +215,13 @@ const EmptyBox = styled.div`
     height: 2.75em;
     width:3em;
     background-color: ${props => props.theme.bg.color}; 
+    `
+
+const GroupTitle = styled.h4`
+    font-size: 1.1em;
+    padding: 0.4em 0.8em;
+    margin: 0;
+    background-color: ${props => props.theme.bg.color}; 
+    color: ${props => props.theme.text.color};
+    border-bottom: 1px solid rgb(0, 0, 0, 0.1);
     `

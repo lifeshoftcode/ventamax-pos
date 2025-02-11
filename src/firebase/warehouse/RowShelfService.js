@@ -16,19 +16,15 @@ import {
 } from 'firebase/firestore';
 
 // Obtener referencia de la colección de filas de un estante
-const getRowShelfCollectionRef = (businessId, warehouseId, shelfId) => {
-    if (typeof businessId !== 'string' || !businessId || typeof warehouseId !== 'string' || !warehouseId || typeof shelfId !== 'string' || !shelfId) {
-        console.error("Invalid parameter passed to getRowShelfCollectionRef", businessId, warehouseId, shelfId);
-        return;
-    }
-    return collection(db, 'businesses', businessId, 'warehouses', warehouseId, 'shelves', shelfId, 'rows');
+const getRowShelfCollectionRef = (businessId) => {
+    return collection(db, 'businesses', businessId, 'rows');
 };
 
 // Crear una nueva fila de estante
 const createRowShelf = async (user, warehouseId, shelfId, rowShelfData) => {
     const id = nanoid();
     try {
-        const rowShelfCollectionRef = getRowShelfCollectionRef(user.businessID, warehouseId, shelfId);
+        const rowShelfCollectionRef = getRowShelfCollectionRef(user.businessID);
         const rowShelfDocRef = doc(rowShelfCollectionRef, id);
 
         await setDoc(rowShelfDocRef, {
@@ -55,8 +51,13 @@ const createRowShelf = async (user, warehouseId, shelfId, rowShelfData) => {
 // Obtener todas las filas de un estante específico
 const getAllRowShelves = async (user, warehouseId, shelfId) => {
     try {
-        const rowShelfCollectionRef = getRowShelfCollectionRef(user.businessID, warehouseId, shelfId);
-        const querySnapshot = await getDocs(rowShelfCollectionRef);
+        const rowShelfCollectionRef = getRowShelfCollectionRef(user.businessID);
+        const q = query(
+            rowShelfCollectionRef,
+            where('warehouseId', '==', warehouseId),
+            where('shelfId', '==', shelfId)
+        );
+        const querySnapshot = await getDocs(q);
         const rows = querySnapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
@@ -71,8 +72,13 @@ const getAllRowShelves = async (user, warehouseId, shelfId) => {
 // Escuchar en tiempo real todas las filas de un estante específico
 const listenAllRowShelves = (user, warehouseId, shelfId, callback, onError) => {
     try {
-        const rowShelfCollectionRef = getRowShelfCollectionRef(user.businessID, warehouseId, shelfId);
-        const q = query(rowShelfCollectionRef, where('isDeleted', '==', false));
+        const rowShelfCollectionRef = getRowShelfCollectionRef(user.businessID);
+        const q = query(
+            rowShelfCollectionRef,
+            where('warehouseId', '==', warehouseId),
+            where('shelfId', '==', shelfId),
+            where('isDeleted', '==', false)
+        );
         return onSnapshot(
             q,
             (querySnapshot) => {
@@ -93,7 +99,7 @@ const listenAllRowShelves = (user, warehouseId, shelfId, callback, onError) => {
 // Actualizar una fila de estante específica
 const updateRowShelf = async (user, warehouseId, shelfId, rowId, updatedData) => {
     try {
-        const rowShelfDocRef = doc(db, 'businesses', user.businessID, 'warehouses', warehouseId, 'shelves', shelfId, 'rows', rowId);
+        const rowShelfDocRef = doc(db, 'businesses', user.businessID, 'rows', rowId);
         await updateDoc(rowShelfDocRef, {
             ...updatedData,
             updatedAt: serverTimestamp(),
@@ -109,7 +115,7 @@ const updateRowShelf = async (user, warehouseId, shelfId, rowId, updatedData) =>
 // Marcar una fila de estante como eliminada
 const deleteRowShelf = async (user, warehouseId, shelfId, rowId) => {
     try {
-        const rowShelfDocRef = doc(db, 'businesses', user.businessID, 'warehouses', warehouseId, 'shelves', shelfId, 'rows', rowId);
+        const rowShelfDocRef = doc(db, 'businesses', user.businessID, 'rows', rowId);
         await updateDoc(rowShelfDocRef, {
             isDeleted: true,
             deletedAt: serverTimestamp(),

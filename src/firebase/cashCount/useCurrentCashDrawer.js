@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { db } from "../firebaseconfig";
 import { collection, limit, onSnapshot, query, where } from "firebase/firestore";
 import { clearCashReconciliation, setCashReconciliation } from "../../features/cashCount/cashStateSlice";
-import { convertTimeStampToMillis } from "../../utils/date/convertTimeStampToDate";
+import DateUtils from "../../utils/date/dateUtils";
 import { getEmployeeData } from "./fbGetCashCounts/getEmployeeData";
 
 export const useCurrentCashDrawer = () => {
@@ -23,14 +23,14 @@ export const useCurrentCashDrawer = () => {
                 const docsPromise = querySnapshot.docs.map(async doc => {
                     const data = doc.data();
                     if(data.cashCount.opening.date) {
-                        data.cashCount.opening.date = convertTimeStampToMillis(data.cashCount.opening.date);
+                        data.cashCount.opening.date = DateUtils.convertTimestampToMillis(data.cashCount.opening.date);
                     }
                     
                     if (data.cashCount && data.cashCount.createdAt) {
-                        data.cashCount.createdAt = convertTimeStampToMillis(data.cashCount.createdAt);
+                        data.cashCount.createdAt = DateUtils.convertTimestampToMillis(data.cashCount.createdAt);
                     }
                     if (data.cashCount && data.cashCount.updatedAt) {
-                        data.cashCount.updatedAt = convertTimeStampToMillis(data.cashCount.updatedAt);
+                        data.cashCount.updatedAt = DateUtils.convertTimestampToMillis(data.cashCount.updatedAt);
                     }
                     const employeeData = await getEmployeeData(data.cashCount.opening.employee);
                     const approvalEmployeeData = await getEmployeeData(data.cashCount.opening.approvalEmployee);

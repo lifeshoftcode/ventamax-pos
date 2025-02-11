@@ -16,34 +16,24 @@ import {
 } from 'firebase/firestore';
 
 // Obtener referencia de la colección de segmentos de una fila de estante
-const getSegmentCollectionRef = (businessId, warehouseId, shelfId, rowShelfId) => {
-    if (
-        typeof businessId !== 'string' || !businessId ||
-        typeof warehouseId !== 'string' || !warehouseId ||
-        typeof shelfId !== 'string' || !shelfId ||
-        typeof rowShelfId !== 'string' || !rowShelfId
-    ) {
-        console.error("Invalid parameter passed to getSegmentCollectionRef", businessId, warehouseId, shelfId, rowShelfId);
-        return;
-    }
-    return collection(db, 'businesses', businessId, 'warehouses', warehouseId, 'shelves', shelfId, 'rows', rowShelfId, 'segments');
+const getSegmentCollectionRef = (businessId) => {
+    return collection(db, 'businesses', businessId, 'segments');
 };
 
 // Crear un nuevo segmento
-const createSegment = async (user, warehouseId, shelfId, rowShelfId, segmentData) => {
+const createSegment = async ({ user, segmentData }) => {
     const id = nanoid();
     try {
         console.log(segmentData)
         if (!segmentData.name || typeof segmentData.capacity !== 'number') {
             throw new Error('Datos inválidos para crear un segmento');
         }
-        const segmentCollectionRef = getSegmentCollectionRef(user.businessID, warehouseId, shelfId, rowShelfId);
+        const segmentCollectionRef = getSegmentCollectionRef(user.businessID);
         const segmentDocRef = doc(segmentCollectionRef, id);
 
         await setDoc(segmentDocRef, {
             ...segmentData,
             id,
-            rowShelfId,
             createdAt: serverTimestamp(),
             createdBy: user.uid,
             updatedAt: serverTimestamp(),
@@ -63,7 +53,7 @@ const createSegment = async (user, warehouseId, shelfId, rowShelfId, segmentData
 // Obtener todos los segmentos de una fila de estante específica
 const getAllSegments = async (user, warehouseId, shelfId, rowShelfId) => {
     try {
-        const segmentCollectionRef = getSegmentCollectionRef(user.businessID, warehouseId, shelfId, rowShelfId);
+        const segmentCollectionRef = getSegmentCollectionRef(user.businessID);
         const querySnapshot = await getDocs(segmentCollectionRef);
         const segments = querySnapshot.docs.map((doc) => ({
             id: doc.id,
@@ -82,8 +72,12 @@ const listenAllSegments = (user, warehouseId, shelfId, rowShelfId, callback) => 
         console.error('Invalid parameter passed to listenAll', user.businessID, warehouseId, shelfId, rowShelfId);
         return () => {};
     }
-    const segmentCollectionRef = getSegmentCollectionRef(user.businessID, warehouseId, shelfId, rowShelfId);
-    const q = query(segmentCollectionRef, where('isDeleted', '==', false));
+    const segmentCollectionRef = getSegmentCollectionRef(user.businessID);
+    const q = query(segmentCollectionRef,
+        where('warehouseId', '==', warehouseId),
+        where('shelfId', '==', shelfId),
+        where('rowShelfId', '==', rowShelfId),
+        where('isDeleted', '==', false));
     return onSnapshot(
         q,
         (querySnapshot) => {
@@ -97,9 +91,9 @@ const listenAllSegments = (user, warehouseId, shelfId, rowShelfId, callback) => 
 };
 
 // Actualizar un segmento específico
-const updateSegment = async (user, warehouseId, shelfId, rowShelfId, data) => {
+const updateSegment = async (user, data) => {
     try {
-        const segmentDocRef = doc(db, 'businesses', user.businessID, 'warehouses', warehouseId, 'shelves', shelfId, 'rows', rowShelfId, 'segments', data.id);
+        const segmentDocRef = doc(db, 'businesses', user.businessID, 'segments', data.id);
         await updateDoc(segmentDocRef, {
             ...data,
             updatedAt: serverTimestamp(),
@@ -115,7 +109,7 @@ const updateSegment = async (user, warehouseId, shelfId, rowShelfId, data) => {
 // Marcar un segmento como eliminado
 const deleteSegment = async (user, warehouseId, shelfId, rowShelfId, segmentId) => {
     try {
-        const segmentDocRef = doc(db, 'businesses', user.businessID, 'warehouses', warehouseId, 'shelves', shelfId, 'rows', rowShelfId, 'segments', segmentId);
+        const segmentDocRef = doc(db, 'businesses', user.businessID, 'segments', segmentId);
         await updateDoc(segmentDocRef, {
             isDeleted: true,
             deletedAt: serverTimestamp(),

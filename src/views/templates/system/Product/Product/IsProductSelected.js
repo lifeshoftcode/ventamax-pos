@@ -39,31 +39,32 @@ export const useProductInCart = (productId) => {
 };
 
 const isStockRestricted = (product) => product?.restrictSaleWithoutStock;
-const isStockExceeded = (product, productInCart) => {
-    const totalAmountToBuy = productInCart?.amountToBuy || 0;
+const isStockExceeded = (product) => {
+    const totalAmountToBuy = product?.amountToBuy || 0;
     return totalAmountToBuy >= product?.stock;
-  };
+};
   
 const isStockCero = (product) => product?.stock <= 0;
-const isStockLow = (product, productInCart) => {
-    const totalAmountToBuy = productInCart?.amountToBuy || 0
+const isStockLow = (product) => {
+    const totalAmountToBuy = product?.amountToBuy || 0
     const remainingStock = product?.stock - totalAmountToBuy;
     return remainingStock < 20 && remainingStock > 0;
-  };
+};
   
-
-export const useProductStockStatus = (product, productInCart) => {
+export const useProductStockStatus = (productInCart, originalProduct) => {
     // Verifica si el stock es bajo (por debajo del umbral de 20 unidades)
     const isLowStock = useMemo(() => {
-        if (!isStockRestricted(product)) return false;
-        return isStockLow(product, productInCart);
-    }, [product, productInCart]);
+        const productToCheck = productInCart || originalProduct;
+        if (!isStockRestricted(productToCheck)) return false;
+        return isStockLow(productToCheck);
+    }, [productInCart, originalProduct]);
 
     // Verifica si el producto está fuera de stock o si el carrito supera el stock disponible
     const isOutOfStock = useMemo(() => {
-        if (!isStockRestricted(product)) return false;
-        return isStockExceeded(product, productInCart) || isStockCero(product);
-    }, [product, productInCart]);
+        const productToCheck = productInCart || originalProduct;
+        if (!isStockRestricted(productToCheck)) return false;
+        return isStockExceeded(productToCheck) || isStockCero(productToCheck);
+    }, [productInCart, originalProduct]);
  
     return { isLowStock, isOutOfStock };
 };

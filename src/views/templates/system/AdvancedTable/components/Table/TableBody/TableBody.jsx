@@ -1,66 +1,97 @@
-import React, { Fragment, useEffect, useState } from 'react'
-import { Row } from '../../../AdvancedTable'
-import styled from 'styled-components'
-import { CenteredText } from '../../../../CentredText'
-import Loader from '../../../../loader/Loader'
+import React, { Fragment } from 'react';
+import { Row } from '../../../AdvancedTable';
+import styled from 'styled-components';
+import { CenteredText } from '../../../../CentredText';
+import Loader from '../../../../../../component/Loader/Loader';
+import { CellRenderer } from '../../CellRenderer/CellRenderer';
 
-export const TableBody = ({ loading = false, shouldGroup, groupedData, currentData, columnOrder, onRowClick, emptyText }) => {
+const Body = styled.div`
+  position: relative;
+`;
 
-  const [showLoader, setShowLoader] = useState(loading);
+const renderCell = (col, value) => {
+  if (col.cell) {
+    return col.cell({ value });
+  }
+  return (
+    <CellRenderer
+      type={col.type}
+      value={value}
+      cellProps={col.cellProps}
+      format={col.format}
+    />
+  );
+};
 
-  useEffect(() => {
-    if (loading) {
-      setShowLoader(true);
-    } else {
-      const timer = setTimeout(() => {
-        setShowLoader(false);
-      }, 1000); // Este tiempo debe coincidir con minDisplayTime
-      return () => clearTimeout(timer);
-    }
-  }, [loading]);
-
-  // Filtrar columnOrder para incluir solo columnas con estado 'active'
+export const TableBody = ({ 
+  loading = false, 
+  shouldGroup, 
+  groupedData, 
+  currentData, 
+  columnOrder, 
+  onRowClick, 
+  emptyText, 
+  isWideScreen,
+  isWideLayout 
+}) => {
   const activeColumns = columnOrder.filter(col => col.status === 'active');
+  
   const handleCellClick = (e, col, row) => {
     if (onRowClick && col?.clickable !== false) onRowClick(row);
   };
 
-  if (showLoader) { return <Loader show={true} minDisplayTime={1000} /> }
+  const tableContent = (
+    <Container columns={activeColumns}>
+      {shouldGroup
+        ? Object.entries(groupedData).map(([groupKey, groupItems]) => (
+          <Fragment key={groupKey}>
+            <GroupHeader>{groupKey}</GroupHeader>
+            {groupItems.map((row, rowIndex) => (
+              <Row key={rowIndex} columns={activeColumns} isWideScreen={isWideScreen} isWideLayout={isWideLayout}>
+                {activeColumns.map((col, colIndex) => (
+                  <BodyCell 
+                    key={colIndex} 
+                    align={col.align}
+                    fixed={col.fixed}
+                    clickable={col?.clickable !== false ? true : false} 
+                    columns={activeColumns} 
+                    onClick={(e) => handleCellClick(e, col, row)}
+                  >
+                    {renderCell(col, row[col.accessor])}
+                  </BodyCell>
+                ))}
+              </Row>
+            ))}
+          </Fragment>
+        ))
+        : currentData.map((row, rowIndex) => (
+          <Row key={rowIndex} columns={activeColumns} isWideScreen={isWideScreen} isWideLayout={isWideLayout}>
+            {activeColumns.map((col, colIndex) => (
+              <BodyCell 
+                key={colIndex} 
+                align={col.align}
+                fixed={col.fixed}
+                clickable={col?.clickable !== false ? true : false} 
+                columns={activeColumns} 
+                onClick={(e) => handleCellClick(e, col, row)}
+              >
+                {renderCell(col, row[col.accessor])}
+              </BodyCell>
+            ))}
+          </Row>
+        ))}
+      {!currentData.length && <CenteredText text={emptyText} />}
+    </Container>
+  );
 
   return (
-    <Container columns={activeColumns}>
-      {
-        shouldGroup
-          ? Object.entries(groupedData).map(([groupKey, groupItems]) => (
-            <Fragment key={groupKey}>
-              <GroupHeader>{groupKey}</GroupHeader>
-              {groupItems.map((row, rowIndex) => (
-                <Row key={rowIndex} columns={activeColumns}>
-                  {activeColumns.map((col, colIndex) => (
-                    <BodyCell key={colIndex} align={col.align} clickable={col?.clickable !== false ? true : false} columns={activeColumns} onClick={(e) => handleCellClick(e, col, row)}>
-                      {col.cell ? col.cell({ value: row[col.accessor] }) : row[col.accessor]}
-                    </BodyCell>
-                  ))}
-                </Row>
-              ))}
-            </Fragment>
-          ))
-          : currentData.map((row, rowIndex) => (
-            <Row key={rowIndex} columns={activeColumns} >
-              {activeColumns.map((col, colIndex) => (
-                <BodyCell key={colIndex} align={col.align} clickable={col?.clickable !== false ? true : false} columns={activeColumns} onClick={(e) => handleCellClick(e, col, row)}>
-                  {col.cell ? col.cell({ value: row[col.accessor] }) : row[col.accessor]}
-                </BodyCell>
-              ))}
-            </Row>
-          ))
-      }
-      {
-        !currentData.length && <CenteredText text={emptyText} />
-      }
-    </Container>
-  )
-}
+    <Body>
+      <Loader loading={loading} overlay>
+        {tableContent}
+      </Loader>
+    </Body>
+  );
+};
 
 const Container = styled.div`
  display: grid;
@@ -79,19 +110,25 @@ const BodyCell = styled.div`
   padding: 0 10px;
   height: 100%;
   height: 3.4em;
+  position: ${props => props.fixed ? 'sticky' : 'relative'};
+  ${props => props.fixed === 'left' && `
+    left: 0;
+    z-index: 1;
+    background-color: white;
+    border-right: 1px solid var(--Gray1);
+  `}
+  ${props => props.fixed === 'right' && `
+    right: 0;
+    z-index: 1;
+    background-color: white;
+    border-left: 1px solid var(--Gray1);
+  `}
   justify-content: ${props => props.align || 'flex-start'};
   text-align: ${props => props.align || 'left'};
-  ${props => {
-    if (props.clickable) {
-      return `
-      cursor: pointer; // Opcional, para indicar que la celda es clickeable
-    `}
-  }
-  }
- 
-  ${props => {
-    if (props?.columns?.minWidth) {
-      return `min-width: ${props?.columns?.minWidth};`
-    }
-  }}
+  ${props => props.clickable && `
+    cursor: pointer;
+  `}
+  ${props => props?.columns?.minWidth && `
+    min-width: ${props?.columns?.minWidth};
+  `}
 `;

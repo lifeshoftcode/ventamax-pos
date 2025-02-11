@@ -2,7 +2,7 @@ import React, { Fragment, useState } from 'react'
 import { Button } from '../../../system/Button/Button'
 import styled from 'styled-components'
 import ROUTES_NAME from '../../../../../routes/routesName'
-import { useMatch } from 'react-router-dom'
+import { useLocation, useMatch } from 'react-router-dom'
 import { icons } from '../../../../../constants/icons/icons'
 import { WarehouseForm } from '../../../../pages/Inventory/components/Warehouse/forms/WarehouseForm/WarehouseForm'
 import { useDispatch } from 'react-redux'
@@ -11,8 +11,22 @@ import { openWarehouseForm } from '../../../../../features/warehouse/warehouseMo
 export const WarehouseToolbar = ({ side = 'left' }) => {
     const [isOpen, setIsOpen] = useState(false)
     const dispatch = useDispatch()
-    const { WAREHOUSES } = ROUTES_NAME.INVENTORY_TERM
-    const matchWithWarehouses = useMatch(WAREHOUSES)
+    const { pathname } = useLocation();
+    const { WAREHOUSES, WAREHOUSE, SHELF, ROW, SEGMENT } = ROUTES_NAME.INVENTORY_TERM;
+  
+    const paths = [WAREHOUSES, WAREHOUSE, SHELF, ROW, SEGMENT];
+
+    // Función para comparar rutas dinámicas
+    const isMatchingPath = (targetPath) => {
+        // Convertir la ruta dinámica a un patrón regex
+        const dynamicPathRegex = new RegExp(
+            `^${targetPath.replace(/:\w+/g, '[^/]+')}$`
+        );
+        return dynamicPathRegex.test(pathname);
+    };
+
+    // Verificar si la ruta actual coincide con alguna de las rutas
+    const matchWithWarehouses = paths.some(isMatchingPath);
     const handleAddWarehouse = () => {
         dispatch(openWarehouseForm())
     }

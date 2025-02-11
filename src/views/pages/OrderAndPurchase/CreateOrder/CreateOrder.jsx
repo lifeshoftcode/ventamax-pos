@@ -10,17 +10,17 @@ import { useFbGetProviders } from '../../../../firebase/provider/useFbGetProvide
 import {
     setOrder,
     AddProductToOrder,
-    DeleteProduct,
-    SelectOrder,
-    SelectOrderState,
+    // DeleteProduct,
+    selectOrder,
+    selectOrderState,
     SelectProduct,
-    SelectProductSelected,
-    SelectProducts,
-    SelectTotalPurchase,
+    selectProductSelected,
+    selectProducts,
+    // SelectTotalPurchase,
     cleanOrder,
     setProductSelected,
     updateProduct
-} from '../../../../features/addOrder/addOrderModalSlice'
+} from '../../../../features/addOrder/addOrderSlice'
 import { OrderDetails } from './OrderDetails/OrderDetails'
 import { addNotification } from '../../../../features/notification/NotificationSlice'
 import { toggleProviderModal } from '../../../../features/modals/modalSlice'
@@ -48,12 +48,12 @@ export const CreateOrder = () => {
     const CreateRef = OPERATION_MODES.CREATE.id;
     const user = useSelector(selectUser);
 
-    const OrderSelected = useSelector(SelectOrder);
-    const OrderState = useSelector(SelectOrderState);
-    const selectedProduct = useSelector(SelectProductSelected);
-    const productsSelected = useSelector(SelectProducts);
-    const productTotalPurchasePrice = useSelector(SelectTotalPurchase)
-    const { ORDERS } = ROUTES_PATH.PURCHASE_TERM
+    const OrderSelected = useSelector(selectOrder);
+    const OrderState = useSelector(selectOrderState);
+    const selectedProduct = useSelector(selectProductSelected);
+    const productsSelected = useSelector(selectProducts);
+    // const productTotalPurchasePrice = useSelector(SelectTotalPurchase)
+    const { ORDERS } = ROUTES_PATH.ORDER_TERM
     const { providers } = useFbGetProviders(user);
     const providerId = OrderSelected.providerId;
     const provider = useGetProvider(providerId, providers);
@@ -112,7 +112,7 @@ export const CreateOrder = () => {
     const selectProduct = (product) => dispatch(SelectProduct(product));
     const handleSetSelectedProduct = (obj) => dispatch(setProductSelected(obj));
     const addProduct = () => dispatch(AddProductToOrder());
-    const handleDeleteProduct = (product) => dispatch(DeleteProduct(product.id));
+    // const handleDeleteProduct = (product) => dispatch(DeleteProduct(product.id));
     const handleUpdateProduct = (product) => dispatch(updateProduct(product));
 
     const providersOption = useMemo(() => {
@@ -178,8 +178,8 @@ export const CreateOrder = () => {
                         />
                         <ProductListSelected
                             productsSelected={productsSelected}
-                            productsTotalPrice={productTotalPurchasePrice}
-                            handleDeleteProduct={handleDeleteProduct}
+                            // productsTotalPrice={productTotalPurchasePrice}
+                            // handleDeleteProduct={handleDeleteProduct}
                             handleUpdateProduct={handleUpdateProduct}
                         />
                         <OrderDetails

@@ -1,17 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { MdDelete, MdEdit } from 'react-icons/md';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { OPERATION_MODES } from '../../../../../constants/modes';
 import { toggleAddProductOutflow } from '../../../../../features/modals/modalSlice';
-import { addNotification } from '../../../../../features/notification/NotificationSlice';
 import { SelectProductOutflow, setProductOutflowData } from '../../../../../features/productOutflow/productOutflow';
 import { fbDeleteProductOutflow } from '../../../../../firebase/ProductOutflow/fbDeleteProductOutflow';
 import { fbGetProductOutflow } from '../../../../../firebase/ProductOutflow/fbGetProductOutflow';
-import { fbUpdateStock } from '../../../../../firebase/ProductOutflow/fbUpdateStock';
 import useScroll from '../../../../../hooks/useScroll';
-import { MenuApp } from '../../../../templates/MenuApp/MenuApp';
-//import { Button } from '../../../../templates/system/Button/Button';
 import { ButtonGroup } from '../../../../templates/system/Button/ButtonGroup';
 import { FormattedValue } from '../../../../templates/system/FormattedValue/FormattedValue';
 import Loader from '../../../../templates/system/loader/Loader';
@@ -19,11 +14,9 @@ import { CenteredText } from '../../../../templates/system/CentredText';
 import { ProductOutflowDataFormatter, toggleProductOutflowModal } from './toggleProductOutflowModal';
 import { selectUser } from '../../../../../features/auth/userSlice';
 import { Header } from './components/Header/Header';
-import * as antd from 'antd'
+import { Button, notification } from 'antd'
 import { icons } from '../../../../../constants/icons/icons';
-import { convertTimeStampToMillis, fromMillisToDateISO } from '../../../../../utils/date/convertTimeStampToDate';
-import { convertMillisToDate } from '../../../../../utils/date/formatDate';
-const { Button } = antd
+import DateUtils from '../../../../../utils/date/dateUtils';
 
 export const ProductOutflow = () => {
   const dispatch = useDispatch()
@@ -41,10 +34,14 @@ export const ProductOutflow = () => {
   const handleDeleteProductOutflow = async (item) => {
     try {
     
-      await fbDeleteProductOutflow(user, item)
-      dispatch(addNotification({ type: 'success', message: 'Salida de producto eliminada' }))
+      await fbDeleteProductOutflow(user, item);
+      notification.success({
+        message: 'Salida de producto eliminada'
+      });
     } catch (err) {
-      dispatch(addNotification({ type: 'error', message: 'Error al eliminar la salida de producto' }))
+      notification.error({
+        message: 'Error al eliminar la salida de producto'
+      });
     }
   }
 
@@ -112,7 +109,7 @@ export const ProductOutflow = () => {
                           type={'number'}
                           value={(outflowList.length - index)}
                         />
-                      {convertMillisToDate(item?.createdAt?.seconds * 1000)}
+                      {DateUtils.formatLuxonDate(DateUtils.convertTimestampToMillis(item?.createdAt))}
                       
                         <span>
                           <FormattedValue

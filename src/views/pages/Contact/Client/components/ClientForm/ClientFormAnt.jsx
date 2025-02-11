@@ -185,11 +185,12 @@ const ClientFormAnt = ({
         <Modal
             style={{ top: 10 }}
             open={isOpen}
-            title={isUpdating ? "Editar Cliente" : "Nuevo Cliente 2"}
+            title={isUpdating ? "Editar Cliente" : "Nuevo Cliente"}
             okText={isUpdating ? "Actualizar" : "Crear"}
             cancelText="Cerrar"
             confirmLoading={loading || submitted}
             okButtonProps={{ disabled: loading || submitted }}
+            width={1000}
             styles={{
                 content: {
                     padding: "1.2em"

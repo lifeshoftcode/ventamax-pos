@@ -24,7 +24,7 @@ export const getProductsWithBatchListener = (businessID, onData, onError) => {
     const productsRef = collection(db, 'businesses', businessID, 'products');
 
     // Crear una consulta para productos que tienen una fecha de expiración
-    const q = query(productsRef, where('hasExpirationDate', '==', true));
+    const q = query(productsRef);
 
     // Configurar la suscripción a la consulta
     const unsubscribe = onSnapshot(

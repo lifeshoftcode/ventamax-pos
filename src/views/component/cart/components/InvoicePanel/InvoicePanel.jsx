@@ -11,9 +11,9 @@ import { selectAR } from '../../../../../features/accountsReceivable/accountsRec
 import { clearTaxReceiptData, selectNcfType, selectTaxReceipt } from '../../../../../features/taxReceipt/taxReceiptSlice'
 import { useReactToPrint } from 'react-to-print'
 import useViewportWidth from '../../../../../hooks/windows/useViewportWidth'
-import { fromMillisToDayjs } from '../../../../../utils/date/convertMillisecondsToDayjs'
+import DateUtils from '../../../../../utils/date/dateUtils'
 import { Invoice } from '../../../Invoice/components/Invoice/Invoice'
-import dayjs from 'dayjs' // Add this import
+import dayjs from 'dayjs' 
 
 export const modalStyles = {
     mask: {
@@ -172,13 +172,13 @@ export const InvoicePanel = () => {
         form.setFieldsValue({
             frequency: 'monthly',
             totalInstallments: 1,
-            paymentDate: fromMillisToDayjs(Date.now()),
+            paymentDate: DateUtils.convertMillisToDayjs(Date.now()),
         });
     }, []);
     useEffect(() => {
         form.setFieldsValue({
             ...accountsReceivable,
-            paymentDate: fromMillisToDayjs(accountsReceivable?.paymentDate),
+            paymentDate: DateUtils.convertMillisToDayjs(accountsReceivable?.paymentDate),
         });
     }, [accountsReceivable]);
     useEffect(() => {

@@ -1,28 +1,18 @@
 import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import { useDispatch, useSelector } from 'react-redux'
-import { Select } from '../../../../templates/system/Select/Select'
-import { DateTime } from 'luxon'
-import { Textarea } from '../../../../templates/system/Inputs/Textarea'
 import { clearImageViewer, toggleImageViewer } from '../../../../../features/imageViewer/imageViewerSlice'
 import { getOrderConditionByID, orderAndDataCondition } from '../../../../../constants/orderAndPurchaseState'
 import { deleteReceiptImageFromPurchase, selectProducts, setPurchase } from '../../../../../features/purchase/addPurchaseSlice'
-import { convertMillisToDate } from '../../../../../hooks/useFormatTime'
 import { selectUser } from '../../../../../features/auth/userSlice'
-import { icons } from '../../../../../constants/icons/icons'
-import { InputV4 } from '../../../../templates/system/Inputs/GeneralInput/InputV4'
-import InputFile from '../../../../templates/system/Form/InputFile/InputFile'
 import { getDate } from '../../../../../utils/date/getDate'
 import { InputMultipleFiles } from '../../../../templates/system/Form/InputFile/InputMultipleFiles'
-import * as antd from 'antd'
-
-import dayjs from 'dayjs';
-import customParseFormat from 'dayjs/plugin/customParseFormat';
+import { Input, Form } from 'antd'
+import DateUtils from '../../../../../utils/date/dateUtils'
 import { SelectStyle } from '../CreatePurchase'
-import { fromMillisToDayjs } from '../../../../../utils/date/convertMillisecondsToDayjs'
 import FileList from '../components/FileList'
 import { toggleProviderModal } from '../../../../../features/modals/modalSlice'
-const { Input, Form } = antd
+
 const dateFormat = 'DD/MM/YYYY';
 
 export const PurchaseDetails = ({ purchase, fileList, setFileList }) => {
@@ -85,14 +75,14 @@ export const PurchaseDetails = ({ purchase, fileList, setFileList }) => {
                     required
                 >
                     <antd.DatePicker
-                        value={deliveryDateValidate ? fromMillisToDayjs(purchase?.dates?.deliveryDate) : fromMillisToDayjs(Date.now())}
+                        value={deliveryDateValidate ? DateUtils.convertMillisToDayjs(purchase?.dates?.deliveryDate) : DateUtils.convertMillisToDayjs(Date.now())}
                         format={dateFormat}
                         onChange={(date) => handleDateChange(date, 'deliveryDate')}
                     />
                 </Form.Item>
                 <Form.Item label="Fecha de pago">
                     <antd.DatePicker
-                        defaultValue={paymentDateValidate ? fromMillisToDayjs(purchase?.dates?.paymentDate) : fromMillisToDayjs(Date.now())}
+                        defaultValue={paymentDateValidate ? DateUtils.convertMillisToDayjs(purchase?.dates?.paymentDate) : DateUtils.convertMillisToDayjs(Date.now())}
                         format={dateFormat}
                         onChange={(date) => handleDateChange(date, 'paymentDate')}
                     />

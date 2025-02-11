@@ -1,7 +1,8 @@
 import React from 'react'
 import { useMatch, useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
-import { Button } from '../../../system/Button/Button'
+// import { Button } from '../../../system/Button/Button'
+import { Button } from 'antd'
 import { useDispatch } from 'react-redux'
 import routesName from '../../../../../routes/routesName'
 import { CgMathPlus } from 'react-icons/cg'
@@ -26,17 +27,16 @@ export const PurchaseToolbar = ({ side = 'left' }) => {
                     side === 'right' && (
                         <ButtonGroup>
                               <Button
-                                borderRadius='normal'
-                                title={`Ver Reporte`}
                                 onClick={handleOpenPurchaseChart}
-                            />
+                                >
+                                Reporte
+                            </Button>
                             <Button
-                                borderRadius='normal'
-
-                                startIcon={<CgMathPlus />}
-                                title={`Comprar`}
+                                icon={<CgMathPlus />}
                                 onClick={openModal}
-                            />
+                            >
+                                Comprar
+                            </Button>
                         </ButtonGroup>
                     )
                 }

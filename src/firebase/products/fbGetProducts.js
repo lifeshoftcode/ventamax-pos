@@ -1,7 +1,7 @@
 import { useSelector } from "react-redux"
 import { selectUser } from "../../features/auth/userSlice"
 import { db } from "../firebaseconfig"
-import { collection, query, orderBy, where, onSnapshot, limit } from "firebase/firestore"
+import { collection, query, orderBy, where, onSnapshot, limit, getDocs } from "firebase/firestore"
 import { useEffect, useState } from "react"
 import { SelectActiveIngredients, SelectCategories, SelectCategoryList, SelectCategoryStatus } from "../../features/category/categorySlicer"
 import { selectCriterio, selectInventariable, selectItbis, selectOrden } from "../../features/filterProduct/filterProductsSlice"
@@ -80,6 +80,20 @@ function orderingProducts(productsArray, criterio, orden) {
   return productsArray;
 }
 
+// Obtener todos los productos de la colección 'products'
+export const fbGetProducts = async (user) => {
+  try {
+    if(!user?.businessID || typeof user.businessID != 'string') return [];
+    const productsRef = collection(db, "businesses", user.businessID, "products");
+    const snapshot = await getDocs(productsRef);
+    const allProducts = snapshot.docs.map(doc => doc.data());
+    return allProducts;
+  } catch (error) {
+    console.error("Error al obtener todos los productos:", error);
+    throw error;
+  }
+};
+
 export function useGetProducts(trackInventory = false) {
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
@@ -132,11 +146,11 @@ export function useGetProducts(trackInventory = false) {
         );
 
 
-         productsArray = filterProducts(productsArray, inventariable, itbis);
-         productsArray = orderingProducts(productsArray, criterio, orden);
+        productsArray = filterProducts(productsArray, inventariable, itbis);
+        productsArray = orderingProducts(productsArray, criterio, orden);
 
-         productsArray = productsArray.sort((a, b) => a?.custom === true ? -1 : 1);
-  
+        productsArray = productsArray.sort((a, b) => a?.custom === true ? -1 : 1);
+
 
         setProducts(productsArray);
         setLoading(false)

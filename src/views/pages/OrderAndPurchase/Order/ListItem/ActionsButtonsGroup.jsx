@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { getOrderData } from '../../../../../features/purchase/addPurchaseSlice'
 import { Button } from '../../../../templates/system/Button/Button'
 import { ButtonGroup } from '../../../../templates/system/Button/ButtonGroup'
-import { getOrderData as getOrderDataToOrder } from '../../../../../features/addOrder/addOrderModalSlice'
+import { getOrderData as getOrderDataToOrder } from '../../../../../features/addOrder/addOrderSlice'
 import { icons } from '../../../../../constants/icons/icons'
 import { useDialog } from '../../../../../Context/Dialog/DialogContext'
 import { selectUser } from '../../../../../features/auth/userSlice'
@@ -22,13 +22,13 @@ export const ActionsButtonsGroup = ({ orderData }) => {
     const { dialog, setDialogConfirm, onClose } = useDialog();
 
     const handleEditMode = (id) => {
-        navigate(`/orders-create/`)
+        navigate(`/orders/update/`)
         dispatch(getOrderDataToOrder({ data: orderData, mode: OPERATION_MODES.UPDATE.id }))
     }
     const handlePurchasingMode = async (id) => {
         // PassDataToPurchaseList(orderData)
         dispatch(getOrderData(orderData));
-        navigate('/purchases-create');
+        navigate('/purchases/create');
     }
     const handleDeleteMode = (id) => {
         // deleteOrderFromDB(orderData.id)

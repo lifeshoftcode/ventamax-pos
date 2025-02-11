@@ -7,8 +7,9 @@ import AdjustInventoryModal from './AdjustInventoryModal'
 import styled from 'styled-components'
 import { useFormatPrice } from '../../../../../../hooks/useFormatPrice'
 const { Card, Space, InputNumber, Row, Button, Col, Select, Checkbox, Form } = ant
+
 export const InventoryInfo = () => {
-    const { product } = useSelector(selectUpdateProductData)
+    const { product, status } = useSelector(selectUpdateProductData)
     const [isModalVisible, setIsModalVisible] = useState(false);
     // Abre el modal de ajuste de inventario
     const showModal = () => {
@@ -89,7 +90,7 @@ export const InventoryInfo = () => {
                     >
                         <InputNumber style={{
                             width: '100%'
-                        }} type='number' placeholder="" />
+                        }} type='number' placeholder="" disabled={status === "update"} />
                     </Form.Item>
                 </Col>
                 <Col

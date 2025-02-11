@@ -1,24 +1,21 @@
 import { AuditInfo } from "./AuditInfo";
-
-export interface Batch {
-    id: string; // auto-generated
-    productId: string; // Referencia al Producto
-    shortName: string; // Nombre corto del lote
-    batchNumber: string; // Número de lote
-    manufacturingDate?: Date; // Fecha de fabricación del lote
-    expirationDate?: Date; // Fecha de expiración del lote (opcional)
-    status: 'active' | 'inactive'; // Estado del lote
-    location: {
-      warehouseId: string; // Referencia al Almacén
-      shelfId: string; // Referencia al Estante
-      rowShelfId: string; // Referencia a la Fila
-      segmentId: string; // Referencia al Segmento
-      locationCode: string; // Código de la ubicación
-    }
-    receivedDate: Date; // Fecha de recepción del lote
-    // supplierId: string; // Referencia al Proveedor
-    notes?: string; // Notas del lote
-    count: number; // Cantidad total de productos en el lote
-    audit: AuditInfo; // Objeto de auditoría
-  }
-  
+export enum BatchStatus {
+  Active = 'active',
+  Inactive = 'inactive',
+  Expired = 'expired',
+  Pending = 'pending',
+}
+export interface Batch extends AuditInfo {
+  id: string; // auto-generated
+  productId: string; // Referencia al Producto
+  shortName: string; // Nombre corto del lote
+  batchNumber: string; // Número de lote
+  manufacturingDate?: Date; // Fecha de fabricación del lote
+  expirationDate?: Date; // Fecha de expiración del lote (opcional)
+  status: BatchStatus; // Estado del lote
+  receivedDate: Date; // Fecha de recepción del lote
+  providerId: string; // Referencia al Proveedor
+  notes?: string; // Notas del lote
+  quantity: number; // Cantidad total de productos en el lote
+  initialQuantity: number; // Cantidad original de productos en el lote
+}

@@ -9,9 +9,10 @@ const Container = styled.div`
     display: grid;
     grid-template-columns: auto 1fr;
     height: 100%;
-    background-color: #ffffff;
+   
+
     overflow-y: hidden;
-    width: 100vw;
+    
 `
 
 const Content = styled.div`
@@ -20,7 +21,7 @@ const Content = styled.div`
    overflow-y: auto;
   /* background-color: #ffffff; */
 
-  padding: 20px;
+  padding: 1em 0.4em;
   height: 100%;
 `;
 
@@ -28,16 +29,17 @@ const ResizeContainer = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%; /* Asegura que el contenedor de redimensionado ocupe el 100% de la altura */
-  
   overflow-y: auto;
-  background-color: #ffffff;
+
+
+
 `
 
 export const ResizableSidebar = ({ Sidebar, children }) => {
   return (
     <Container>
-   <ResizeContainer>
-            {/*<ResizableBox
+      <ResizeContainer>
+        {/*<ResizableBox
           width={300}
           height={Infinity}
           minConstraints={[200, Infinity]}
@@ -45,10 +47,10 @@ export const ResizableSidebar = ({ Sidebar, children }) => {
           resizeHandles={["e"]} // Lado derecho para redimensionar
           style={{ height: '100%' }}
         > */}
-          {Sidebar}
+        {Sidebar}
         {/* </ResizableBox>*/}
 
-      </ResizeContainer> 
+      </ResizeContainer>
       <Content>{children}</Content>
     </Container>
   );

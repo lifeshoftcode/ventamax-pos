@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 const createMode = (label) => {
     return {
-        id: nanoid(),
+        id: label,
         label: label
     }
 }

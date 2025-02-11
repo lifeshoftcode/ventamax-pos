@@ -1,6 +1,6 @@
 import { Timestamp, doc, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "../firebaseconfig";
-import { fbAddMultipleFilesAndGetURLs, fbUploadFileAndGetURL } from "../img/fbUploadFileAndGetURL";
+import { fbUploadFiles } from "../img/fbUploadFileAndGetURL";
 import { isImageFile, isPDFFile } from "../../utils/file/isValidFile";
 import { fbUpdateProdStockForReplenish } from "./fbUpdateProdStockForReplenish";
 
@@ -43,7 +43,7 @@ export const fbTransformOrderToPurchase = async (user, data, filesList, setLoadi
 
         if (filesList.length > 0) {
             setLoading({ isOpen: true, message: "Subiendo recibo al servidor..." });
-            dataModified.fileList = await fbAddMultipleFilesAndGetURLs(user, "purchaseReceipts", filesList);
+            dataModified.fileList = await fbUploadFiles(user, "purchaseReceipts", filesList);
             data.fileList = [...(data?.fileList || []), ...files]
 
         }

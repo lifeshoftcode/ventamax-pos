@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import styled from 'styled-components'
 import { useDispatch, useSelector } from 'react-redux'
-import { ButtonGroup, MenuApp, Select } from '../../..'
+import { ButtonGroup, MenuApp } from '../../..'
 import { Button } from '../../..'
 import { getOrderData, selectPurchase, cleanPurchase, AddProductToPurchase, SelectProductSelected, SelectProduct, deleteProductFromPurchase, setProductSelected, updateProduct, setPurchase, selectPurchaseState } from '../../../../features/purchase/addPurchaseSlice'
 import { StockedProductPicker } from '../../../component/StockedProductPicker/StockedProductPicker'
@@ -11,18 +11,18 @@ import { fbGetPendingOrders } from '../../../../firebase/order/fbGetPedingOrder'
 import { useFbGetProviders } from '../../../../firebase/provider/useFbGetProvider'
 import { useNavigate } from 'react-router-dom'
 import ROUTES_PATH from '../../../../routes/routesName'
-import { addNotification } from '../../../../features/notification/NotificationSlice'
 import { PurchaseDetails } from './PurchaseDetails/PurchaseDetails'
 import { fbTransformOrderToPurchase } from '../../../../firebase/purchase/fbPreparePurchaseDocument'
 import Loader from '../../../templates/system/loader/Loader'
 import { fbAddPurchase } from '../../../../firebase/purchase/fbAddPurchase'
 import { fbUpdatePurchase } from '../../../../firebase/purchase/fbUpdatePurchase'
-import * as antd from 'antd'
+import { Form } from 'antd'
 import { icons } from '../../../../constants/icons/icons'
 import { toggleProviderModal } from '../../../../features/modals/modalSlice'
 import { OPERATION_MODES } from '../../../../constants/modes'
-import { fromMillisToDateISO } from '../../../../utils/date/convertTimeStampToDate'
+import DateUtils from '../../../../utils/date/dateUtils'
 import { useFormatPrice } from '../../../../hooks/useFormatPrice'
+import { notification } from 'antd'
 
 const ProviderOption = ({ provider, orderCount }) => (
     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -31,7 +31,6 @@ const ProviderOption = ({ provider, orderCount }) => (
     </div>
 );
 
-const { Form } = antd
 export const AddPurchase = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
@@ -66,7 +65,7 @@ export const AddPurchase = () => {
             return pendingOrders
                 .filter(({ data }) => data.provider.id === selectedProvider.id)
                 .map(({ data }) => {
-                    return { label: `#${data.numberId}  | ${fromMillisToDateISO(data.dates.createdAt)}  | ${useFormatPrice(data.total)}`, value: JSON.stringify(data) };
+                    return { label: `#${data.numberId}  | ${DateUtils.convertMillisToISODate(data.dates.createdAt)}  | ${useFormatPrice(data.total)}`, value: JSON.stringify(data) };
                 });
         } else {
             return [];
@@ -107,24 +106,39 @@ export const AddPurchase = () => {
 
     const handleSubmit = async () => {
         if (!purchase?.provider || purchase?.provider?.id == "") {
-            dispatch(addNotification({ title: 'Error', message: 'Agregue el proveedor', type: 'error' }))
-            return
+            notification.error({
+                message: 'Error',
+                description: 'Agregue el proveedor'
+            });
+            return;
         }
         if (purchase.replenishments.length <= 0) {
-            dispatch(addNotification({ title: 'Error', message: 'Agregue un producto', type: 'error' }))
-            return
+            notification.error({
+                message: 'Error',
+                description: 'Agregue un producto'
+            });
+            return;
         }
         if (!purchase.dates.deliveryDate) {
-            dispatch(addNotification({ title: 'Error', message: 'Agregue la Fecha de entrega', type: 'error' }))
-            return
+            notification.error({
+                message: 'Error',
+                description: 'Agregue la Fecha de entrega'
+            });
+            return;
         }
         if (!purchase.dates.paymentDate) {
-            dispatch(addNotification({ title: 'Error', message: 'Agregue la Fecha de pago', type: 'error' }))
-            return
+            notification.error({
+                message: 'Error',
+                description: 'Agregue la Fecha de pago'
+            });
+            return;
         }
         if (!purchase.condition) {
-            dispatch(addNotification({ title: 'Error', message: 'Agregue la Condición', type: 'error' }))
-            return
+            notification.error({
+                message: 'Error',
+                description: 'Agregue la Condición'
+            });
+            return;
         }
 
         const filesToUpload = fileList.length > 0 ? fileList.map(file => file.originFileObj) : [];
@@ -132,8 +146,10 @@ export const AddPurchase = () => {
             if (mode === "add") {
                 if (purchase.id) {
                     await fbTransformOrderToPurchase(user, purchase, filesToUpload, setLoading);
-                    dispatch(addNotification({ title: 'Exito', message: 'Compra realizada', type: 'success' }))
-
+                    notification.success({
+                        message: 'Exito',
+                        description: 'Compra realizada'
+                    });
                 } else {
                     await fbAddPurchase(user, purchase, filesToUpload, setLoading);
                 }
@@ -142,7 +158,10 @@ export const AddPurchase = () => {
             }
             handleClose();
         } catch (error) {
-            dispatch(addNotification({ title: 'Error', message: 'Error al realizar la compra', type: 'error' }))
+            notification.error({
+                message: 'Error',
+                description: 'Error al realizar la compra'
+            });
             console.error("Hubo un error al transformar la orden en una compra:", error);
         }
     }

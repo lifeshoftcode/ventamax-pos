@@ -1,9 +1,8 @@
 import { collection, doc, getDoc, onSnapshot, orderBy, query, where } from "firebase/firestore"
 import { db } from "../../firebaseconfig"
 import { DateTime } from "luxon"
-import { date } from "yup"
 import { getEmployeeData } from "./getEmployeeData"
-import { convertTimeStampToMillis } from "../../../utils/date/convertTimeStampToDate"
+import DateUtils from "../../../utils/date/dateUtils"
 
 export const fbGetCashCounts = async (user, setCashCounts, dateRange) => {
     if (!user || !user?.businessID) { return }
@@ -39,14 +38,14 @@ export const fbGetCashCounts = async (user, setCashCounts, dateRange) => {
             const closingEmployeeData = await getEmployeeData(data.closing.employee);
             const closingApprovalEmployeeData = await getEmployeeData(data.closing.approvalEmployee);
 
-            if (data.opening.date) { data.opening.date = convertTimeStampToMillis(data.opening.date) }
+            if (data.opening.date) { data.opening.date = DateUtils.convertTimestampToMillis(data.opening.date) }
             delete data.sales
             delete data.stateHistory
 
             data = {
                 ...data,
-                updatedAt: convertTimeStampToMillis(data.updatedAt),
-                createdAt: convertTimeStampToMillis(data.createdAt),
+                updatedAt: DateUtils.convertTimestampToMillis(data.updatedAt),
+                createdAt: DateUtils.convertTimestampToMillis(data.createdAt),
                 opening: {
                     ...data.opening,
                     employee: employeeData,
@@ -55,7 +54,7 @@ export const fbGetCashCounts = async (user, setCashCounts, dateRange) => {
                 },
                 closing: {
                     ...data.closing,
-                    date: data.closing.date ? convertTimeStampToMillis(data.closing.date) : null,
+                    date: data.closing.date ? DateUtils.convertTimestampToMillis(data.closing.date) : null,
                     employee: closingEmployeeData,
                     approvalEmployee: closingApprovalEmployeeData
                 },
@@ -108,14 +107,14 @@ export const fbGetCashCountsDefault = async (user, setCashCounts) => {
             const closingEmployeeData = await getEmployeeData(data.closing.employee);
             const closingApprovalEmployeeData = await getEmployeeData(data.closing.approvalEmployee);
 
-            if (data.opening.date) { data.opening.date = convertTimeStampToMillis(data.opening.date) }
+            if (data.opening.date) { data.opening.date = DateUtils.convertTimestampToMillis(data.opening.date) }
             delete data.sales
             delete data.stateHistory
 
             data = {
                 ...data,
-                updatedAt: convertTimeStampToMillis(data.updatedAt),
-                createdAt: convertTimeStampToMillis(data.createdAt),
+                updatedAt: DateUtils.convertTimestampToMillis(data.updatedAt),
+                createdAt: DateUtils.convertTimestampToMillis(data.createdAt),
                 opening: {
                     ...data.opening,
                     employee: employeeData,
@@ -124,7 +123,7 @@ export const fbGetCashCountsDefault = async (user, setCashCounts) => {
                 },
                 closing: {
                     ...data.closing,
-                    date: data.closing.date ? convertTimeStampToMillis(data.closing.date) : null,
+                    date: data.closing.date ? DateUtils.convertTimestampToMillis(data.closing.date) : null,
                     employee: closingEmployeeData,
                     approvalEmployee: closingApprovalEmployeeData
                 },

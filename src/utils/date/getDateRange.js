@@ -1,11 +1,4 @@
 import { DateTime } from 'luxon';
-/**
- * Returns a date range object with a start and end date based on the specified parameter.
- * 
- * @param {string} parameter - The descriptor for the desired date range (e.g., 'today', 'thisWeek', etc.)
- * @returns {Object} An object with a 'startDate' and 'endDate' property, each being a Luxon DateTime object.
- */
-
 
 export function getDateRange(parameter) {
     const now = DateTime.local();

@@ -13,35 +13,45 @@ export const FeatureCard = ({ card }) => {
     )
 }
 const Container = styled(Link)`
-        border-radius: 0.4em;
-        overflow: hidden;
-         /* Tus estilos para el enlace de la tarjeta de funciones aquí */
-            background-color: var(--White);
-            min-height: 3.2em;
-            border: 1px solid #e7e7e7;
-          width: 100%;
-          padding: 0.4em 0.8em;
-          display:grid;
-          grid-template-columns: min-content 1fr;
-          gap: 0.6em;
-          align-items: center;
-          text-decoration: none;
-    
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #fff;
+    min-height: 3em;
+    border: 1px solid #eaeaea;
+    width: 100%;
+    padding: 0.6em 1em;
+    display: grid;
+    grid-template-columns: min-content 1fr;
+    gap: 0.8em;
+    align-items: center;
+    text-decoration: none;
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+        background-color: #f8f9fa;
+        border-color: #0086df;
+    }
 `
 
 const FeatureCardIcon = styled.div`
-  /* Tus estilos para la imagen de la tarjeta de funciones aquí */
-  font-size: 1.4em;
-  width: 1.4em;
-  display: flex;
-  align-items: center;
-              color: var(--color);
-              display: block;
+    font-size: 1.3em;
+    width: 1.3em;
+    height: 1.3em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0086df;
 `;
 
 const FeatureCardTitle = styled.span`
-  /* Tus estilos para el título de la tarjeta de funciones aquí */
-  color: rgb(32, 32, 32);
-           font-size: 15px;
-            font-weight: 450;
+    color: #2c3e50;
+    font-size: 0.95em;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    ${Container}:hover & {
+        color: #0086df;
+    }
 `;

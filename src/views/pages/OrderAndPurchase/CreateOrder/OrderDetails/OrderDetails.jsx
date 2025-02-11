@@ -1,23 +1,19 @@
 import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import { useDispatch, useSelector } from 'react-redux'
-import { Select } from '../../../../templates/system/Select/Select'
-import { SelectOrder, setOrder } from '../../../../../features/addOrder/addOrderModalSlice'
-import { DateTime } from 'luxon'
+import { selectOrder, setOrder } from '../../../../../features/addOrder/addOrderSlice'
 import { getOrderConditionByID, orderAndDataCondition } from '../../../../../constants/orderAndPurchaseState'
-import { Textarea } from '../../../../templates/system/Inputs/Textarea'
-import * as antd from 'antd'
-import { InputV4 } from '../../../../templates/system/Inputs/GeneralInput/InputV4'
+import { Form, DatePicker, Input } from 'antd'
 import { SelectStyle } from '../../CreatePurchase/CreatePurchase'
 import { fromMillisToDayjs } from '../../../../../utils/date/convertMillisecondsToDayjs'
-import dayjs from 'dayjs'
 import FileList from '../../CreatePurchase/components/FileList'
 import { InputMultipleFiles } from '../../../../templates/system/Form/InputFile/InputMultipleFiles'
-const { Form, DatePicker, Input } = antd
+
 const dateFormat = 'DD/MM/YYYY';
+
 export const OrderDetails = ({ setFileList, fileList }) => {
     const dispatch = useDispatch()
-    const order = useSelector(SelectOrder);
+    const order = useSelector(selectOrder);
     const { note, condition, dates } = order;
 
     const handleDateChange = (value) => {

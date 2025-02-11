@@ -9,10 +9,8 @@ import { clearShelfForm, closeShelfForm, selectShelfState, updateShelfFormData }
 export function ShelfForm({ }) {
   const dispatch = useDispatch();
   const [form] = Form.useForm();
-  const { formData, isOpen } = useSelector(selectShelfState)
-  const { selectedWarehouse } = useSelector(selectWarehouse);
+  const { formData, isOpen, path } = useSelector(selectShelfState) // Obtener la ruta
   const user = useSelector(selectUser);
-  const warehouseId = selectedWarehouse?.id;
 
   useEffect(() => {
     if (formData) {
@@ -24,33 +22,34 @@ export function ShelfForm({ }) {
 
   const handleFinish = async (values) => {
     try {
+      // Sanitize the data before sending to Firebase
       const newShelf = {
         ...formData,
-        ...values,
-        rowCapacity: parseInt(values.rowCapacity, 10), // Convertir a entero
+        name: values.name || '',
+        shortName: values.shortName || '',
+        description: values.description || '',
+        rowCapacity: parseInt(values.rowCapacity, 10) || 0
       };
+      
+      const warehouseId = path[0]?.id;
+      if (!warehouseId) {
+        throw new Error('No se encontró el ID del almacén');
+      }
 
       if (formData?.id) {
-        console.log(formData)
-        // Actualizar un estante existente
-        await updateShelf(
-          user,
-          warehouseId,
-          newShelf
-        );
+        await updateShelf(user, warehouseId, newShelf);
         message.success("Estante actualizado con éxito.");
       } else {
-        // Crear un nuevo estante
         await createShelf(user, warehouseId, newShelf);
-   
         message.success("Estante creado con éxito.");
       }
       handleClose();
     } catch (error) {
       console.error("Error al guardar el estante: ", error);
-      message.error("Error al guardar el estante."); // Mostrar mensaje de error
+      message.error(error.message || "Error al guardar el estante.");
     }
   };
+
   const handleClose = () => {
     dispatch(clearShelfForm());
     dispatch(closeShelfForm());

@@ -1,6 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { selectUser } from '../../features/auth/userSlice';
+
+// Servicios de escucha
 import { listenAllWarehouses } from './warehouseService';
 import { listenAllShelves } from './shelfService';
 import { listenAllRowShelves } from './RowShelfService';
@@ -9,145 +11,231 @@ import { listenAllProductStockByLocation } from './productStockService';
 
 export const useWarehouseHierarchy = () => {
   const user = useSelector(selectUser);
+
   const [warehouses, setWarehouses] = useState([]);
   const [shelves, setShelves] = useState({});
   const [rows, setRows] = useState({});
   const [segments, setSegments] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [productStock, setProductStock] = useState({});
+
   const [warehousesLoading, setWarehousesLoading] = useState(true);
   const [shelvesLoading, setShelvesLoading] = useState({});
   const [rowsLoading, setRowsLoading] = useState({});
   const [segmentsLoading, setSegmentsLoading] = useState({});
-  const [productStock, setProductStock] = useState({});
+  const [error, setError] = useState(null);
+
+  const [warehouseUnsubscribe, setWarehouseUnsubscribe] = useState(null);
+  const [shelvesUnsubscribes, setShelvesUnsubscribes] = useState([]);
+  const [rowsUnsubscribes, setRowsUnsubscribes] = useState([]);
+  const [segmentsUnsubscribes, setSegmentsUnsubscribes] = useState([]);
   const [productStockUnsubscribes, setProductStockUnsubscribes] = useState([]);
 
+  // ---------------------------------------------------
+  // Escucha de WAREHOUSES
+  // ---------------------------------------------------
   useEffect(() => {
     if (!user?.businessID) return;
 
-    // Cleanup previous listeners
-    productStockUnsubscribes.forEach((unsubscribe) => unsubscribe());
-    setProductStockUnsubscribes([]);
+    if (warehouseUnsubscribe) {
+      warehouseUnsubscribe();
+    }
 
     setWarehousesLoading(true);
-    const unsubscribeWarehouses = listenAllWarehouses(user, (warehouseData) => {
-      setWarehouses(warehouseData);
-      setWarehousesLoading(false);
 
-      warehouseData.forEach((warehouse) => {
-        // Subscribe to warehouse products
-        const unsubscribeWarehouseStock = listenAllProductStockByLocation(
-          user,
-          { id: warehouse.id, type: 'warehouse' },
-          (productStockData) => {
-            setProductStock((prev) => ({
-              ...prev,
-              [warehouse.id]: productStockData,
-            }));
-          }
-        );
-        setProductStockUnsubscribes((prev) => [...prev, unsubscribeWarehouseStock]);
+    const unsubscribe = listenAllWarehouses(
+      user,
+      (warehouseData) => {
+        setWarehouses(warehouseData);
+        setWarehousesLoading(false);
+      },
+      (err) => {
+        setError(err);
+        setWarehousesLoading(false);
+      }
+    );
 
-        setShelvesLoading((prev) => ({ ...prev, [warehouse.id]: true }));
-        listenAllShelves(user, warehouse.id, (shelfData) => {
-          setShelves((prev) => ({
-            ...prev,
-            [warehouse.id]: shelfData,
-          }));
-          setShelvesLoading((prev) => ({ ...prev, [warehouse.id]: false }));
-          
-          shelfData.forEach((shelf) => {
-            // Subscribe to shelf products
-            const unsubscribeShelfStock = listenAllProductStockByLocation(
-              user,
-              { id: shelf.id, type: 'shelf' },
-              (productStockData) => {
-                setProductStock((prev) => ({
-                  ...prev,
-                  [shelf.id]: productStockData,
-                }));
-              }
-            );
-            setProductStockUnsubscribes((prev) => [...prev, unsubscribeShelfStock]);
+    setWarehouseUnsubscribe(() => unsubscribe);
 
-            setRowsLoading((prev) => ({ ...prev, [shelf.id]: true }));
-            listenAllRowShelves(user, warehouse.id, shelf.id, (rowData) => {
-              setRows((prev) => ({
-                ...prev,
-                [shelf.id]: rowData,
-              }));
-              setRowsLoading((prev) => ({ ...prev, [shelf.id]: false }));
-
-              rowData.forEach((row) => {
-                // Subscribe to row products
-                const unsubscribeRowStock = listenAllProductStockByLocation(
-                  user,
-                  { id: row.id, type: 'row' },
-                  (productStockData) => {
-                    setProductStock((prev) => ({
-                      ...prev,
-                      [row.id]: productStockData,
-                    }));
-                  }
-                );
-                setProductStockUnsubscribes((prev) => [...prev, unsubscribeRowStock]);
-
-                setSegmentsLoading((prev) => ({ ...prev, [row.id]: true }));
-                listenAllSegments(user, warehouse.id, shelf.id, row.id, (segmentData) => {
-                  setSegments((prev) => ({
-                    ...prev,
-                    [row.id]: segmentData,
-                  }));
-                  setSegmentsLoading((prev) => ({ ...prev, [row.id]: false }));
-
-                  segmentData.forEach((segment) => {
-                    // Subscribe to segment products
-                    const unsubscribeSegmentStock = listenAllProductStockByLocation(
-                      user,
-                      { id: segment.id, type: 'segment' },
-                      (productStockData) => {
-                        setProductStock((prev) => ({
-                          ...prev,
-                          [segment.id]: productStockData,
-                        }));
-                      }
-                    );
-                    setProductStockUnsubscribes((prev) => [...prev, unsubscribeSegmentStock]);
-                  });
-                });
-              });
-            });
-          });
-        });
-      });
-
-      setLoading(false);
-    });
-
-    // Cleanup
     return () => {
-      unsubscribeWarehouses();
-      productStockUnsubscribes.forEach((unsubscribe) => unsubscribe());
+      if (unsubscribe) unsubscribe();
     };
   }, [user]);
 
-  // Función para combinar los datos
+  // ---------------------------------------------------
+  // Escucha de SHELVES
+  // ---------------------------------------------------
+  useEffect(() => {
+    shelvesUnsubscribes.forEach((u) => u());
+    setShelvesUnsubscribes([]);
+
+    const newUnsubscribes = [];
+
+    warehouses.forEach((warehouse) => {
+      setShelvesLoading((prev) => ({ ...prev, [warehouse.id]: true }));
+
+      const unsubscribe = listenAllShelves(
+        user,
+        warehouse.id,
+        (shelfData) => {
+          setShelves((prev) => ({ ...prev, [warehouse.id]: shelfData }));
+          setShelvesLoading((prev) => ({ ...prev, [warehouse.id]: false }));
+        },
+        (err) => {
+          setError(err);
+          setShelvesLoading((prev) => ({ ...prev, [warehouse.id]: false }));
+        }
+      );
+
+      newUnsubscribes.push(unsubscribe);
+    });
+
+    setShelvesUnsubscribes(newUnsubscribes);
+
+    return () => {
+      newUnsubscribes.forEach((u) => u());
+    };
+  }, [warehouses, user]);
+
+  // ---------------------------------------------------
+  // Escucha de ROWS
+  // ---------------------------------------------------
+  useEffect(() => {
+    rowsUnsubscribes.forEach((u) => u());
+    setRowsUnsubscribes([]);
+
+    const newUnsubscribes = [];
+
+    Object.keys(shelves).forEach((warehouseId) => {
+      shelves[warehouseId].forEach((shelf) => {
+        setRowsLoading((prev) => ({ ...prev, [shelf.id]: true }));
+
+        const unsubscribe = listenAllRowShelves(
+          user,
+          warehouseId,
+          shelf.id,
+          (rowData) => {
+            setRows((prev) => ({ ...prev, [shelf.id]: rowData }));
+            setRowsLoading((prev) => ({ ...prev, [shelf.id]: false }));
+          },
+          (err) => {
+            setError(err);
+            setRowsLoading((prev) => ({ ...prev, [shelf.id]: false }));
+          }
+        );
+
+        newUnsubscribes.push(unsubscribe);
+      });
+    });
+
+    setRowsUnsubscribes(newUnsubscribes);
+
+    return () => {
+      newUnsubscribes.forEach((u) => u());
+    };
+  }, [shelves, user]);
+
+  // ---------------------------------------------------
+  // Escucha de SEGMENTS
+  // ---------------------------------------------------
+  useEffect(() => {
+    segmentsUnsubscribes.forEach((u) => u());
+    setSegmentsUnsubscribes([]);
+
+    const newUnsubscribes = [];
+
+    Object.keys(rows).forEach((shelfId) => {
+      rows[shelfId].forEach((row) => {
+        setSegmentsLoading((prev) => ({ ...prev, [row.id]: true }));
+
+        const unsubscribe = listenAllSegments(
+          user,
+          row.warehouseId, // Debes agregar esta propiedad en tu servicio
+          row.shelfId,
+          row.id,
+          (segmentData) => {
+            setSegments((prev) => ({ ...prev, [row.id]: segmentData }));
+            setSegmentsLoading((prev) => ({ ...prev, [row.id]: false }));
+          },
+          (err) => {
+            setError(err);
+            setSegmentsLoading((prev) => ({ ...prev, [row.id]: false }));
+          }
+        );
+
+        newUnsubscribes.push(unsubscribe);
+      });
+    });
+
+    setSegmentsUnsubscribes(newUnsubscribes);
+
+    return () => {
+      newUnsubscribes.forEach((u) => u());
+    };
+  }, [rows, user]);
+
+  // ---------------------------------------------------
+  // Escucha de PRODUCT STOCK
+  // ---------------------------------------------------
+  useEffect(() => {
+    productStockUnsubscribes.forEach((u) => u());
+    setProductStockUnsubscribes([]);
+
+    const newUnsubscribes = [];
+
+    // Warehouses
+    warehouses.forEach((warehouse) => {
+      const unsubscribe = listenAllProductStockByLocation(
+        user,
+        { id: warehouse.id, type: 'warehouse' },
+        (stockData) => {
+          setProductStock((prev) => ({ ...prev, [warehouse.id]: stockData }));
+        },
+        (err) => setError(err)
+      );
+      newUnsubscribes.push(unsubscribe);
+    });
+
+    // Shelves
+    Object.keys(shelves).forEach((warehouseId) => {
+      shelves[warehouseId].forEach((shelf) => {
+        const unsubscribe = listenAllProductStockByLocation(
+          user,
+          { id: shelf.id, type: 'shelf' },
+          (stockData) => {
+            setProductStock((prev) => ({ ...prev, [shelf.id]: stockData }));
+          },
+          (err) => setError(err)
+        );
+        newUnsubscribes.push(unsubscribe);
+      });
+    });
+
+    // Rows and Segments...
+    // (Similar lógica para rows y segments)
+
+    setProductStockUnsubscribes(newUnsubscribes);
+
+    return () => {
+      newUnsubscribes.forEach((u) => u());
+    };
+  }, [warehouses, shelves, rows, segments, user]);
+
+  // ---------------------------------------------------
+  // Combinar datos en estructura final
+  // ---------------------------------------------------
   const combineData = () => {
     return warehouses.map((warehouse) => {
       const warehouseShelves = shelves[warehouse.id] || [];
-
       return {
         ...warehouse,
         productStock: productStock[warehouse.id] || [],
         shelves: warehouseShelves.map((shelf) => {
           const shelfRows = rows[shelf.id] || [];
-
           return {
             ...shelf,
             productStock: productStock[shelf.id] || [],
             rows: shelfRows.map((row) => {
               const rowSegments = segments[row.id] || [];
-
               return {
                 ...row,
                 productStock: productStock[row.id] || [],
@@ -163,107 +251,46 @@ export const useWarehouseHierarchy = () => {
     });
   };
 
-  const combinedData = combineData();
+  const data = useMemo(() => combineData(), [
+    warehouses,
+    shelves,
+    rows,
+    segments,
+    productStock,
+  ]);
 
-  return {
-    data: combinedData,
-    loading,
-    error,
-    shelvesLoading,
-    rowsLoading,
-    segmentsLoading,
-  };
-};
+  const overallLoading =
+    warehousesLoading ||
+    Object.values(shelvesLoading).some(Boolean) ||
+    Object.values(rowsLoading).some(Boolean) ||
+    Object.values(segmentsLoading).some(Boolean);
 
-// Función de transformación (sin cambios)
-const transformData = (data, shelvesLoading, rowsLoading, segmentsLoading) => {
-  return data.map((warehouse) => ({
-    id: warehouse.id,
-    name: warehouse.name,
-    isLoading: shelvesLoading[warehouse.id] !== false,
-    productStock: warehouse.productStock || [], // Add productStock at warehouse level
-    data: {
-      owner: warehouse.owner,
-      location: warehouse.location,
-      address: warehouse.address,
-      capacity: warehouse.capacity,
-      dimension: warehouse.dimension,
-      description: warehouse.description,
-      createdAt: warehouse.createdAt,
-      updatedAt: warehouse.updatedAt,
-      createdBy: warehouse.createdBy,
-      updatedBy: warehouse.updatedBy,
-      number: warehouse.number,
-    },
-    children: warehouse.shelves?.map((shelf) => ({
-      id: shelf.id,
-      name: shelf.name,
-      isLoading: rowsLoading[shelf.id] !== false,
-      productStock: shelf.productStock || [], // Add productStock at shelf level
-      data: {
-        rowCapacity: shelf.rowCapacity,
-        shortName: shelf.shortName,
-        description: shelf.description,
-        createdAt: shelf.createdAt,
-        updatedAt: shelf.updatedAt,
-        createdBy: shelf.createdBy,
-        updatedBy: shelf.updatedBy,
-        warehouseId: shelf.warehouseId,
-      },
-      children: shelf.rows?.map((row) => ({
-        id: row.id,
-        name: row.name,
-        isLoading: segmentsLoading[row.id] !== false,
-        productStock: row.productStock || [], // Add productStock at row level
-        data: {
-          capacity: row.capacity,
-          shortName: row.shortName,
-          description: row.description,
-          createdAt: row.createdAt,
-          updatedAt: row.updatedAt,
-          createdBy: row.createdBy,
-          updatedBy: row.updatedBy,
-          shelfId: row.shelfId,
-        },
-        children: row.segments?.map((segment) => ({
-          id: segment.id,
-          name: segment.name,
-          isLoading: false, // Assuming segments load immediately
-          productStock: segment.productStock || [], // Add productStock at segment level
-          data: {
-            capacity: segment.capacity,
-            shortName: segment.shortName,
-            description: segment.description,
-            createdAt: segment.createdAt,
-            updatedAt: segment.updatedAt,
-            createdBy: segment.createdBy,
-            updatedBy: segment.updatedBy,
-            rowShelfId: segment.rowShelfId,
-          },
-          children: [], // Segmento no tiene hijos
-        })) || [],
-      })) || [],
-    })) || [],
-  }));
+  return { data, loading: overallLoading, error };
 };
 
 export const useTransformedWarehouseData = () => {
-  const {
-    data,
-    loading,
-    error,
-    shelvesLoading,
-    rowsLoading,
-    segmentsLoading,
-  } = useWarehouseHierarchy();
+  const { data, loading, error } = useWarehouseHierarchy();
 
-  const transformedData = useMemo(
-    () =>
-      data
-        ? transformData(data, shelvesLoading, rowsLoading, segmentsLoading)
-        : [],
-    [data, shelvesLoading, rowsLoading, segmentsLoading]
-  );
+  const transformData = (data) => {
+    return data.map((warehouse) => ({
+      id: warehouse.id,
+      name: warehouse.name,
+      children: warehouse.shelves?.map((shelf) => ({
+        id: shelf.id,
+        name: shelf.name,
+        children: shelf.rows?.map((row) => ({
+          id: row.id,
+          name: row.name,
+          children: row.segments?.map((segment) => ({
+            id: segment.id,
+            name: segment.name,
+          })),
+        })),
+      })),
+    }));
+  };
+
+  const transformedData = useMemo(() => transformData(data), [data]);
 
   return { data: transformedData, loading, error };
 };

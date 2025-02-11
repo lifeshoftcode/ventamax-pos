@@ -2,10 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { IoMdTrash } from 'react-icons/io'
 import { useDispatch } from 'react-redux'
 import styled from 'styled-components'
-import { DeleteProduct, updateInitialCost, updateProduct, } from '../../../features/addOrder/addOrderModalSlice'
-import { separator } from '../../../hooks/separator'
 import { Button } from '../../templates/system/Button/Button'
-import { InputV4 } from '../../templates/system/Inputs/GeneralInput/InputV4'
 import { useFormatPrice } from '../../../hooks/useFormatPrice'
 
 export const ProductCard = ({ item, handleDeleteProduct, handleUpdateProduct }) => {

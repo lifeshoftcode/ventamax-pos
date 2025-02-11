@@ -22,7 +22,7 @@ export const transformConfig = [
     },
     {
         field: 'pricing.price',
-        source: 'pricing.listPrice',
+        // source: 'pricing.listPrice',
         transform: (value) => value || 0
     },
     {
@@ -40,7 +40,6 @@ export const transformConfig = [
     {
         field: 'pricing.tax', // Nuevo
         transform: (value) => {
-            console.log('value:', typeof value, " value ", value)
             const tax = value * 100 || 0
             return `${tax}`;
         } // Usa el valor por defecto de initTaxes
@@ -139,6 +138,10 @@ export const transformConfig = [
     },
     {
         field: 'barcode',
+        transform: (value) => value || ''
+    },
+    {
+        field: 'activeIngredients',
         transform: (value) => value || ''
     }
 

@@ -1,12 +1,26 @@
 import { Timestamp } from "firebase/firestore";
-
-export interface ProductStock {
-  id: string; // auto-generated
-  batchId: string; // Referencia al lote del producto
-  locationType: 'warehouse' | 'shelf' | 'rowShelf' | 'segment';
-  locationId: string; // Referencia a la ubicación del producto
-  productId: string; // Referencia al producto
-  stock: number; // Cantidad de stock del producto en la fila del estante
-  updatedAt?: Timestamp; // Fecha de última actualización
-  updatedBy?: string; // Usuario que realizó la última actualización
+import { AuditInfo } from "./AuditInfo";
+/**
+ * Interface ProductStock
+ * 
+ * Representa la información de stock de un producto en el almacén.
+ * 
+ * @property id - Identificador auto-generado.
+ * @property batchId - Referencia al lote del producto.
+ * @property location - Ubicación del producto con la siguiente estructura: "warehouseId/shelfId/rowId/segmentId".
+ * @property productId - Referencia al producto.
+ * @property stock - Cantidad de stock del producto en la fila del estante.
+ * @property updatedAt - Fecha de última actualización.
+ * @property updatedBy - Usuario que realizó la última actualización.
+ */
+export interface ProductStock extends AuditInfo {
+  id: string; 
+  batchId: string; 
+  location: string;
+  productId: string;
+  quantity: number; 
+  initialQuantity: number;
+  updatedAt?: Timestamp; 
+  updatedBy?: string; 
 }
+

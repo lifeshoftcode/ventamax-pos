@@ -168,8 +168,12 @@ const cartSlice = createSlice({
                     }
                     state.data.products = [...products, productData]
                 }else{
+                    
+                    // Object.assign(checkingID, product);
+                    checkingID.productStockId = product.productStockId;
+                    checkingID.batchId = product.batchId;
+                    checkingID.stock = product.stock;
                     checkingID.amountToBuy +=  1;
-
                 }
               
             } else { 

@@ -4,7 +4,7 @@ import { checkOpenCashReconciliation } from "../../firebase/cashCount/useIsOpenC
 import { fbGetAndUpdateTaxReceipt } from "../../firebase/taxReceipt/fbGetAndUpdateTaxReceipt";
 import { fbUpsertClient } from "../../firebase/client/fbUpsertClient";
 import { GenericClient } from "../../features/clientCart/clientCartSlice";
-import { fbUpdateProductsStock } from "../../firebase/products/fbUpdateProductStock";
+import { fbUpdateProductsStock } from "../../firebase/products/fbUpdateProductsStock";
 import { fbAddInvoice } from "../../firebase/invoices/fbAddInvoice";
 import { fbAddAR } from "../../firebase/accountsReceivable/fbAddAR";
 import { fbAddInstallmentAR } from "../../firebase/accountsReceivable/fbAddInstallmentAR";
@@ -42,12 +42,11 @@ export async function processInvoice({
             retrieveAndUpdateClientData({ user, client }),
         ]);
 
-        const [invoice] = await Promise.all([
-            cart?.preorderDetails?.isOrWasPreorder
-                ? generalInvoiceFromPreorder({ user, cart, cashCount, ncfCode })
-                : generateFinalInvoice({ user, cart, clientData, ncfCode, cashCount, dueDate }),
-            adjustProductInventory({ user, products: cart.products }),
-        ]);
+        const invoice = cart?.preorderDetails?.isOrWasPreorder
+            ? await generalInvoiceFromPreorder({ user, cart, cashCount, ncfCode })
+            : await generateFinalInvoice({ user, cart, clientData, ncfCode, cashCount, dueDate });
+
+        await adjustProductInventory({ user, products: cart.products, invoice });
 
         await manageReceivableAccounts({ user, accountsReceivable, invoice })
 
@@ -126,8 +125,8 @@ async function retrieveAndUpdateClientData({ user, client, transaction = null })
         throw new Error(`Error al actualizar los datos del cliente: ${error.message}`);
     }
 }
-async function adjustProductInventory({ user, products }) {
-    await fbUpdateProductsStock(products, user)
+async function adjustProductInventory({ user, products, invoice }) {
+    await fbUpdateProductsStock(products, user, invoice)
 }
 async function generateFinalInvoice({ user, cart, cashCount, ncfCode, clientData, dueDate }) {
     try {

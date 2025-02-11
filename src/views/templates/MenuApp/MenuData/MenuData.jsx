@@ -22,8 +22,8 @@ export const getMenuData = () => {
     const allMenuItems = [
         ...basic,
         ...sales,
-        ...accountsReceivable,
         ...inventory,
+        ...accountsReceivable,
         ...financialManagement,
         ...utility,
         ...contacts,
