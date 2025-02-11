@@ -1,8 +1,8 @@
 import React from 'react'
 import styled from 'styled-components'
-import KeyValueDisplay from '@templates/system/KeyValueDisplay/KeyValueDisplay';
-import { useFormatPrice } from '@hooks/useFormatPrice';
 import { Payment } from './components/Payment';
+import KeyValueDisplay from '../../../../../../../../templates/system/KeyValueDisplay/KeyValueDisplay';
+import { useFormatPrice } from '../../../../../../../../../hooks/useFormatPrice';
 
 
 export const AccountCard = ({  accountNumber, date, frequency, balance, installments, installmentAmount, lastPayment, lastPaymentDate, isActive, account }) => {

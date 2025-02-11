@@ -1,4 +1,4 @@
-import { useFormatPrice } from '@hooks/useFormatPrice';
+import { useFormatPrice } from '../../../../../../../../../../hooks/useFormatPrice';
 import * as antd from 'antd'
 import KeyValueDisplay from '../../../../../../../../../templates/system/KeyValueDisplay/KeyValueDisplay';
 import styled from 'styled-components';
