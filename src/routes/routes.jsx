@@ -1,4 +1,4 @@
-import { Home, Inventory, Login, Sales, Welcome, Purchases, NotFound } from "../views";
+import { NotFound } from "../views";
 import basic from "./paths/Basic";
 import auth from "./paths/Auth";
 import inventory from "./paths/Inventory";
@@ -13,6 +13,7 @@ import expenses from "./paths/Expenses";
 import changelogs from "./paths/Changelogs"
 import utility from "./paths/Utility";
 import accountReceivable from './paths/AccountReceivable'
+import insurance from './paths/Insurance'
 
 export const routes = [
     ...basic,
@@ -29,6 +30,7 @@ export const routes = [
     ...changelogs,
     ...utility,
     ...accountReceivable,
+    ...insurance,
     {
         path: "*",
         element: <NotFound />,

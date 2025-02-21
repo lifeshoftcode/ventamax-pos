@@ -2,11 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useFbGetClients } from '../../../../firebase/client/useFbGetClients'
 import { getClient, setChange, toggleCart, totalPurchase } from '../../../../features/cart/cartSlice'
 import { useDispatch, useSelector } from 'react-redux'
-import { useClickOutSide } from '../../../../hooks/useClickOutSide.jsx'
 import { useRef } from 'react'
 import { ClientDetails } from './ClientDetails/ClientDetails.jsx'
-import { ClientSelector } from './ClientSelector.jsx'
-import { filtrarDatos, useSearchFilter } from '../../../../hooks/useSearchFilter.js'
 import { updateObject } from '../../../../utils/object/updateObject'
 import { deleteClient, selectClient, selectClientMode, selectClientSearchTerm, selectIsOpen, selectLabelClientMode, setClient, setClientMode, setClientSearchTerm, setIsOpen } from '../../../../features/clientCart/clientCartSlice'
 import { CLIENT_MODE_BAR } from '../../../../features/clientCart/clientMode'
@@ -17,14 +14,16 @@ import * as antd from 'antd'
 const { Select } = antd
 import { fbGetTaxReceipt } from '../../../../firebase/taxReceipt/fbGetTaxReceipt.js'
 import { selectNcfType, selectTaxReceipt, selectTaxReceiptType } from '../../../../features/taxReceipt/taxReceiptSlice.js'
-import { Input, Button as AntButton } from 'antd';
-import { MdClose, MdPersonAdd, MdEdit } from 'react-icons/md';
+import { Input, Button as AntButton, Checkbox } from 'antd';
+import { MdPersonAdd, MdEdit } from 'react-icons/md';
 import styled from 'styled-components'
-import { icons } from '../../../../constants/icons/icons.jsx'
+import { selectBusinessData } from '../../../../features/auth/businessSlice.js'
+import { toggleInsurance, selectInsuranceStatus } from '../../../../features/insurance/insuranceSlice';
+import useInsuranceEnabled from '../../../../hooks/useInsuranceEnabled';
 
 export const ClientControl = () => {
   const dispatch = useDispatch()
-
+  const business = useSelector(selectBusinessData);
   const client = useSelector(selectClient)
   const mode = useSelector(selectClientMode)
   const taxReceipt = useSelector(selectTaxReceipt)
@@ -36,17 +35,15 @@ export const ClientControl = () => {
   const taxReceiptData = fbGetTaxReceipt()
   const isOpen = useSelector(selectIsOpen)
   const nfcType = useSelector(selectNcfType)
+  const insuranceEnabled = useInsuranceEnabled();
   const closeMenu = () => dispatch(setIsOpen(false))
   const setSearchTerm = (e) => dispatch(setClientSearchTerm(e))
   const openAddClientModal = () => dispatch(toggleClientModal({ mode: OPERATION_MODES.CREATE.id, data: null, addClientToCart: true }))
   const openUpdateClientModal = () => dispatch(toggleClientModal({ mode: OPERATION_MODES.UPDATE.id, data: client, addClientToCart: true }))
-  const createClientMode = () => dispatch(setClientMode(CLIENT_MODE_BAR.CREATE.id))
-  const updateClientMode = () => dispatch(setClientMode(CLIENT_MODE_BAR.UPDATE.id))
-
-  const searchClientMode = () => dispatch(setClientMode(CLIENT_MODE_BAR.SEARCH.id));
 
   const handleDeleteData = () => {
     dispatch(deleteClient())
+    dispatch(toggleInsurance(false))
   }
 
   const handleChangeClient = (e) => {
@@ -57,6 +54,10 @@ export const ClientControl = () => {
       dispatch(setClient(updateObject(client, e)))
     }
   }
+
+  const handleInsuranceChange = (e) => {
+    dispatch(toggleInsurance());
+  };
 
   useEffect(() => {
     switch (mode) {
@@ -82,8 +83,15 @@ export const ClientControl = () => {
 
   useEffect(() => { dispatch(getClient(client)) }, [client])
 
+  useEffect(() => {
+    // Si no hay cliente seleccionado, desactivar el seguro
+    if (!client?.id) {
+      dispatch(toggleInsurance(false))
+    }
+  }, [client])
+
   const searchClientRef = useRef(null)
-  // useClickOutSide(searchClientRef, isOpen === true, closeMenu)
+//   useClickOutSide(searchClientRef, isOpen === true, closeMenu)
 
   const OpenClientList = () => {
     switch (mode) {
@@ -147,24 +155,37 @@ export const ClientControl = () => {
       <ClientDetails
         mode={mode === CLIENT_MODE_BAR.CREATE.id}
       />
-      
-        {/* <ClientSelector /> */}
-      
+
+      {/* <ClientSelector /> */}
+
       {
         taxReceiptSettingEnabled && (
-          <Select
-            style={{ width: 200 }}
-            value={nfcType}
-            onChange={(e) => dispatch(selectTaxReceiptType(e))}
-          >
-            <Select.OptGroup label="Comprobantes Fiscal" >
-              {taxReceiptData.taxReceipt
-                .map(({ data }, index) => (
-                  <Select.Option value={data.name} key={index}>{data.name}</Select.Option>
-                ))
-              }
-            </Select.OptGroup>
-          </Select>
+          <SelectContainer>
+            <Select
+              style={{ width: 200 }}
+              value={nfcType}
+              onChange={(e) => dispatch(selectTaxReceiptType(e))}
+            >
+              <Select.OptGroup label="Comprobantes Fiscal" >
+                {taxReceiptData.taxReceipt
+                  .map(({ data }, index) => (
+                    <Select.Option value={data.name} key={index}>{data.name}</Select.Option>
+                  ))
+                }
+              </Select.OptGroup>
+            </Select>
+            {
+              business?.businessType === 'pharmacy' && (
+                <Checkbox 
+                  onChange={handleInsuranceChange}
+                  disabled={!client?.id}
+                  checked={insuranceEnabled} // Hook que compara el tipo de negocio y el estado del seguro
+                >
+                  Seguro
+                </Checkbox>
+              )
+            }
+          </SelectContainer>
         )
       }
     </Container>
@@ -199,4 +220,16 @@ const Header = styled.div`
    .ant-btn {
        margin-left: 8px;
    }
+`
+
+const SelectContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 10px;
+
+  .ant-select {
+    width: 200px;
+  }
 `

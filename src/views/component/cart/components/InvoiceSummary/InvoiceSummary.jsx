@@ -18,6 +18,7 @@ import { deleteClient, setIsOpen } from '../../../../../features/clientCart/clie
 import { PreorderConfirmation } from './components/Delivery/PreorderConfirmation/PreorderConfirmation';
 import useViewportWidth from '../../../../../hooks/windows/useViewportWidth';
 import { getTotalDiscount } from '../../../../../utils/pricing';
+import useInsuranceEnabled from '../../../../../hooks/useInsuranceEnabled';
 
 const InvoiceSummary = () => {
   const [isCartValid, setIsCartValid] = useState(false)
@@ -34,6 +35,7 @@ const InvoiceSummary = () => {
   const { billing } = useSelector(SelectSettingCart)
   const dispatch = useDispatch()
   const viewport = useViewportWidth();
+  const insuranceEnabled = useInsuranceEnabled();
 
   useEffect(() => {
     const { isValid } = validateInvoiceCart(cartData)
@@ -96,6 +98,12 @@ const InvoiceSummary = () => {
         <CustomInput discount={discount} value={discountPercent} options={["10", "20", "30", "40", "50"]} />
     
       </LineItem>
+      { insuranceEnabled && (
+        <LineItem>
+          <Label>Diferencia:</Label>
+          <Label>{useFormatPrice(subTotal - discount)}</Label>
+        </LineItem>
+      )}
       <TotalLine>
         {
           billing?.billingMode === "direct" && (

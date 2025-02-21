@@ -176,6 +176,7 @@ async function processBatchOfProducts(products, user, defaultWarehouse, baseRefs
             batchNumberId: startBatchNumber + i,
             destinationLocation: defaultWarehouse.id,
             sourceLocation: null,
+            
             productId: product.id,
             quantity: product.stock,
             movementType: MovementType.Entry,

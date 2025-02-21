@@ -60,6 +60,7 @@ export const fbAddProduct = (data, dispatch, user) => {
                     batchNumberId: batchNumber,
                     location: defaultWarehouse.id,
                     expirationDate: null,
+                    status: BatchStatus.Active,
                     productId: product.id,
                     quantity: product.stock,
                     initialQuantity: product.stock,

@@ -1,71 +1,30 @@
-import React, { useState } from 'react';
-import * as antd from 'antd';
-const { Modal, Menu, Form, Input, Button } = antd;
-import { MailOutlined, AppstoreOutlined } from '@ant-design/icons';
+import React from 'react';
+import { Modal, Button } from 'antd';
+import { useDispatch } from 'react-redux';
+import { toggleSignUpUser } from '../../../features/modals/modalSlice';
 
-export const BusinessEditModal = ({ isOpen }) => {
-  const [currentSection, setCurrentSection] = useState('products');
-
-  const renderContent = () => {
-    switch (currentSection) {
-      case 'products':
-        return <ProductsForm />;
-      case 'categories':
-        return <CategoriesForm />;
-      default:
-        return null;
-    }
+export const BusinessEditModal = ({ isOpen, onClose, business }) => {
+  const dispatch = useDispatch();
+  
+  const handleOpenSignUpModal = () => {
+    dispatch(toggleSignUpUser({
+      isOpen: true,
+      businessID: business?.id
+    }));
   };
 
   return (
     <Modal
       title="Editar Negocio"
       open={isOpen}
-      // onCancel={onClose}
-      width={800}
+      onCancel={onClose}
       footer={null}
     >
-      <div style={{ display: 'flex', height: '100%' }}>
-        <Menu
-          style={{ width: 256 }}
-          selectedKeys={[currentSection]}
-          mode="inline"
-          onClick={({ key }) => setCurrentSection(key)}
-        >
-          <Menu.Item key="products" icon={<AppstoreOutlined />}>
-            Productos
-          </Menu.Item>
-          <Menu.Item key="categories" icon={<MailOutlined />}>
-            Categorías
-          </Menu.Item>
-          {/* Puedes agregar más secciones aquí */}
-        </Menu>
-        <div style={{ flex: 1, padding: '0 24px' }}>
-          {renderContent()}
-        </div>
-      </div>
+      <Button type="primary" onClick={handleOpenSignUpModal}>
+        Agregar Usuario [{business?.id}]
+      </Button>
     </Modal>
   );
 };
-
-const ProductsForm = () => (
-  <Form layout="vertical">
-    <Form.Item label="Nombre del Producto">
-      <Input placeholder="Introduce el nombre del producto" />
-    </Form.Item>
-    {/* Más campos según sea necesario */}
-    <Button type="primary">Guardar Cambios</Button>
-  </Form>
-);
-
-const CategoriesForm = () => (
-  <Form layout="vertical">
-    <Form.Item label="Nombre de la Categoría">
-      <Input placeholder="Introduce el nombre de la categoría" />
-    </Form.Item>
-    {/* Más campos según sea necesario */}
-    <Button type="primary">Guardar Cambios</Button>
-  </Form>
-);
 
 

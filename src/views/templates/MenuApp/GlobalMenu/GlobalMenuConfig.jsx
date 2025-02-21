@@ -1,10 +1,12 @@
 import { CashReconciliation } from "../../../pages/CashReconciliation/CashReconciliation";
+import BusinessManagerToolbar from "./Page/BusinessManageToolbar";
 import { CashReconciliationToolbar } from "./Page/CashReconciliationToolbar";
 import { ClientControlToolbar } from "./Page/ClientControlToolbar";
 import { CreateOrderToolbar } from "./Page/CreateOrderToolbar";
 import { CreatePurchaseToolbar } from "./Page/CreatePurchaseToolbar";
 import { ExpensesCategoriesToolbar } from "./Page/ExpensesCategoriesToolbar";
 import { ExpensesListToolbar } from "./Page/ExpensesListToolbar";
+import { InsuranceConfigToolbar } from "./Page/InsuranceConfigToolbar";
 import { InventoryMenuToolbar } from "./Page/InventoryMenuToolbar/InventoryMenuToolbar";
 import { OrderToolbar } from "./Page/OrderToolbar";
 import { PreorderMenuToolbar } from "./Page/PreorderMenuToolbar";
@@ -74,6 +76,14 @@ const componentsConfig = [
   {
     id: 'preorderToolBar',
     component: PreorderMenuToolbar
+  },
+  {
+    id: 'businessManagementToolBar',
+    component: BusinessManagerToolbar
+  },
+  {
+    id: 'insuranceConfigToolBar',
+    component: InsuranceConfigToolbar
   }
 ];
 

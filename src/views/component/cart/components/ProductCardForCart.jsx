@@ -23,6 +23,8 @@ import {
 } from '../../../../utils/pricing';
 import { selectTaxReceiptEnabled } from '../../../../features/taxReceipt/taxReceiptSlice';
 import PriceAndSaleUnitsModal from './PriceAndSaleUnitsModal';
+import { Input as AntInput } from 'antd'; // Añadir este import
+import { selectInsuranceStatus } from '../../../../features/insurance/insuranceSlice';
 
 const defaultColor = { bg: 'var(--White3)', border: 'var(--Gray4)' };
 const errorColor = { bg: '#ffefcc', border: '#f5ba3c' };
@@ -86,6 +88,7 @@ export const ProductCardForCart = ({ item }) => {
     const dispatch = useDispatch();
     const { abilities } = userAccess();
     const [isModalVisible, setModalVisible] = useState(false);
+    const insuranceSelected = useSelector(selectInsuranceStatus);
 
     const taxReceiptEnabled = useSelector(selectTaxReceiptEnabled);
     const [selectedUnit, setSelectedUnit] = useState(null); // Por defecto, el item base
@@ -190,6 +193,24 @@ export const ProductCardForCart = ({ item }) => {
 
                 </Group>
             </Row>
+            {insuranceSelected && (
+                <Row>
+                    <Group>
+                        <CoverageLabel>Cobertura:</CoverageLabel>
+                        <AntInput
+                            type="number"
+                            placeholder="%"
+                            size='small'
+                            style={{ width: '80px' }}
+                        />
+                        <AntInput
+                            type="number"
+                             size='small'
+                            placeholder="Monto"
+                        />
+                    </Group>
+                </Row>
+            )}
             <PriceAndSaleUnitsModal
                 isVisible={isModalVisible}
                 onClose={() => setModalVisible(false)}
@@ -255,4 +276,10 @@ const Input = styled.input`
     border: 2px solid ${props => props?.color?.border};
     color: var(--Gray6);
     outline: none;
+`;
+
+const CoverageLabel = styled.span`
+    font-size: 14px;
+    color: rgb(71, 71, 71);
+    white-space: nowrap;
 `;

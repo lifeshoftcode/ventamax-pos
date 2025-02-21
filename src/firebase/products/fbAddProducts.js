@@ -65,6 +65,15 @@ export const fbAddProducts = async (user, products, maxProducts = 10000) => {
           // Eliminar producto existente en el batch, excepto el campo 'image'
           batch.delete(docRef);
           operationCount++;
+          
+          // Validar y ajustar el precio si es necesario
+          if (!product.pricing?.price || product.pricing.price <= 0) {
+            if (product.pricing) {
+              product.pricing.price = product.pricing.listPrice || 0;
+            } else {
+              product.pricing = { price: 0, listPrice: 0 };
+            }
+          }
 
           // Crear un nuevo documento y restaurar la imagen
           const updatedProduct = { ...product, image: existingImage };
@@ -72,6 +81,15 @@ export const fbAddProducts = async (user, products, maxProducts = 10000) => {
           operationCount++;
           console.log(`Producto actualizado y se mantuvo 'image': ${product.name}`);
         } else {
+          // Validar y ajustar el precio si es necesario
+          if (!product.pricing?.price || product.pricing.price <= 0) {
+            if (product.pricing) {
+              product.pricing.price = product.pricing.listPrice || 0;
+            } else {
+              product.pricing = { price: 0, listPrice: 0 };
+            }
+          }
+
           let docRef;
           if (product.id) {
             docRef = doc(productsCollection, product.id);
@@ -130,6 +148,7 @@ export const fbAddProducts = async (user, products, maxProducts = 10000) => {
           location: defaultWarehouse?.id || null,
           expirationDate: null,
           productId: product.id,
+          status: BatchStatus.Active,
           quantity: product.stock || 0,
           initialQuantity: product.stock || 0,
         };

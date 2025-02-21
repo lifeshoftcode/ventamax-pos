@@ -49,6 +49,8 @@ import activeIngredientsReducer from "../features/activeIngredients/activeIngred
 import fileReducer from '../features/files/fileSlice';
 import productStockSimpleReducer from '../features/productStock/productStockSimpleSlice';
 import deleteProductStockReducer from '../features/productStock/deleteProductStockSlice';
+import insuranceReducer from '../features/insurance/insuranceSlice';
+import insuranceConfigModalReducer from '../features/insurance/insuranceConfigModalSlice';
 
 export const store = configureStore({
   reducer: {
@@ -119,6 +121,8 @@ export const store = configureStore({
     barcodePrintModal: barcodePrintModalReducer,
     productWeightEntryModalSlice: productWeightEntryModalSlice,
     files: fileReducer,
+    insurance: insuranceReducer,
+    insuranceConfigModal: insuranceConfigModalReducer,
   }
 })
 

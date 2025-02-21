@@ -1,49 +1,126 @@
 import styled from "styled-components"
 import { FormattedValue } from "../../../../templates/system/FormattedValue/FormattedValue"
 import { BusinessEditModal } from "../../../BusinessEditModal/BusinessEditModal"
-import { useState } from "react"
+import { useMemo, useState } from "react"
+import { EditOutlined, EnvironmentOutlined, PhoneOutlined, IdcardOutlined } from '@ant-design/icons'
+import { truncateString } from "../../../../../utils/text/truncateString"
 
 export const BusinessCard = ({ business }) => {
     const [businessEditModalOpen, setBusinessEditModalOpen] = useState(false)
-    const handleBusinessEdit = () => setBusinessEditModalOpen((prev) => !prev)
+
+    const openModal = (e) => {
+        e.stopPropagation();
+        setBusinessEditModalOpen(true);
+    }
+    const closeModal = () => setBusinessEditModalOpen(false);
+
+    const truncatedValues = useMemo(() => ({
+        address: truncateString(business.address, 20),
+        tel: truncateString(business.tel, 20),
+        name: truncateString(business.name, 20),
+        id: truncateString(business.id, 20),
+      }), [business]);
     
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault(); // Evita comportamientos no deseados
+            openModal(e);
+          }
+      };
+
     return (
-        <Container onClick={handleBusinessEdit}>
+        <StyledCard onClick={openModal} onKeyDown={handleKeyDown} role="button" tabIndex={0}>
             <Head>
-                <FormattedValue type={'subtitle'} value={business.name}>{business.name}</FormattedValue>
+                <BusinessName>
+                    <FormattedValue type={'subtitle'} value={truncatedValues.name} />
+                </BusinessName>
+                <EditIcon><EditOutlined /></EditIcon>
             </Head>
             <Body>
-                <p>ID: {business.id}</p>
-                <p>DIRECCIÓN: {business.address}</p>
-                <p>TEL: {business.tel}</p>
-                {`Modal:  ${businessEditModalOpen ? "Abierto" : "Cerrado"}`}
+                <InfoItem>
+                    <IdcardOutlined /> <span>{truncatedValues.id}</span>
+                </InfoItem>
+                <InfoItem>
+                    <EnvironmentOutlined /> <span>{truncatedValues.address}</span>
+                </InfoItem>
+                <InfoItem>
+                    <PhoneOutlined /> <span>{truncatedValues.tel}</span>
+                </InfoItem>
             </Body>
             <BusinessEditModal
                 isOpen={businessEditModalOpen}
-                onClose={handleBusinessEdit}
+                onClose={closeModal}
+                business={business} 
             />
-        </Container>
+        </StyledCard>
     )
 }
 
-
-
-const Container = styled.div`
-    padding: 1em;
-    border: var(--border-primary);
-    border-radius: 10px;
+const StyledCard = styled.div`
+    padding: 0.75rem;
+    border: 1px solid var(--color-border, #e8e8e8);
+    border-radius: 6px;
     background-color: #ffffff;
-  
-`
-const Head = styled.div`
-    text-align: center;
-    color: black;
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 10px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
 
+    &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
 `
+
+const Head = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-border, #f0f0f0);
+`
+
+const BusinessName = styled.div`
+    color: var(--color-text-primary, #262626);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-right: 0.5rem;
+`
+
+const EditIcon = styled.span`
+    color: var(--color-primary, #1890ff);
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+    padding: 4px;
+
+    &:hover {
+        opacity: 1;
+    }
+`
+
 const Body = styled.div`
-    color: black;
-    font-size: 15px;
+    display: grid;
+
+    gap: 0.5rem;
+`
+
+const InfoItem = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    color: var(--color-text-secondary, #595959);
+    font-size: 0.85rem;
+    min-width: 0;
+
+    span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    svg {
+        flex-shrink: 0;
+        font-size: 0.9rem;
+        color: var(--color-text-secondary, #8c8c8c);
+    }
 `

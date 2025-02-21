@@ -8,6 +8,7 @@ import { db } from '../../../../firebase/firebaseconfig';
 import { collection, getDocs, query, writeBatch } from 'firebase/firestore';
 import { fbInitializedProductInventory } from '../../../../firebase/products/fbInitializeProductInventory';
 import { fbInitializedProductInventoryForAllBusinesses } from '../../../../firebase/products/fbInitializedProductInventoryForAllBusinesses';
+import { updateDoc } from 'firebase/firestore';
 
 const { FloatButton } = antd
 
@@ -49,15 +50,160 @@ const handleDeleteProducts = async (user) => {
   }
 };
 
+const handleUpdateStockStatus = async (user, setProcessState) => {
+  try {
+    setProcessState({
+      status: "Iniciando actualización de estados",
+      progress: 0
+    });
+
+    const stockCollection = collection(db, `businesses/${user.businessID}/productsStock`);
+    const querySnapshot = await getDocs(stockCollection);
+
+    if (querySnapshot.empty) {
+      setProcessState({
+        status: "No hay productos para actualizar",
+        progress: 100
+      });
+      return;
+    }
+
+    const totalDocs = querySnapshot.size;
+    let batch = writeBatch(db);
+    const batchLimit = 500;
+    let counter = 0;
+    let updatedCount = 0;
+
+    for (const doc of querySnapshot.docs) {
+      const data = doc.data();
+      if (!data.hasOwnProperty("status")) {
+        batch.update(doc.ref, { status: "active" });
+        updatedCount++;
+        counter++;
+
+        setProcessState({
+          status: `Actualizando productos: ${updatedCount}/${totalDocs}`,
+          progress: Math.round((counter / totalDocs) * 100),
+          currentProduct: {
+            id: doc.id,
+            name: data.name || 'Producto sin nombre',
+            stock: data.stock || 0
+          }
+        });
+
+        if (counter % batchLimit === 0) {
+          await batch.commit();
+          batch = writeBatch(db);
+        }
+      }
+    }
+
+    if (counter % batchLimit !== 0) {
+      await batch.commit();
+    }
+
+    setProcessState({
+      status: `Actualización completada. Se actualizaron ${updatedCount} productos`,
+      progress: 100
+    });
+
+    console.log(`Se actualizaron ${updatedCount} productosStock exitosamente`);
+  } catch (error) {
+    console.error("Error actualizando productosStock: ", error);
+    setProcessState({
+      status: "Error en la actualización",
+      progress: 100,
+      error: true
+    });
+  }
+};
+
+const handleUpdateProductPrice = async (user, setProcessState) => {
+  try {
+    setProcessState({
+      status: "Iniciando actualización de precios",
+      progress: 0
+    });
+
+    const productsCollection = collection(db, `businesses/${user.businessID}/products`);
+    const querySnapshot = await getDocs(productsCollection);
+
+    if (querySnapshot.empty) {
+      setProcessState({
+        status: "No hay productos para actualizar",
+        progress: 100
+      });
+      return;
+    }
+
+    const totalDocs = querySnapshot.size;
+    let batch = writeBatch(db);
+    const batchLimit = 500;
+    let counter = 0;
+    let updatedCount = 0;
+
+    for (const doc of querySnapshot.docs) {
+      const data = doc.data();
+      // Verificar si tiene pricing.listPrice y actualizar pricing.price
+      if (data.pricing?.listPrice) {
+        batch.update(doc.ref, { 
+          'pricing.price': data.pricing.listPrice
+        });
+        
+        updatedCount++;
+        counter++;
+
+        setProcessState({
+          status: `Actualizando productos: ${updatedCount}/${totalDocs}`,
+          progress: Math.round((counter / totalDocs) * 100),
+          currentProduct: {
+            id: doc.id,
+            name: data.name || 'Producto sin nombre',
+            pricing: {
+              price: data.pricing.listPrice,
+              listPrice: data.pricing.listPrice
+            }
+          }
+        });
+
+        if (counter % batchLimit === 0) {
+          await batch.commit();
+          batch = writeBatch(db);
+        }
+      }
+    }
+
+    if (counter % batchLimit !== 0) {
+      await batch.commit();
+    }
+
+    setProcessState({
+      status: `Actualización completada. Se actualizaron ${updatedCount} productos`,
+      progress: 100
+    });
+
+    console.log(`Se actualizaron ${updatedCount} productos exitosamente`);
+  } catch (error) {
+    console.error("Error actualizando productos: ", error);
+    setProcessState({
+      status: "Error en la actualización",
+      progress: 100,
+      error: true
+    });
+  }
+}
+
 export const Prueba = () => {
   const user = useSelector(selectUser)
   const [processState, setProcessState] = useState(null);
 
   const handleSubmit = async () => {
     try {
-      // await fbInitializedProductInventory(user, setProcessState);
-      await fbInitializedProductInventoryForAllBusinesses(setProcessState);
+      //  await fbInitializedProductInventory(user, setProcessState);
+      // await fbInitializedProductInventoryForAllBusinesses(setProcessState);
       // await handleDeleteProducts(user);
+      await handleUpdateStockStatus(user, setProcessState);
+      // await handleUpdateProductPrice(user, setProcessState);
     } catch (error) {
       console.error(error);
     } finally {
@@ -74,7 +220,7 @@ export const Prueba = () => {
       {/* <GridVirtualizerFixed /> */}
       {/* <OrderManagement /> */}
       {/* <Receipt data={invoice} ignoreHidden={true} />  */}
-      prueba 2
+      prueba 
       {processState && <ProcessViewer {...processState} />}
       <FloatButton onClick={handleSubmit}>Iniciar</FloatButton>
     </Container>

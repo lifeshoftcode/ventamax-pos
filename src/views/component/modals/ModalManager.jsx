@@ -65,6 +65,14 @@ export const ModalManager = () => {
   const ProductOutflowSelected = useSelector(SelectProductOutflow)
   const currentNotification = useSelector(selectCurrentNotification)
   const FileListSelected = useSelector(SelectFileListModal)
+  {/* <BusinessEditModal /> */ }
+  {/* <UpdateProductModal
+      key='modal-update-product'
+      isOpen={UpdateProdModalSelected}
+    /> */}
+  {/* <ARInfoModal
+                key={'modal-ar-info-modal'}
+             /> */}
 
   return (
     <Fragment>
@@ -75,11 +83,6 @@ export const ModalManager = () => {
             isOpen={AddClientModalSelected}
           />
         )}
-        {/* <BusinessEditModal /> */}
-        {/* <UpdateProductModal
-            key='modal-update-product'
-            isOpen={UpdateProdModalSelected}
-          /> */}
         <BarcodePrintModal
           key={'modal-barcode-print'}
         />
@@ -116,9 +119,7 @@ export const ModalManager = () => {
         <PaymentForm
           key={'modal-payment-form'}
         />
-        {/* <ARInfoModal
-            key={'modal-ar-info-modal'}
-         /> */}
+
         {ProviderModalDataSelected.isOpen && (
           <ProviderForm
             key={'modal-provider'}
@@ -133,7 +134,9 @@ export const ModalManager = () => {
           />
         )}
 
-        <ProductStockForm />
+        <ProductStockForm
+          key={'modal-product-stock-form'}
+        />
 
         <AddCategoryModal
           key={'modal-add-category'}
@@ -156,8 +159,12 @@ export const ModalManager = () => {
           />
         )}
 
-        <EvidenceUploadDrawer />
-        <DeleteProductStockModal />
+        <EvidenceUploadDrawer
+          key={'modal-evidence-upload-drawer'}
+        />
+        <DeleteProductStockModal
+          key={'modal-delete-product-stock'}  
+        />
       </AnimatePresence>
       <NoteModal />
       <Loader />

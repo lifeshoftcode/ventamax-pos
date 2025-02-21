@@ -15,8 +15,8 @@ const CHANGELOG_TERM = {
     CHANGELOG_LIST: '/changelogs/list'
 }
 const DEV_VIEW_TERM = {
-    CREATE_BUSINESS: '/create-business',
-    MANAGE_BUSINESS: '/manage-business',
+    CREATE_BUSINESS: '/dev/business/create',
+    BUSINESSES: '/dev/businesses',
     ALL_USERS: '/all-users',
     CHANGELOG_CREATE: CHANGELOG_TERM.CHANGELOG_CREATE,
     CHANGELOG_MANAGE: CHANGELOG_TERM.CHANGELOG_MANAGE,
@@ -70,6 +70,7 @@ const CONTACT_TERM = {
     CLIENTS: '/contact',
     SUPPLIERS: '/suppliers',
 }
+
 const SETTING_TERM = {
     SETTINGS: '/settings',
     SETTING: '/general-config',
@@ -107,6 +108,14 @@ const ACCOUNT_RECEIVABLE_TERM = {
     RECEIVABLE_PAYMENT_RECEIPTS: '/account-receivable/receipts',
 }
 
+const INSURANCE_TERM = {
+    INSURANCE_CONFIG: '/insurance/config',
+    INSURANCE_LIST: '/insurance/list',
+    INSURANCE_CREATE: '/insurance/create',
+    INSURANCE_EDIT: '/insurance/edit/:id',
+    INSURANCE_DETAILS: '/insurance/details/:id',
+}
+
 const ROUTES_PATH = {
     UTILITY_TERM,
     BASIC_TERM,
@@ -121,7 +130,8 @@ const ROUTES_PATH = {
     PURCHASE_TERM,
     ORDER_TERM,
     DEV_VIEW_TERM,
-    CHANGELOG_TERM
+    CHANGELOG_TERM,
+    INSURANCE_TERM
 }
 export const ROUTES = {
     ...ROUTES_PATH,

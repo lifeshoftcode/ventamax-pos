@@ -16,8 +16,6 @@ export const SignUpModal = () => {
     const user = useSelector(selectUser);
     const [isOpenChangePassword, setIsOpenChangePassword] = useState(false)
     const [loading, setLoading] = useState(false)
-    const navigate = useNavigate();
-    const { abilities } = userAccess();
     const signUpModal = useSelector(SelectSignUpUserModal)
     const { isOpen, data } = signUpModal;
     const [fbError, setFbError] = useState(null);
@@ -37,7 +35,7 @@ export const SignUpModal = () => {
         const userData = {
             ...data,
             ...values,
-            businessID: user.businessID,
+            businessID: signUpModal.businessID || user.businessID,
         };
         try {
             if (data) {
