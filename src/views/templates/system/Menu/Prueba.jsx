@@ -9,6 +9,9 @@ import { collection, getDocs, query, writeBatch } from 'firebase/firestore';
 import { fbInitializedProductInventory } from '../../../../firebase/products/fbInitializeProductInventory';
 import { fbInitializedProductInventoryForAllBusinesses } from '../../../../firebase/products/fbInitializedProductInventoryForAllBusinesses';
 import { updateDoc } from 'firebase/firestore';
+import { cleanInventoryData } from '../../../../firebase/inventoryDataCleaner/inventoryDataCleanerService';
+import { InvoiceTemplate3 } from '../../../component/Invoice/templates/Invoicing/InvoiceTemplate3/InvoiceTemplate3';
+import { InvoiceTemplate4 } from '../../../component/Invoice/templates/Invoicing/InvoiceTemplate4/InvoiceTemplate4';
 
 const { FloatButton } = antd
 
@@ -146,10 +149,10 @@ const handleUpdateProductPrice = async (user, setProcessState) => {
       const data = doc.data();
       // Verificar si tiene pricing.listPrice y actualizar pricing.price
       if (data.pricing?.listPrice) {
-        batch.update(doc.ref, { 
+        batch.update(doc.ref, {
           'pricing.price': data.pricing.listPrice
         });
-        
+
         updatedCount++;
         counter++;
 
@@ -202,8 +205,13 @@ export const Prueba = () => {
       //  await fbInitializedProductInventory(user, setProcessState);
       // await fbInitializedProductInventoryForAllBusinesses(setProcessState);
       // await handleDeleteProducts(user);
-      await handleUpdateStockStatus(user, setProcessState);
+      // await handleUpdateStockStatus(user, setProcessState);
+      // await cleanInventoryData('7zydYrerx10N0Rg9vD2pQ')
       // await handleUpdateProductPrice(user, setProcessState);
+      setProcessState({
+        status: "Inventario limpiado exitosamente",
+        progress: 100
+      });
     } catch (error) {
       console.error(error);
     } finally {
@@ -216,11 +224,12 @@ export const Prueba = () => {
       {user?.businessID}
       {/* <FileProcessor />
       <RncSearch />  */}
-
+      <InvoiceTemplate3 />
+      <InvoiceTemplate4 />
       {/* <GridVirtualizerFixed /> */}
       {/* <OrderManagement /> */}
       {/* <Receipt data={invoice} ignoreHidden={true} />  */}
-      prueba 
+      prueba
       {processState && <ProcessViewer {...processState} />}
       <FloatButton onClick={handleSubmit}>Iniciar</FloatButton>
     </Container>

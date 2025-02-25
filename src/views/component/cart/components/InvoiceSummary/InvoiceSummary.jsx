@@ -1,24 +1,26 @@
-import React, {Fragment} from 'react';
+import React, { Fragment, useRef, useState, useEffect } from 'react';
 import styled from 'styled-components';
 import CustomInput from '../../../../templates/system/Inputs/CustomInput';
-import { InputV4 } from '../../../../templates/system/Inputs/GeneralInput/InputV4';
 import { useDispatch, useSelector } from 'react-redux';
 import { CancelShipping, SelectCartData, SelectSettingCart, selectCart, setCartId, toggleCart, toggleInvoicePanelOpen } from '../../../../../features/cart/cartSlice';
 import { useFormatPrice } from '../../../../../hooks/useFormatPrice';
 import { Delivery } from './components/Delivery/Delivery';
 import { validateInvoiceCart } from '../../../../../utils/invoiceValidation';
-import { useState } from 'react';
-import { useEffect } from 'react';
-import * as antd from 'antd'
+import { notification, Modal } from 'antd'
 import { AnimatedNumber } from '../../../../templates/system/AnimatedNumber/AnimatedNumber';
 import { fbAddPreOrder } from '../../../../../firebase/invoices/fbAddPreocer';
 import { selectUser } from '../../../../../features/auth/userSlice';
-import { clearTaxReceiptData } from '../../../../../features/taxReceipt/taxReceiptSlice';
-import { deleteClient, setIsOpen } from '../../../../../features/clientCart/clientCartSlice';
 import { PreorderConfirmation } from './components/Delivery/PreorderConfirmation/PreorderConfirmation';
-import useViewportWidth from '../../../../../hooks/windows/useViewportWidth';
 import { getTotalDiscount } from '../../../../../utils/pricing';
 import useInsuranceEnabled from '../../../../../hooks/useInsuranceEnabled';
+import { ActionMenu } from './components/ActionMenu/Actionmenu';
+import { icons } from '../../../../../constants/icons/icons';
+import { handleCancelShipping } from '../InvoicePanel/InvoicePanel';
+import { Quotation } from '../../../Quotation/components/Quotation/Quotation';
+import { useReactToPrint } from 'react-to-print';
+import { addQuotation } from '../../../../../firebase/quotation/quotationService';
+import { generateInvoicePDF } from '../../../../../utils/pdf/pdfGenerator';
+import { selectBusinessData } from '../../../../../features/auth/businessSlice';
 
 const InvoiceSummary = () => {
   const [isCartValid, setIsCartValid] = useState(false)
@@ -26,21 +28,24 @@ const InvoiceSummary = () => {
   const user = useSelector(selectUser)
   const [isOpenPreorderConfirmation, setIsOpenPreorderConfirmation] = useState(false)
   const cartData = cart?.data;
+  const billingSettings = cart?.settings?.billing;
+const business = useSelector(selectBusinessData) || {};
   const total = cartData?.totalPurchase?.value;
   const subTotal = cartData?.totalPurchaseWithoutTaxes?.value;
   const itbis = cartData.totalTaxes.value;
   const discountPercent = cartData.discount.value;
-  const discount = getTotalDiscount(subTotal, discountPercent)
-  const [loading, setLoading] = useState(false)
-  const { billing } = useSelector(SelectSettingCart)
-  const dispatch = useDispatch()
-  const viewport = useViewportWidth();
+  const quotationPrintRef = useRef();
+  const [quotationData, setQuotationData] = useState();
+  const discount = getTotalDiscount(subTotal, discountPercent);
+  const { billing } = useSelector(SelectSettingCart);
+
+  const dispatch = useDispatch();
   const insuranceEnabled = useInsuranceEnabled();
 
   useEffect(() => {
-    const { isValid } = validateInvoiceCart(cartData)
-    setIsCartValid(isValid)
-  }, [cartData])
+    const { isValid } = validateInvoiceCart(cartData);
+    setIsCartValid(isValid);
+  }, [cartData]);
 
   const handleInvoicePanelOpen = () => {
     const { isValid, message } = validateInvoiceCart(cartData)
@@ -48,95 +53,152 @@ const InvoiceSummary = () => {
       dispatch(toggleInvoicePanelOpen())
       dispatch(setCartId())
     } else {
-      antd.notification.error({
+      notification.error({
         description: message
       })
     }
   }
-  const handleCancelShipping = () => {
-    if (viewport <= 800) dispatch(toggleCart());
-    dispatch(CancelShipping())
-    dispatch(clearTaxReceiptData())
-    dispatch(deleteClient())
-    dispatch(clearTaxReceiptData())
-}
+
+  const handlePrint = useReactToPrint({
+    content: () => quotationPrintRef.current,
+    onAfterPrint: () => {
+      Modal.confirm({
+        title: '¿Limpiar cotización?',
+        content: '¿Desea limpiar los datos de la cotización?',
+        okText: 'Limpiar',
+        cancelText: 'Mantener',
+        onOk: () => {
+          handleCancelShipping({ dispatch, closeInvoicePanel: false });
+          notification.success({
+            message: 'Cotización eliminada',
+            description: 'Los datos de la cotización han sido eliminados.',
+            duration: 4
+          });
+        },
+        onCancel: () => {
+          notification.success({
+            message: 'Cotización conservada',
+            description: 'Los datos de la cotización se han mantenido.',
+            duration: 4
+          });
+        }
+      });
+    }
+  })
+
+    const handleGeneratePDF = () => {
+      generateInvoicePDF({ business, data: cartData });
+    };
+  
+
+  async function handlePrintQuotation() {
+    const data = await addQuotation(user, cartData, billingSettings);
+    console.log("data", data);
+    setQuotationData(data);
+    setTimeout(() => handlePrint(), 1000);
+  };
+
   const handleSavePreOrder = async () => {
     const { isValid, message } = validateInvoiceCart(cartData);
     try {
-    
-        await fbAddPreOrder(user, cartData)
-        handleCancelShipping()
-        setIsOpenPreorderConfirmation(false)
-        antd.notification({
-          message: 'Preorden guardada con éxito',
-          type: 'success'
 
-        })
-   
+      await fbAddPreOrder(user, cartData)
+      handleCancelShipping()
+      setIsOpenPreorderConfirmation(false)
+      notification.success({
+        message: 'Preorden guardada con éxito',
+        type: 'success'
+      })
     } catch (error) {
       console.error('Error al guardar la preorden:', error)
     }
-
   };
-  
+
+  const billingButtons = {
+    direct: {
+      text: 'Facturar',
+      action: handleInvoicePanelOpen,
+      // action: handleGeneratePDF,
+      disabled: !isCartValid && !billing?.isLoading
+    },
+    deferred: {
+      text: 'Preventa',
+      action: () => setIsOpenPreorderConfirmation(true),
+      disabled: !isCartValid && !billing?.isLoading
+    },
+    default: {
+      text: 'Sin accion',
+      action: undefined,
+      disabled: true
+    }
+  }
+
+  const { text, action, disabled } = billingButtons[billing?.billingMode] || billingButtons.default;
+
+  const menuOptions = [
+    billingSettings?.quoteEnabled && {
+      text: 'Cotización',
+      action: () => handlePrintQuotation(),
+      icon: icons.quotation.quote,
+      disabled: !isCartValid && !billing?.isLoading
+    },
+    {
+      text: 'Cancelar venta',
+      action: () => handleCancelShipping({ dispatch, closeInvoicePanel: false }),
+      icon: icons.operationModes.close,
+      disabled: !isCartValid && !billing?.isLoading,
+    },
+  ].filter(Boolean);
 
   return (
     <Fragment>
-    <SummaryContainer>
-      <LineItem>
-        <Label>SubTotal:</Label>
-        <Label>{useFormatPrice(subTotal)}</Label>
-      </LineItem>
-      <LineItem>
-        <Label>ITBIS:</Label>
-        <Label>{useFormatPrice(itbis)}</Label>
-      </LineItem>
-      <Delivery />
-      <LineItem>
-        <Label>Descuento:</Label>
-      
-        <CustomInput discount={discount} value={discountPercent} options={["10", "20", "30", "40", "50"]} />
-    
-      </LineItem>
-      { insuranceEnabled && (
+      <SummaryContainer>
         <LineItem>
-          <Label>Diferencia:</Label>
-          <Label>{useFormatPrice(subTotal - discount)}</Label>
+          <Label>SubTotal:</Label>
+          <Label>{useFormatPrice(subTotal)}</Label>
         </LineItem>
-      )}
-      <TotalLine>
-        {
-          billing?.billingMode === "direct" && (
-            <Button
-              onClick={handleInvoicePanelOpen}
-              disabled={!isCartValid && !billing?.isLoading}
-            >
-              Facturar
-            </Button>
-          )
-        }
-        {
-          billing?.billingMode === "deferred" && (
-            <Button
-              onClick={ () => setIsOpenPreorderConfirmation(true)}
-              disabled={!isCartValid && !billing?.isLoading}
-            >
-              Preventa
-            </Button>
-          )
-        }
-        <TotalLabel>
-          <AnimatedNumber value={useFormatPrice(total)} />
-        </TotalLabel>
-      </TotalLine>
-    </SummaryContainer>
-    <PreorderConfirmation
-      open={isOpenPreorderConfirmation}
-      onCancel={() => setIsOpenPreorderConfirmation(false)}
-      onConfirm={handleSavePreOrder}
-      preorder={{data: cartData}}
-      
-    />
+        <LineItem>
+          <Label>ITBIS:</Label>
+          <Label>{useFormatPrice(itbis)}</Label>
+        </LineItem>
+        <Delivery />
+        <LineItem>
+          <Label>Descuento:</Label>
+          <CustomInput
+            discount={discount}
+            value={discountPercent}
+            options={["10", "20", "30", "40", "50"]}
+          />
+        </LineItem>
+        {insuranceEnabled && (
+          <LineItem>
+            <Label>Diferencia:</Label>
+            <Label>{useFormatPrice(subTotal - discount)}</Label>
+          </LineItem>
+        )}
+        <TotalLine>
+          <Button
+            onClick={action}
+            disabled={disabled}
+          >
+            {text}
+          </Button>
+          <ActionMenu
+            disabled={disabled}
+            options={menuOptions}
+          />
+          <Quotation ref={quotationPrintRef} data={quotationData} />
+          <TotalLabel>
+            <AnimatedNumber value={useFormatPrice(total)} />
+          </TotalLabel>
+        </TotalLine>
+      </SummaryContainer>
+      <PreorderConfirmation
+        open={isOpenPreorderConfirmation}
+        onCancel={() => setIsOpenPreorderConfirmation(false)}
+        onConfirm={handleSavePreOrder}
+        preorder={{ data: cartData }}
+      />
     </Fragment>
   );
 };
@@ -146,6 +208,7 @@ export default InvoiceSummary;
 const SummaryContainer = styled.div`
   border-radius: 5px;
   padding: 0px 10px;
+  position: relative;
 `;
 
 export const LineItem = styled.div`

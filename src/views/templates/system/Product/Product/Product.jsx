@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { Spin, notification } from 'antd';
+import { LoadingOutlined } from '@ant-design/icons';
 
 // Ajusta las rutas/imports según tu estructura:
 import noImg from '../../../../../assets/producto/noimg.png';
@@ -122,9 +123,11 @@ const useProductHandling = (product, taxReceiptEnabled) => {
   const { checkProductStock } = useProductStockCheck();
 
   const price = useMemo(() => getTotalPrice(product, taxReceiptEnabled), [product, taxReceiptEnabled]);
+  const [isFirebaseLoading, setIsFirebaseLoading] = useState(false);
 
   const handleGetThisProduct = useCallback(async () => {
     try {
+      setIsFirebaseLoading(true);
       if (isOutOfStock) {
         notification.warning({
           message: 'Alerta de Stock Agotado',
@@ -197,6 +200,8 @@ const useProductHandling = (product, taxReceiptEnabled) => {
         description: 'No se pudo agregar el producto al carrito',
       });
       console.error('Error adding product:', error);
+    } finally {
+      setIsFirebaseLoading(false);
     }
   }, [
     product,
@@ -225,6 +230,7 @@ const useProductHandling = (product, taxReceiptEnabled) => {
     price,
     handleGetThisProduct,
     deleteProductFromCart,
+    isFirebaseLoading,
   };
 };
 
@@ -331,7 +337,7 @@ const Title = styled.div`
 `;
 
 const Footer = styled.div`
-  padding: 0 0.8em;
+  padding: 0 0.4em;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -407,6 +413,20 @@ const StockWarning = styled.div`
   z-index: 1;
 `;
 
+const LoadingOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2;
+  border-radius: var(--border-radius);
+`;
+
 // =========================================================
 // 9. Componente principal Product
 // =========================================================
@@ -425,6 +445,7 @@ export const Product = React.memo(({ product }) => {
     price,
     handleGetThisProduct,
     deleteProductFromCart,
+    isFirebaseLoading, // Agregar esta línea
   } = useProductHandling(product, taxReceiptEnabled);
 
   const isDisabled = isOutOfStock || isLowStock;
@@ -444,6 +465,12 @@ export const Product = React.memo(({ product }) => {
         isLowStock={isLowStock}
         hasStrictStock={product?.restrictSaleWithoutStock}
       >
+        {isFirebaseLoading && (
+          <LoadingOverlay>
+            <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
+          </LoadingOverlay>
+        )}
+        
         <ImageWrapper imageHiddenRef={productState.imageHidden}>
           <ImageContainer imageHiddenRef={productState.imageHidden}>
             {!productState.isImageLoaded && <Spin />}

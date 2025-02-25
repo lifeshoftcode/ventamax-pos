@@ -4,6 +4,8 @@ import { InvoiceTemplate2 } from '../../templates/Invoicing/InvoiceTemplate2/Inv
 import styled from 'styled-components';
 import { useSelector } from 'react-redux';
 import { SelectSettingCart } from '../../../../../features/cart/cartSlice';
+import { InvoiceTemplate3 } from '../../templates/Invoicing/InvoiceTemplate3/InvoiceTemplate3';
+import InvoiceTemplate4 from '../../templates/Invoicing/InvoiceTemplate4/InvoiceTemplate4';
 
 const InvoiceWrapper = styled.div`
   ${props => props.template === 'template2' && `
@@ -29,20 +31,24 @@ const InvoiceWrapper = styled.div`
 
 export const Invoice = React.forwardRef(({ data, template = "template1", ignoreHidden }, ref) => {
   const { billing: { billingMode, invoiceType } } = useSelector(SelectSettingCart);
-    const renderTemplate = () => {
-        switch (invoiceType?.toLowerCase()) {
-            case 'template1':
-                return <InvoiceTemplate1 ref={ref} data={data} ignoreHidden={ignoreHidden} />;
-            case 'template2':
-                return <InvoiceTemplate2 ref={ref} data={data} ignoreHidden={ignoreHidden} />;
-            default:
-                return <InvoiceTemplate1 ref={ref} data={data} ignoreHidden={ignoreHidden} />;
-        }
-    };
+  const renderTemplate = () => {
+    switch (invoiceType?.toLowerCase()) {
+      case 'template1':
+        return <InvoiceTemplate1 ref={ref} data={data} ignoreHidden={ignoreHidden} />;
+      case 'template2':
+        return <InvoiceTemplate2 ref={ref} data={data} ignoreHidden={ignoreHidden} />;
+      case 'template3':
+        return <InvoiceTemplate3 ref={ref} data={data} ignoreHidden={ignoreHidden} />;
+      case 'template4':
+        return <InvoiceTemplate4 ref={ref} data={data} ignoreHidden={ignoreHidden} />;
+      default:
+        return <InvoiceTemplate1 ref={ref} data={data} ignoreHidden={ignoreHidden} />;
+    }
+  };
 
-    return (
-        <InvoiceWrapper template={template}>
-            {renderTemplate()}
-        </InvoiceWrapper>
-    );
+  return (
+    <InvoiceWrapper template={template}>
+      {renderTemplate()}
+    </InvoiceWrapper>
+  );
 });

@@ -13,7 +13,7 @@ import { useReactToPrint } from 'react-to-print'
 import useViewportWidth from '../../../../../hooks/windows/useViewportWidth'
 import DateUtils from '../../../../../utils/date/dateUtils'
 import { Invoice } from '../../../Invoice/components/Invoice/Invoice'
-import dayjs from 'dayjs' 
+import dayjs from 'dayjs'
 
 export const modalStyles = {
     mask: {
@@ -38,7 +38,7 @@ export const modalStyles = {
 
 const calculateDueDate = (duePeriod, hasDueDate) => {
     if (!hasDueDate) return null;
-    
+
     const currentDate = dayjs();
     return currentDate
         .add(duePeriod.months || 0, 'month')
@@ -46,12 +46,22 @@ const calculateDueDate = (duePeriod, hasDueDate) => {
         .add(duePeriod.days || 0, 'day');
 }
 
+export const handleCancelShipping = ({ dispatch, viewport, closeInvoicePanel = true }) => {
+    if (dispatch === undefined) return;
+    if (viewport !== undefined && viewport <= 800) dispatch(toggleCart());
+    if (closeInvoicePanel) dispatch(toggleInvoicePanel());
+    dispatch(CancelShipping());
+    dispatch(clearTaxReceiptData());
+    dispatch(deleteClient());
+    dispatch(clearTaxReceiptData());
+};
+
 export const InvoicePanel = () => {
     const dispatch = useDispatch()
     const [form] = Form.useForm()
     const [invoice, setInvoice] = useState({})
     const [submitted, setSubmitted] = useState(false)
-    
+
     const [loading, setLoading] = useState({
         status: false,
         message: ''
@@ -63,7 +73,7 @@ export const InvoicePanel = () => {
     const cartSettings = useSelector(SelectSettingCart)
     const invoicePanel = cartSettings.isInvoicePanelOpen;
     const shouldPrintInvoice = cartSettings.printInvoice;
-    const {duePeriod, hasDueDate} = cartSettings?.billing;
+    const { duePeriod, hasDueDate } = cartSettings?.billing;
     const componentToPrintRef = useRef();
     const user = useSelector(selectUser)
     const client = useSelector(selectClient)
@@ -74,13 +84,13 @@ export const InvoicePanel = () => {
     const isAddedToReceivables = cart?.isAddedToReceivables;
     const change = cart?.change?.value;
     const isChangeNegative = change < 0;
-   
+
 
     const handlePrint = useReactToPrint({
         content: () => componentToPrintRef.current,
         onAfterPrint: () => {
             setInvoice({});
-            handleCancelShipping();
+            handleCancelShipping({dispatch, viewport});
             notification.success({
                 message: 'Venta Procesada',
                 description: 'La venta ha sido procesada con éxito',
@@ -88,15 +98,6 @@ export const InvoicePanel = () => {
             })
         }
     })
-
-    const handleCancelShipping = () => {
-        if (viewport <= 800) dispatch(toggleCart());
-        dispatch(CancelShipping())
-        dispatch(clearTaxReceiptData())
-        dispatch(deleteClient())
-        dispatch(toggleInvoicePanel())
-        dispatch(clearTaxReceiptData())
-    }
 
     const showCancelSaleConfirm = () => {
         Modal.confirm({
@@ -109,7 +110,7 @@ export const InvoicePanel = () => {
 
             onOk() {
                 message.success('Venta cancelada', 2.5)
-                handleCancelShipping()
+                handleCancelShipping({dispatch, viewport})
             },
             onCancel() {
                 // Aquí manejas el caso en que el usuario decide no cancelar la venta
@@ -126,7 +127,7 @@ export const InvoicePanel = () => {
             }
 
             const dueDate = calculateDueDate(duePeriod, hasDueDate);
-            
+
             const { invoice } = await processInvoice({
                 cart,
                 user,
@@ -144,7 +145,7 @@ export const InvoicePanel = () => {
                 setTimeout(() => handlePrint(), 1000)
             }
             if (!shouldPrintInvoice) {
-                handleCancelShipping();
+                handleCancelShipping({dispatch, viewport});
                 notification.success({
                     message: 'Venta Procesada',
                     description: 'La venta ha sido procesada con éxito',
@@ -153,7 +154,7 @@ export const InvoicePanel = () => {
             }
             setLoading({ status: false, message: '' })
             setSubmitted(true)
-            
+
         } catch (error) {
             notification.error({
                 message: 'Error de Proceso',

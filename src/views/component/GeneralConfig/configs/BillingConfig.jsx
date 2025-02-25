@@ -6,13 +6,14 @@ import { SelectSettingCart } from '../../../../features/cart/cartSlice';
 import BillingSection from './components/BillingSection';
 import BillingModeConfig from './components/BillingModeConfig';
 import InvoiceSettingsSection from './components/InvoiceSettingsSection';
+import QuoteSettingsSection from './components/QuoteSettingsSection';
 
 const StyledCard = styled.div`
   margin-top: 16px;
 `;
 
 const BillingConfig = () => {
-  const { billing: { billingMode } } = useSelector(SelectSettingCart);
+  const { billing: { billingMode,  } } = useSelector(SelectSettingCart);
 
   return (
     <StyledCard title="Configuración de Ventas y Facturación" bordered={false}>
@@ -23,14 +24,20 @@ const BillingConfig = () => {
         <BillingModeConfig billingMode={billingMode} />
       </BillingSection>
       
-      <Divider />
-      
       <BillingSection
         title="Configuración de Factura"
         description="Configure los detalles de su factura."
       >
         <InvoiceSettingsSection />
       </BillingSection>
+
+      <BillingSection
+        title="Configuración de Cotizaciones"
+        description="Configure los parámetros predeterminados para sus cotizaciones."
+      >
+        <QuoteSettingsSection />
+      </BillingSection>
+    
     </StyledCard>
   );
 };

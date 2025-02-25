@@ -19,6 +19,12 @@ const TEMPLATES_CONFIG = {
     width: '210mm',
     height: '297mm',
     padding: '0mm',
+  },
+  template4: {
+    format: '80mm',
+    width: '80mm',
+    height: 'auto',
+    padding: '0mm', 
   }
 };
 

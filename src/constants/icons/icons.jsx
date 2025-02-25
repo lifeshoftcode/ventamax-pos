@@ -189,5 +189,8 @@ export const icons = {
     },
     insurance: {
         insurance: <FontAwesomeIcon icon={faShieldAlt} />,
+    },
+    quotation: {
+        quote: <FontAwesomeIcon icon={faQuoteLeft} />,
     }
 }

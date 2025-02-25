@@ -23,7 +23,7 @@ export const getMenuData = () => {
     const allMenuItems = [
         ...basic,
         ...sales,
-        ...insurance,
+        //...insurance,
         ...inventory,
         ...accountsReceivable,
         ...financialManagement,
