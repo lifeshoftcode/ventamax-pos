@@ -6,13 +6,15 @@ import { Row } from './Table/Row'
 import { getPriceTotal, getTax, getTotal, getTotalPrice, resetAmountToBuyForProduct } from '../../../../../../../utils/pricing'
 import { useFormatPrice } from '../../../../../../../hooks/useFormatPrice'
 import { useDispatch, useSelector } from 'react-redux'
-import {  SelectSettingCart } from '../../../../../../../features/cart/cartSlice'
+import { SelectSettingCart, selectInsuranceEnabled } from '../../../../../../../features/cart/cartSlice'
 import { convertTimeToSpanish } from '../../../../../../component/modals/ProductForm/components/sections/WarrantyInfo'
+import useInsuranceEnabled from '../../../../../../../hooks/useInsuranceEnabled'
 
 export const ProductList = ({ data }) => {
     const { products, NCF } = data
-    const {taxReceipt} = useSelector(SelectSettingCart)
-    const getFullProductName = ({ name, measurement, footer }) => 
+    const { taxReceipt } = useSelector(SelectSettingCart)
+    const insuranceEnabled = data.insuranceEnabled;
+    const getFullProductName = ({ name, measurement, footer }) =>
         `${name}${measurement ? ` Medida: [${measurement}]` : ''}${footer ? ` Pie: [${footer}]` : ''}`;
     return (
         <Container>
@@ -27,7 +29,7 @@ export const ProductList = ({ data }) => {
                                             product?.weightDetail?.isSoldByWeight ? (
                                                 <div>
                                                     {product?.weightDetail?.weight} {product?.weightDetail?.weightUnit} X {useFormatPrice(getTotalPrice(resetAmountToBuyForProduct(product), taxReceipt?.enabled))}
-                                           </div>
+                                                </div>
                                             ) : (
                                                 <div>
                                                     {product?.amountToBuy || 0} x {separator(getTotalPrice(resetAmountToBuyForProduct(product), taxReceipt?.enabled))}
@@ -49,6 +51,15 @@ export const ProductList = ({ data }) => {
                                     product?.warranty?.status && (
                                         <Row>
                                             {convertTimeToSpanish(product?.warranty?.quantity, product?.warranty?.unit)} de Garantía
+                                        </Row>
+                                    )
+                                }
+                                {
+                                    insuranceEnabled && product?.insurance?.mode && (
+                                        <Row>
+                                            <InsuranceCoverage>
+                                                Cobertura de seguro: {product.insurance.mode} - {useFormatPrice(product.insurance.value)}
+                                            </InsuranceCoverage>
                                         </Row>
                                     )
                                 }
@@ -95,3 +106,10 @@ const ProductName = styled.div`
         text-overflow: ellipsis;
         overflow: hidden;
 `
+
+const InsuranceCoverage = styled.div`
+    font-size: 1em;
+    font-style: italic;
+    color: #555;
+    padding-left: 8px;
+`;

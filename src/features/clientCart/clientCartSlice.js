@@ -4,6 +4,7 @@ import { fbAddClient } from '../../firebase/client/fbAddClient'
 import { fbUpdateClient } from '../../firebase/client/fbUpdateClient'
 import { useCompareObjectsInState } from '../../hooks/useCompareObject'
 import { useDispatch } from 'react-redux'
+import { fetchInsuranceAuthByClientId } from '../insurance/insuranceAuthSlice'
 
 export const GenericClient = {
     name: 'Generic Client',
@@ -110,6 +111,20 @@ export const clientSlice = createSlice({
 
     }
 })
+
+// Create a thunk to handle both client selection and auth data fetching
+export const selectClientWithAuth = (client) => (dispatch, getState) => {
+  dispatch(addClient(client));
+  
+  const user = getState().user.userData;
+  
+  if (client.id && user) {
+    dispatch(fetchInsuranceAuthByClientId({
+      user,
+      clientId: client.id
+    }));
+  }
+};
 
 export const { setClient, setClientMode, setIsOpen,setClientSearchTerm, deleteClient, addClient, handleClient } = clientSlice.actions;
 

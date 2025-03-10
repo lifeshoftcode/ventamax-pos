@@ -12,6 +12,8 @@ import { updateDoc } from 'firebase/firestore';
 import { cleanInventoryData } from '../../../../firebase/inventoryDataCleaner/inventoryDataCleanerService';
 import { InvoiceTemplate3 } from '../../../component/Invoice/templates/Invoicing/InvoiceTemplate3/InvoiceTemplate3';
 import { InvoiceTemplate4 } from '../../../component/Invoice/templates/Invoicing/InvoiceTemplate4/InvoiceTemplate4';
+import UpdateProducts from './UpdateProducts/UpdateProducts';
+import { ProductMaintenance } from './ProductMaintenance';
 
 const { FloatButton } = antd
 
@@ -208,10 +210,10 @@ export const Prueba = () => {
       // await handleUpdateStockStatus(user, setProcessState);
       // await cleanInventoryData('7zydYrerx10N0Rg9vD2pQ')
       // await handleUpdateProductPrice(user, setProcessState);
-      setProcessState({
-        status: "Inventario limpiado exitosamente",
-        progress: 100
-      });
+      // setProcessState({
+      //   status: "Inventario limpiado exitosamente",
+      //   progress: 100
+      // });
     } catch (error) {
       console.error(error);
     } finally {
@@ -224,8 +226,11 @@ export const Prueba = () => {
       {user?.businessID}
       {/* <FileProcessor />
       <RncSearch />  */}
-      <InvoiceTemplate3 />
-      <InvoiceTemplate4 />
+      {/* <InvoiceTemplate3 />
+      
+      <InvoiceTemplate4 /> */}
+      {/* <UpdateProducts /> */}
+      < ProductMaintenance />
       {/* <GridVirtualizerFixed /> */}
       {/* <OrderManagement /> */}
       {/* <Receipt data={invoice} ignoreHidden={true} />  */}

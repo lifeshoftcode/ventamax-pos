@@ -1,13 +1,17 @@
 import { useSelector } from 'react-redux';
-import { selectInsuranceStatus } from '../features/insurance/insuranceSlice';
 import { selectBusinessData } from '../features/auth/businessSlice';
+import { selectInsuranceEnabled } from '../features/cart/cartSlice';
 
-
+/**
+ * Custom hook to determine if insurance functionality is enabled
+ * Checks both business type and insurance status from cart
+ */
 const useInsuranceEnabled = () => {
     const business = useSelector(selectBusinessData);
-    const insuranceSelected = useSelector(selectInsuranceStatus);
+    const insuranceEnabled =  useSelector(selectInsuranceEnabled);
     
-    return business?.businessType === 'pharmacy' && insuranceSelected;
+    // Only enable insurance for pharmacy businesses and when explicitly enabled in cart
+    return business?.businessType === 'pharmacy' && insuranceEnabled;
 };
 
 export default useInsuranceEnabled;

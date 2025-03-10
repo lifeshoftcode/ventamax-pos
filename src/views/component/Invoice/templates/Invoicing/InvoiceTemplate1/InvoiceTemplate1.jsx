@@ -10,10 +10,15 @@ import { WarrantySignature } from './components/WarrantySignature'
 import { ReceiptComponent } from './Style'
 import { ThankYouMessage } from './components/ThankYouMessage'
 import { selectBusinessData } from '../../../../../../features/auth/businessSlice'
+import { selectInsuranceData } from '../../../../../../features/insurance/insuranceSlice'
+import { selectInsuranceEnabled } from '../../../../../../features/cart/cartSlice'
 
 
 export const InvoiceTemplate1 = React.forwardRef(({ data, ignoreHidden }, ref) => {
-      const business = useSelector(selectBusinessData) || ""
+    const business = useSelector(selectBusinessData) || ""
+    const insuranceStatus = data?.insuranceEnabled;
+    const insuranceData = useSelector(selectInsuranceData)
+    
     function getReceiptInfo(code) {
         if (!code) {
             return { type: 'Desconocido', description: 'RECIBO  DE PAGO' };
@@ -63,11 +68,18 @@ export const InvoiceTemplate1 = React.forwardRef(({ data, ignoreHidden }, ref) =
                     <ProductList data={data} />
                     <Line />
                     <PaymentArea P={P} data={data} />
+                    {insuranceStatus && (
+                        <InsuranceInfo>
+                            <P align="center">Cobertura de Seguro Aplicada</P>
+                            {insuranceData.authNumber && (
+                                <P align="center">No. Autorización: {insuranceData.authNumber}</P>
+                            )}
+                        </InsuranceInfo>
+                    )}
                     <WarrantySignature data={data} />
                     <ThankYouMessage message={business?.invoice?.invoiceMessage} />
-                    {/* <WarrantyArea data={data} /> */}
                 </ReceiptComponent.Container>
-        </ReceiptComponent.HiddenPrintWrapper>
+            </ReceiptComponent.HiddenPrintWrapper>
         ) : null
     )
 });
@@ -129,3 +141,10 @@ const Space = styled.div`
     }}
 
 `
+
+const InsuranceInfo = styled.div`
+    margin: 0.5em 0;
+    padding: 0.5em 0;
+    border-top: 1px dashed black;
+    border-bottom: 1px dashed black;
+`;

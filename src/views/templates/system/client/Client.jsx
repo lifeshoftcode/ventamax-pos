@@ -1,10 +1,12 @@
 import styled from "styled-components";
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { highlightSearch } from "../highlight/Highlight";
 import { addClient } from "../../../../features/clientCart/clientCartSlice";
 import { MdDelete, MdEdit } from 'react-icons/md';
 import { Button, Modal, Tooltip } from 'antd';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
+import { clearAuthData, fetchInsuranceAuthByClientId } from "../../../../features/insurance/insuranceAuthSlice";
+import { selectUser } from "../../../../features/auth/userSlice";
 
 const Container = styled.li`
     list-style: none;
@@ -120,19 +122,31 @@ const ActionButtons = styled.div`
 `
 
 export const Client = ({ client, Close, updateClientMode, onDelete, searchTerm, selectedClient }) => {
-    const dispatch = useDispatch()
+    const dispatch = useDispatch();
+    const user = useSelector(selectUser);
     const hasMissingName = !client.name;
     const hasMissingID = !client.personalID;
 
     const handleSubmit = (client) => {
-        dispatch(addClient(client))
-        Close()
+        dispatch(addClient(client));
+        
+        // Fetch insurance auth data for the selected client and store it in the state
+        if (client.id && user) {
+            dispatch(fetchInsuranceAuthByClientId({
+                user,
+                clientId: client.id
+            }));
+        } else {
+            dispatch(clearAuthData());
+        }
+        
+        Close();
     }
 
     const handleEdit = (e) => {
         e.stopPropagation();
-        updateClientMode(client)
-        Close()
+        updateClientMode(client);
+        Close();
     }
 
     const handleDelete = (e) => {

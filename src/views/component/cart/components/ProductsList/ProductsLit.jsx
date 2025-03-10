@@ -7,11 +7,12 @@ import { AnimatePresence, motion } from 'framer-motion'
 import Typography from '../../../../templates/system/Typografy/Typografy'
 import { InsuranceAuthFields } from '../InsuranceAuthFields/InsuranceAuthFields'
 import { selectInsuranceStatus, selectInsuranceData, updateInsuranceData } from '../../../../../features/insurance/insuranceSlice'
+import useInsuranceEnabled from '../../../../../hooks/useInsuranceEnabled'
 
 export const ProductsList = () => {
     const dispatch = useDispatch();
-    const ProductSelected = useSelector(SelectProduct)
-    const insuranceSelected = useSelector(selectInsuranceStatus);
+    const ProductSelected = useSelector(SelectProduct);
+    const insuranceEnabled = useInsuranceEnabled();
     const insuranceData = useSelector(selectInsuranceData);
     const EMPTY_CART_MESSAGE = "Los productos seleccionados aparecerán aquí...";
 
@@ -49,7 +50,7 @@ export const ProductsList = () => {
                     </EmptyCartMessage>
                 )}
             </Body>
-            {insuranceSelected && (
+            {insuranceEnabled && (
                 <InsuranceAuthFields
                     values={insuranceData}
                     onRecurrenceChange={handleRecurrenceChange}

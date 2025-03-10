@@ -9,10 +9,12 @@ import { useFormatPrice } from '../../../../../../../hooks/useFormatPrice'
 import { Paragraph, Spacing, Subtitle } from '../Style'
 import { getDiscount, getProductsDiscount, getProductsPrice, getProductsTax, getTotalDiscount } from '../../../../../../../utils/pricing'
 import { fbGetPendingBalance } from '../../../../../../../firebase/accountsReceivable/fbGetPendingBalance'
+import { selectInsuranceEnabled } from '../../../../../../../features/cart/cartSlice'
 
 export const PaymentArea = ({ data }) => {
     const [pendingBalance, setPendingBalance] = useState(0);
     const user = useSelector(selectUser);
+    const insuranceEnabled = useSelector(selectInsuranceEnabled);
     const businessID = user?.businessID;
     const clientId = data?.client?.id;
     const subtotal = getProductsPrice(data?.products || []) + getProductsTax(data?.products || []);
@@ -46,6 +48,11 @@ export const PaymentArea = ({ data }) => {
             label: 'DESCUENTO',
             value2: formatNumber(discount),
             condition: discount > 0
+        },
+        {
+            label: 'COBERTURA SEGURO',
+            value2: formatNumber(data?.totalInsurance?.value || 0),
+            condition: insuranceEnabled && (data?.totalInsurance?.value > 0)
         },
         ...data?.paymentMethod?.filter(item => item?.status === true)
             .map((item) => ({

@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { IoMdClose } from 'react-icons/io';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { Counter } from '../../../templates/system/Counter/Counter';
 import {
     deleteProduct,
     changeProductPrice,
-    changeProductWeight
+    changeProductWeight,
+    updateProductInsurance
 } from '../../../../features/cart/cartSlice';
 import { useFormatPrice } from '../../../../hooks/useFormatPrice';
 import { icons } from '../../../../constants/icons/icons';
@@ -23,8 +23,9 @@ import {
 } from '../../../../utils/pricing';
 import { selectTaxReceiptEnabled } from '../../../../features/taxReceipt/taxReceiptSlice';
 import PriceAndSaleUnitsModal from './PriceAndSaleUnitsModal';
-import { Input as AntInput } from 'antd'; // Añadir este import
+import { Input as AntInput, Radio, InputNumber } from 'antd'; // Añadir este import
 import { selectInsuranceStatus } from '../../../../features/insurance/insuranceSlice';
+import useInsuranceEnabled from '../../../../hooks/useInsuranceEnabled';
 
 const defaultColor = { bg: 'var(--White3)', border: 'var(--Gray4)' };
 const errorColor = { bg: '#ffefcc', border: '#f5ba3c' };
@@ -33,21 +34,11 @@ const inRangeColor = { bg: '#ffffcc', border: '#cccc88' };
 
 const { Button, message } = antd;
 
-const determineInputPriceColor = (totalPrice, minPrice, listPrice, avgPrice) => {
-    if (totalPrice < minPrice || totalPrice > listPrice) {
-        return errorColor;
-    } else if (totalPrice === minPrice || totalPrice === avgPrice) {
-        return exactMatchColor;
-    } else if (totalPrice > minPrice && totalPrice < listPrice) {
-        return inRangeColor;
-    }
-    return defaultColor;
-};
 
 export function extraerPreciosConImpuesto(pricing, taxReceiptEnabled = true) {
 
     const { listPrice, avgPrice, minPrice } = pricing || {};
-   
+
     const preciosConImpuesto = [
         {
             label: 'Precio de Lista',
@@ -74,7 +65,6 @@ export function extraerPreciosConImpuesto(pricing, taxReceiptEnabled = true) {
             enabled: pricing?.minPriceEnabled ?? true
         }
     ];
-    console.log('preciosConImpuesto ______________________________', preciosConImpuesto);
     return preciosConImpuesto;
 }
 
@@ -88,11 +78,14 @@ export const ProductCardForCart = ({ item }) => {
     const dispatch = useDispatch();
     const { abilities } = userAccess();
     const [isModalVisible, setModalVisible] = useState(false);
-    const insuranceSelected = useSelector(selectInsuranceStatus);
+    const insuranceEnabled = useInsuranceEnabled();
+    const canModifyPrice = abilities.can('modify', 'Price');
+    const canSelectPrice = abilities.can('read', 'PriceList');
 
     const taxReceiptEnabled = useSelector(selectTaxReceiptEnabled);
     const [selectedUnit, setSelectedUnit] = useState(null); // Por defecto, el item base
     const [inputPrice, setInputPrice] = useState(getTotalPrice(item, taxReceiptEnabled));
+    const [isEditingPrice, setIsEditingPrice] = useState(false);
     const [precios, setPrecios] = useState([]);
     const itemPrice = () => {
         setInputPrice(getPriceTotal(item, taxReceiptEnabled))
@@ -141,6 +134,91 @@ export const ProductCardForCart = ({ item }) => {
         updatePricing(pricing.pricing);
     };
 
+    const handlePriceChange = (e) => {
+        const newValue = e.target.value.replace(/[^0-9.]/g, '');
+        setInputPrice(newValue);
+    };
+
+    const handlePriceBlur = () => {
+        if (isEditingPrice) {
+            // Convertir el precio con impuesto a precio sin impuesto
+            const priceWithoutTax = getPriceWithoutTax(parseFloat(inputPrice), item.pricing.tax, taxReceiptEnabled);
+
+            // Despachar el cambio al estado con el precio sin impuesto
+            dispatch(changeProductPrice({
+                id: item.id,
+                price: priceWithoutTax
+            }));
+
+            setIsEditingPrice(false);
+        }
+    };
+
+    const handlePriceFocus = () => {
+        if (canModifyPrice && !item?.weightDetail?.isSoldByWeight) {
+            setIsEditingPrice(true);
+        }
+    };
+
+    // New local state for insurance mode and value:
+    const [insurance, setInsurance] = useState({
+        mode: item.insurance?.mode || 'porcentaje',
+        value: item.insurance?.value 
+    });
+    // Update local state when item changes
+    useEffect(() => {
+        setInsurance({
+            mode: item.insurance?.mode || 'porcentaje',
+            value: item.insurance?.value 
+        });
+    }, [item]);
+
+    const handleInsuranceModeChange = e => {
+        const newMode = e.target.value;
+        const newInsurance = { ...insurance, mode: newMode };
+        setInsurance(newInsurance);
+        dispatch(updateProductInsurance({ id: item.id, mode: newMode, value: newInsurance.value }));
+    };
+
+    const validateNumericWithDecimal = (input) => {
+        // Si está vacío, permitirlo
+        if (input === '') return '';
+        
+        // Verificar si la entrada contiene sólo dígitos y a lo sumo un punto decimal
+        const isValid = /^(\d+)?\.?(\d+)?$/.test(input);
+        
+        if (isValid) {
+          return input;
+        } else {
+          // Si no es válido, rechazamos el cambio
+          return null;
+        }
+      };
+
+    const handleInsuranceValueChange = newValue => {
+        const validatedValue = validateNumericWithDecimal(newValue);
+  
+        // Si la entrada no es válida, mantenemos el valor anterior
+        if (validatedValue === null) return;
+        
+        // Actualizamos el estado con el valor validado (aún como string para mantener el punto decimal)
+        const newInsurance = { ...insurance, value: validatedValue };
+        setInsurance(newInsurance);
+        dispatch(updateProductInsurance({ id: item.id, mode: newInsurance.mode, value: newInsurance.value }));
+    };
+
+    const handleInsuranceValueBlur = e => {
+        let value = e.target.value === '' ? '' : Number(e.target.value);
+
+        if (insurance.mode === 'porcentaje') {
+            if (value > 100) value = 100;
+
+            setInsurance({ ...insurance, value });
+            dispatch(updateProductInsurance({ id: item.id, mode: insurance.mode, value }));
+        }
+    };
+
+    console.log(insurance)
 
     return (
         <Container variants={variants} initial="initial" animate="animate" transition={{ duration: 0.6 }}>
@@ -165,10 +243,12 @@ export const ProductCardForCart = ({ item }) => {
                         onClick={() => setModalVisible(true)}
                     />
                     <Input
-                        disabled={!abilities.can('modify', 'Price') || item?.weightDetail?.isSoldByWeight}
-                        readOnly={!abilities.can('modify', 'Price')}
+                        disabled={!canModifyPrice || item?.weightDetail?.isSoldByWeight}
                         type="text"
-                        value={useFormatPrice(inputPrice)}
+                        value={isEditingPrice ? inputPrice : useFormatPrice(inputPrice)}
+                        onChange={handlePriceChange}
+                        onBlur={handlePriceBlur}
+                        onFocus={handlePriceFocus}
                     />
                     {
                         item?.weightDetail?.isSoldByWeight ? (
@@ -193,23 +273,42 @@ export const ProductCardForCart = ({ item }) => {
 
                 </Group>
             </Row>
-            {insuranceSelected && (
-                <Row>
-                    <Group>
-                        <CoverageLabel>Cobertura:</CoverageLabel>
-                        <AntInput
-                            type="number"
-                            placeholder="%"
-                            size='small'
-                            style={{ width: '80px' }}
+            {insuranceEnabled && (
+                <CoveragePill
+                    as={motion.div}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3 }}
+                >
+                    <CoverageLabel>Coverage</CoverageLabel>
+                    <CoverageControls>
+                        <ToggleGroup>
+                            <ToggleOption
+                                active={insurance.mode === 'porcentaje'}
+                                onClick={() => handleInsuranceModeChange({ target: { value: 'porcentaje' } })}
+                                as={motion.button}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                %
+                            </ToggleOption>
+                            <ToggleOption
+                                active={insurance.mode === 'monto'}
+                                onClick={() => handleInsuranceModeChange({ target: { value: 'monto' } })}
+                                as={motion.button}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                $
+                            </ToggleOption>
+                        </ToggleGroup>
+                        <ValueInput
+                            value={insurance.value}
+                            onChange={(e) => handleInsuranceValueChange(e.target.value)}
+                            onBlur={handleInsuranceValueBlur}
+                            as={motion.input}
+                            whileFocus={{ boxShadow: "0 0 0 2px rgba(37, 99, 235, 0.25)" }}
                         />
-                        <AntInput
-                            type="number"
-                             size='small'
-                            placeholder="Monto"
-                        />
-                    </Group>
-                </Row>
+                    </CoverageControls>
+                </CoveragePill>
             )}
             <PriceAndSaleUnitsModal
                 isVisible={isModalVisible}
@@ -278,8 +377,99 @@ const Input = styled.input`
     outline: none;
 `;
 
+// Estilos minimalistas
+const CoveragePill = styled.div`
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 16px;
+  background: #f9f9f9;
+  border: 1px solid #eaeaea;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  transition: all 0.2s ease;
+  
+  &:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+    border-color: #e0e0e0;
+  }
+`;
+
 const CoverageLabel = styled.span`
-    font-size: 14px;
-    color: rgb(71, 71, 71);
-    white-space: nowrap;
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+  margin-right: 8px;
+  white-space: nowrap;
+`;
+
+const CoverageControls = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
+const ToggleGroup = styled.div`
+  display: flex;
+  align-items: center;
+  height: 2em;
+  padding: 1px;
+  border-radius: 100px;
+  background: white;
+  border: 1px solid #e0e0e0;
+`;
+
+const ToggleOption = styled.button`
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: ${props => props.active ? '#062057' : 'transparent'};
+  color: ${props => props.active ? 'white' : '#666'};
+  border: none;
+  font-size: 16px;
+  font-weight: ${props => props.active ? '600' : '400'};
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-radius: 12px;
+
+  
+  &:active {
+    transform: scale(0.97);
+  }
+  
+  &:focus {
+    outline: none;
+  }
+`;
+
+const ValueInput = styled.input`
+  width: 100%;
+  height: 2em;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  background: white;
+  padding: 0 8px;
+  text-align: center;
+  font-size: 14px;
+  color: #333;
+  transition: all 0.2s ease;
+  
+  &:hover, &:focus {
+    border-color: #2563eb;
+    outline: none;
+  }
+  
+  &:focus {
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  }
+  
+  &::placeholder {
+    color: #aaa;
+  }
+  
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  -moz-appearance: textfield;
 `;

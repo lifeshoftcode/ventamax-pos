@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { initialState, defaultDelivery } from "./default/default";
 import { GenericClient } from "../clientCart/clientCartSlice";
-import { getProductsPrice, getProductsTax, getProductsTotalPrice, getTax, getTotalItems } from "../../utils/pricing";
+import { getProductsPrice, getProductsTax, getProductsTotalPrice, getTax, getTotalItems, getProductsInsuranceExtra } from "../../utils/pricing";
 import { nanoid } from "nanoid";
 
 const limitTwoDecimal = (number) => {
@@ -16,19 +16,26 @@ const updateAllTotals = (state, paymentValue = null) => {
     const products = state.data.products;
     const discountPercentage = state?.data?.discount?.value;
     const delivery = state?.data?.delivery?.value;
-    state.data.totalPurchase.value = getProductsTotalPrice(products, discountPercentage, delivery, taxReceiptEnabled);
+    
+    // Get base total without insurance and then subtract coverage
+    const baseTotal = getProductsTotalPrice(products, discountPercentage, delivery, taxReceiptEnabled);
+    const insuranceExtra = getProductsInsuranceExtra(products);
+    state.data.totalPurchase.value = baseTotal - insuranceExtra;
+    
+    // Save insurance coverage separately for display (coverage is a discount)
+    state.data.totalInsurance = { value: insuranceExtra };
+
     state.data.totalTaxes.value = getProductsTax(products, taxReceiptEnabled);
     state.data.totalShoppingItems.value = getTotalItems(products);
     state.data.totalPurchaseWithoutTaxes.value = getProductsPrice(products);
+    
     const cashPaymentMethod = state.data.paymentMethod
         .findIndex((method) => method.method === 'cash' && method.status === true);
-
     if (cashPaymentMethod !== -1) {
         state.data.paymentMethod[cashPaymentMethod].value = state.data.totalPurchase.value;
     }
-
     state.data.payment.value = paymentValue !== null ? paymentValue : state.data.totalPurchase.value;
-    state.data.change.value = calculateChange(state.data.payment.value, state.data.totalPurchase.value);
+    state.data.change.value = state.data.payment.value - state.data.totalPurchase.value;
 };
 
 
@@ -182,6 +189,7 @@ const cartSlice = createSlice({
                     cid: checkingID?.weightDetail?.isSoldByWeight
                         ? nanoid(8)
                         : product.id,
+                    insurance: product.insurance || { mode: null, value: 0 }
                 }
                 state.data.products = [...products, productData]
             }
@@ -276,6 +284,31 @@ const cartSlice = createSlice({
             state.settings.billing.isLoading = isLoading;
             state.settings.billing.isError = isError;
         },
+        updateProductInsurance: (state, action) => {
+            const { id, mode, value } = action.payload;
+            const product = state.data.products.find(p => p.id === id || p.cid === id);
+            if (product) {
+                product.insurance = { mode, value };
+            }
+            updateAllTotals(state);
+        },
+        updateInsuranceStatus: (state, action) => {
+            // Update insurance status in cart data
+            state.data.insuranceEnabled = action.payload;
+            
+            // If insurance is disabled, reset any insurance-related values on products
+            if (!action.payload) {
+                state.data.products.forEach(product => {
+                    if (product.insurance) {
+                        product.insurance = { mode: null, value: 0 };
+                    }
+                });
+            }
+            
+            // Recalculate totals when insurance status changes
+            updateAllTotals(state);
+        },
+        
     }
 })
 
@@ -315,6 +348,8 @@ export const {
     toggleInvoicePanel,
     setDefaultClient,
     setBillingSettings,
+    updateProductInsurance,
+    updateInsuranceStatus
 } = cartSlice.actions
 
 export const SelectProduct = (state) => state.cart.data.products;
@@ -335,29 +370,6 @@ export const SelectCartIsOpen = (state) => state.cart.isOpen
 export const SelectCartData = (state) => state.cart.data
 export const SelectSettingCart = (state) => state.cart.settings
 export const selectCart = (state) => state.cart
+export const selectInsuranceEnabled = (state) => state.cart.data.insuranceEnabled;
 
 export default cartSlice.reducer
-
-
-
-
-
-
-// const timestamp = new Date().toISOString();
-
-// state.data.history.push({
-//     status: newStatus,
-//     timestamp
-// });
-// state.data.status = newStatus;
-
-// if (newStatus === 'preorder') {
-//     state.data.isPreOrder = true;
-//     state.data.preOrderDate = new Date().toISOString();
-// } else if (newStatus === 'completed') {
-//     state.data.isPreOrder = false;
-//     state.data.preOrderDate = null;
-// } else if (newStatus === 'canceled' || newStatus === 'deleted') {
-//     state.data.isPreOrder = false;
-//     state.data.preOrderDate = null;
-// }

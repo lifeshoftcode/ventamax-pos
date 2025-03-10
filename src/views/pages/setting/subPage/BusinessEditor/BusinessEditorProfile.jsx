@@ -163,7 +163,7 @@ const BusinessProfileEditor = () => {
           >
             <Select placeholder="Selecciona el tipo de negocio">
               <Option value="general">General</Option>
-              {/* <Option value="pharmacy">Farmacia</Option> */}
+              <Option value="pharmacy">Farmacia</Option>
             </Select>
           </Form.Item>
 

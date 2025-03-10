@@ -274,7 +274,7 @@ export const renderPaymentArea = (
   const formatNumber = (num) => separator(num);
 
   // Calculos para subtotal, itbis y descuentos
-  const subtotal = getProductsPrice(data?.products || []) + getProductsTax(data?.products || []);
+  const subtotal = getProductsPrice(data?.products || []);
   const discount = getTotalDiscount(subtotal, data?.discount?.value || 0);
 
   // Etiquetas de métodos de pago
@@ -301,6 +301,11 @@ export const renderPaymentArea = (
       value2: formatNumber(discount),
       condition: discount > 0
     },
+    {
+      label: 'ITBIS',
+      value2: formatNumber(getProductsTax(data?.products || [])),
+      condition: true
+    },
     ...((data?.paymentMethod?.filter(item => item?.status === true)) || []).map((item) => ({
       label: paymentLabel[item?.method],
       value2: formatNumber(item?.value),
@@ -308,7 +313,6 @@ export const renderPaymentArea = (
     })),
     {
       subtitle: 'TOTAL',
-      value1: formatNumber(data?.totalTaxes?.value),
       value2: formatNumber(data?.totalPurchase?.value),
       condition: true
     },

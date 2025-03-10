@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDocs, onSnapshot } from "firebase/firestore";
+import { collection, doc, setDoc, getDocs, onSnapshot, query, where } from "firebase/firestore";
 import { nanoid } from "nanoid";
 import { useState, useEffect } from "react";
 import { db } from "../firebaseconfig";
@@ -24,9 +24,10 @@ const getInsuranceBeneficiariesCollection = (user) => {
  *
  * @param {object} user - The user object with businessID and uid.
  * @param {object} beneficiaryData - The data of the insurance beneficiary.
+ * @param {string} clientId - The ID of the client to associate with the beneficiary.
  * @returns {Promise<string>} - The generated ID of the newly added beneficiary.
  */
-export const addInsuranceBeneficiary = async (user, beneficiaryData) => {
+export const addInsuranceBeneficiary = async (user, beneficiaryData, clientId) => {
   try {
     const id = nanoid();
     const createdAt = new Date().toISOString();
@@ -40,13 +41,14 @@ export const addInsuranceBeneficiary = async (user, beneficiaryData) => {
     await setDoc(newDocRef, {
       id, // Se guarda el ID generado en el documento
       userId: user.uid, // Asocia el beneficiario al usuario (titular)
+      clientId, // Asocia el beneficiario con el cliente actual
       ...beneficiaryData,
       createdBy: user.uid, // Usamos user.uid directamente
       createdAt,
       updatedAt: createdAt,
       deleted: false
     });
-    
+
     return id;
   } catch (error) {
     console.error("Error adding insurance beneficiary:", error);
@@ -71,7 +73,7 @@ export const updateInsuranceBeneficiary = async (user, beneficiaryId, updatedDat
     }
     const beneficiaryDoc = doc(beneficiariesCollection, beneficiaryId);
     const updateTime = new Date().toISOString();
-    
+
     await setDoc(
       beneficiaryDoc,
       {
@@ -103,7 +105,7 @@ export const softDeleteInsuranceBeneficiary = async (user, beneficiaryId) => {
     }
     const beneficiaryDoc = doc(beneficiariesCollection, beneficiaryId);
     const deletedAt = new Date().toISOString();
-    
+
     await setDoc(
       beneficiaryDoc,
       {
@@ -127,23 +129,23 @@ export const softDeleteInsuranceBeneficiary = async (user, beneficiaryId) => {
  * @param {function} errorCallback - (Optional) Function to call if an error occurs.
  * @returns {function} - The unsubscribe function to stop listening.
  */
-export const listenInsuranceBeneficiaries = (user, callback, errorCallback) => {
+export const listenInsuranceBeneficiaries = ({ user, clientId, callback, errorCallback }) => {
   const beneficiariesCollection = getInsuranceBeneficiariesCollection(user);
   if (!beneficiariesCollection) {
     console.warn("No se pudo escuchar beneficiarios: datos de usuario no disponibles");
     // Retornamos una función de no-op para evitar errores en el unsubscribe
-    return () => {};
+    return () => { };
+  }
+  let queryRef = beneficiariesCollection;
+  if (clientId) {
+    queryRef = query(beneficiariesCollection, where("clientId", "==", clientId));
   }
   return onSnapshot(
-    beneficiariesCollection,
+    queryRef,
     (querySnapshot) => {
-      const beneficiaries = [];
-      querySnapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        if (!data.deleted) {
-          beneficiaries.push({ id: docSnap.id, ...data });
-        }
-      });
+      const beneficiaries = querySnapshot.docs
+        .map(doc => doc.data())
+        .filter(data => !data.deleted); // Filtrar solo los beneficiarios no eliminados
       callback(beneficiaries);
     },
     errorCallback
@@ -156,22 +158,23 @@ export const listenInsuranceBeneficiaries = (user, callback, errorCallback) => {
  * @param {object} user - The user object with businessID and uid.
  * @returns {Array} - The current list of active insurance beneficiaries.
  */
-export const useInsuranceBeneficiaries = (user) => {
+export const useInsuranceBeneficiaries = (user, clientId) => {
   const [beneficiaries, setBeneficiaries] = useState([]);
 
   useEffect(() => {
     if (!user) return;
     const unsubscribe = listenInsuranceBeneficiaries(
-      user,
-      (data) => {
-        setBeneficiaries(data);
-      },
-      (error) => {
-        console.error("Error listening to insurance beneficiaries:", error);
+      {
+        user,
+        clientId,
+        callback: (data) => setBeneficiaries(data),
+        errorCallback: (error) => {
+          console.error("Error listening to insurance beneficiaries:", error);
+        }
       }
     );
     return () => unsubscribe();
-  }, [user]);
+  }, [user, clientId]);
 
   return beneficiaries;
 };

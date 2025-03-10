@@ -12,6 +12,10 @@ export const generateNCFCode = (receiptData) => {
 
         // Increment the sequence
         const updatedSequence = increaseSequence(sequence, increase, 10);
+        
+        const updatedQuantity = Number(quantity) - Number(increase);
+
+        receiptData.data.quantity = updatedQuantity;
 
         // Build the NCF code
         const ncfCode = type + serie + updatedSequence;

@@ -27,7 +27,7 @@ const InvoiceSummary = () => {
   const cart = useSelector(selectCart);
   const user = useSelector(selectUser)
   const [isOpenPreorderConfirmation, setIsOpenPreorderConfirmation] = useState(false)
-  const cartData = cart?.data;
+  const cartData = useSelector(SelectCartData);
   const billingSettings = cart?.settings?.billing;
 const business = useSelector(selectBusinessData) || {};
   const total = cartData?.totalPurchase?.value;
@@ -38,6 +38,7 @@ const business = useSelector(selectBusinessData) || {};
   const [quotationData, setQuotationData] = useState();
   const discount = getTotalDiscount(subTotal, discountPercent);
   const { billing } = useSelector(SelectSettingCart);
+  const insuranceExtra = cartData?.totalInsurance?.value || 0;
 
   const dispatch = useDispatch();
   const insuranceEnabled = useInsuranceEnabled();
@@ -172,8 +173,8 @@ const business = useSelector(selectBusinessData) || {};
         </LineItem>
         {insuranceEnabled && (
           <LineItem>
-            <Label>Diferencia:</Label>
-            <Label>{useFormatPrice(subTotal - discount)}</Label>
+            <Label>Cobertura:</Label>
+            <Label>{useFormatPrice(insuranceExtra)}</Label>
           </LineItem>
         )}
         <TotalLine>

@@ -40,7 +40,10 @@ export const transformConfig = [
     {
         field: 'pricing.tax', // Nuevo
         transform: (value) => {
-            const tax = value * 100 || 0
+            if (value === null || value === undefined || value === '') return '0';
+            const numValue = typeof value === 'string' ? parseFloat(value) : value;
+            if(isNaN(numValue)) return 0;
+            const tax = numValue < 1 ? numValue * 100 : numValue;
             return `${tax}`;
         } // Usa el valor por defecto de initTaxes
     },

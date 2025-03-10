@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useFbGetClients } from '../../../../firebase/client/useFbGetClients'
-import { getClient, setChange, toggleCart, totalPurchase } from '../../../../features/cart/cartSlice'
+import { getClient, setChange, toggleCart, totalPurchase, updateInsuranceStatus, selectInsuranceEnabled } from '../../../../features/cart/cartSlice'
 import { useDispatch, useSelector } from 'react-redux'
 import { useRef } from 'react'
 import { ClientDetails } from './ClientDetails/ClientDetails.jsx'
@@ -18,7 +18,7 @@ import { Input, Button as AntButton, Checkbox } from 'antd';
 import { MdPersonAdd, MdEdit } from 'react-icons/md';
 import styled from 'styled-components'
 import { selectBusinessData } from '../../../../features/auth/businessSlice.js'
-import { toggleInsurance, selectInsuranceStatus } from '../../../../features/insurance/insuranceSlice';
+import { clearAuthData } from '../../../../features/insurance/insuranceAuthSlice.js'
 import useInsuranceEnabled from '../../../../hooks/useInsuranceEnabled';
 
 export const ClientControl = () => {
@@ -43,7 +43,8 @@ export const ClientControl = () => {
 
   const handleDeleteData = () => {
     dispatch(deleteClient())
-    dispatch(toggleInsurance(false))
+    dispatch(clearAuthData());
+    dispatch(updateInsuranceStatus(false))
   }
 
   const handleChangeClient = (e) => {
@@ -56,7 +57,8 @@ export const ClientControl = () => {
   }
 
   const handleInsuranceChange = (e) => {
-    dispatch(toggleInsurance());
+    const isChecked = e.target.checked;
+    dispatch(updateInsuranceStatus(isChecked));
   };
 
   useEffect(() => {
@@ -84,14 +86,13 @@ export const ClientControl = () => {
   useEffect(() => { dispatch(getClient(client)) }, [client])
 
   useEffect(() => {
-    // Si no hay cliente seleccionado, desactivar el seguro
     if (!client?.id) {
-      dispatch(toggleInsurance(false))
+      dispatch(updateInsuranceStatus(false))
     }
-  }, [client])
+  }, [client, dispatch])
 
   const searchClientRef = useRef(null)
-//   useClickOutSide(searchClientRef, isOpen === true, closeMenu)
+  //   useClickOutSide(searchClientRef, isOpen === true, closeMenu)
 
   const OpenClientList = () => {
     switch (mode) {
@@ -176,10 +177,10 @@ export const ClientControl = () => {
             </Select>
             {
               business?.businessType === 'pharmacy' && (
-                <Checkbox 
+                <Checkbox
                   onChange={handleInsuranceChange}
                   disabled={!client?.id}
-                  checked={insuranceEnabled} // Hook que compara el tipo de negocio y el estado del seguro
+                  checked={insuranceEnabled} // Directly use cart's insurance status
                 >
                   Seguro
                 </Checkbox>

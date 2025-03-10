@@ -201,3 +201,18 @@ export const setNumPrecision = (value, precision = 2) => {
   }
   return Number(num.toFixed(precision));
 }
+
+export function getInsuranceExtra(product) {
+  const ins = product.insurance || { mode: null, value: 0 };
+  if (!ins.value) return 0;
+  // Use getPricingDetails to obtain price and quantity.
+  const { price, isSoldByWeight, weight, amountToBuy } = getPricingDetails(product);
+  const quantity = isSoldByWeight ? weight : amountToBuy;
+  return ins.mode === 'porcentaje'
+      ? price * quantity * (ins.value / 100)
+      : ins.value * quantity;
+}
+
+export function getProductsInsuranceExtra(products = []) {
+  return products.reduce((acc, product) => acc + getInsuranceExtra(product), 0);
+}

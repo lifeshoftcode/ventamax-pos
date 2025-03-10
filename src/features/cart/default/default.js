@@ -86,7 +86,11 @@ const initialState = {
             preorderNumber: null,
             createdAt: null,
         },
-        history: []
+        history: [],
+        insuranceEnabled: false,
+        totalInsurance: {
+            value: 0
+        }
     },
 }
 /*los estados pueden ser:

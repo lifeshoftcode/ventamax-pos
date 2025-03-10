@@ -51,6 +51,7 @@ import productStockSimpleReducer from '../features/productStock/productStockSimp
 import deleteProductStockReducer from '../features/productStock/deleteProductStockSlice';
 import insuranceReducer from '../features/insurance/insuranceSlice';
 import insuranceConfigModalReducer from '../features/insurance/insuranceConfigModalSlice';
+import insuranceAuthReducer from '../features/insurance/insuranceAuthSlice';
 
 export const store = configureStore({
   reducer: {
@@ -123,6 +124,7 @@ export const store = configureStore({
     files: fileReducer,
     insurance: insuranceReducer,
     insuranceConfigModal: insuranceConfigModalReducer,
+    insuranceAuth: insuranceAuthReducer,
   }
 })
 

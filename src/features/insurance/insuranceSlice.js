@@ -17,6 +17,7 @@ const insuranceSlice = createSlice({
       state.selectedInsurance = action.payload
     },
     toggleInsurance: (state, action) => {
+      // If explicit value provided, use it, otherwise toggle current value
       state.selectedInsurance = action.payload ?? !state.selectedInsurance;
     },
     updateInsuranceData: (state, action) => {
