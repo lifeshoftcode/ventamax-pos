@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { getInsuranceAuthByClientId } from '../../firebase/insurance/insuranceAuthService';
+import { getClientInsuranceByClientId } from '../../firebase/insurance/clientInsuranceService';
 
 const initialState = {
   authData: {
@@ -29,8 +29,13 @@ export const fetchInsuranceAuthByClientId = createAsyncThunk(
   'insuranceAuth/fetchByClientId',
   async ({ user, clientId }, { rejectWithValue }) => {
     try {
-      const authData = await getInsuranceAuthByClientId(user, clientId);
-      return authData || initialState.authData;
+      const insuranceData = await getClientInsuranceByClientId(user, clientId);
+      if (insuranceData) {
+        // Solo extraemos los campos específicos que necesitamos
+        const { insuranceId, insuranceType, birthDate } = insuranceData;
+        return { insuranceId, insuranceType, birthDate };
+      }
+      return null;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -59,10 +64,15 @@ export const insuranceAuthSlice = createSlice({
     },
     openModal: (state, action) => {
       state.modal.open = true;
-      // We no longer need to set initialValues as we'll use authData directly
+      if (action.payload?.initialValues) {
+        // Actualiza el estado con los valores iniciales pasados al modal
+        state.authData = { ...state.authData, ...action.payload.initialValues };
+      }
     },
     closeModal: (state, { payload: { clearAuthData = false } = {} }) => {
-      clearAuthData && (state.authData = initialState.authData);
+      if (clearAuthData) {
+        state.authData = initialState.authData;
+      }
       state.modal.open = false;
     },
   },
@@ -74,8 +84,13 @@ export const insuranceAuthSlice = createSlice({
       })
       .addCase(fetchInsuranceAuthByClientId.fulfilled, (state, action) => {
         state.loading = false;
-        state.authData = action.payload;
-        // We don't need to set initialValues anymore
+        if (action.payload) {
+          // Solo actualiza los campos específicos manteniendo el resto del estado
+          state.authData = { 
+            ...state.authData, 
+            ...action.payload
+          };
+        }
       })
       .addCase(fetchInsuranceAuthByClientId.rejected, (state, action) => {
         state.loading = false;

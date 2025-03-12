@@ -1,32 +1,71 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Checkbox, Input } from 'antd';
+import { Checkbox, Input, Button } from 'antd';
 import { EditOutlined } from '@ant-design/icons';
 import { InsuranceAuthModal } from './InsuranceAuthModal/InsuranceAuthModal';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectClient } from '../../../../../features/clientCart/clientCartSlice';
-import { openModal, selectInsuranceAuthData } from '../../../../../features/insurance/insuranceAuthSlice';
+import { openModal, selectInsuranceAuthData, setAuthData } from '../../../../../features/insurance/insuranceAuthSlice';
 import {
   selectInsuranceData,
   updateInsuranceData
 } from '../../../../../features/insurance/insuranceSlice';
+import { getClientInsuranceByClientId } from '../../../../../firebase/insurance/clientInsuranceService';
+import { selectUser } from '../../../../../features/auth/userSlice';
 
 export const InsuranceAuthFields = () => {
   const dispatch = useDispatch();
+  const user = useSelector(selectUser);
   const client = useSelector(selectClient);
   const authData = useSelector(selectInsuranceAuthData);
   const insuranceData = useSelector(selectInsuranceData);
+  const [authNumber, setAuthNumber] = useState(authData?.authNumber || '');
+  const [clientInsurance, setClientInsurance] = useState(null);
+
+  // Obtener datos de seguro del cliente cuando el cliente cambia
+  useEffect(() => {
+    const fetchClientInsurance = async () => {
+      if (client?.id) {
+        const insuranceData = await getClientInsuranceByClientId(user, client.id);
+        if (insuranceData) {
+          setClientInsurance(insuranceData);
+          // Actualizar solo los datos específicos que necesitamos
+          dispatch(setAuthData({
+            insuranceId: insuranceData.insuranceId,
+            insuranceType: insuranceData.insuranceType,
+            birthDate: insuranceData.birthDate
+          }));
+        }
+      }
+    };
+
+    if (client?.id) {
+      fetchClientInsurance();
+    }
+  }, [client, user, dispatch]);
 
   if (!client) return null;
 
-  const handleInputClick = () => {
+  const handleOpenModal = () => {
     dispatch(openModal({
-      initialValues: { authNumber: authData?.authNumber, clientId: client?.id }
+      initialValues: { 
+        authNumber: authNumber, 
+        clientId: client?.id,
+        // Incluir los datos del seguro del cliente si están disponibles
+        insuranceId: clientInsurance?.insuranceId || authData?.insuranceId,
+        insuranceType: clientInsurance?.insuranceType || authData?.insuranceType,
+        birthDate: clientInsurance?.birthDate || authData?.birthDate
+      }
     }));
   };
 
   const handleRecurrenceChange = (e) => {
     dispatch(updateInsuranceData({ recurrence: e.target.checked }));
+  };
+
+  const handleInputChange = (e) => {
+    setAuthNumber(e.target.value);
+    dispatch(setAuthData({ authNumber: e.target.value }));
   };
 
   return (
@@ -40,13 +79,20 @@ export const InsuranceAuthFields = () => {
         </StyledCheckbox>
       </FormRow>
       <FormRow>
-        <StyledInput
-          placeholder="Número de autorización del seguro"
-          value={authData?.authNumber}
-          onClick={handleInputClick}
-          readOnly
-          suffix={<EditIcon onClick={handleInputClick} />}
-        />
+        <InputContainer>
+          <StyledInput
+            placeholder="Número de autorización del seguro"
+            value={authData?.authNumber}
+            onChange={handleInputChange}
+          />
+          <EditButton 
+            type="primary" 
+            icon={<EditOutlined />} 
+            onClick={handleOpenModal}
+          >
+            Editar
+          </EditButton>
+        </InputContainer>
       </FormRow>
       <InsuranceAuthModal />
     </Container>
@@ -78,9 +124,14 @@ const StyledCheckbox = styled(Checkbox)`
   }
 `;
 
+const InputContainer = styled.div`
+  display: flex;
+  width: 100%;
+  gap: 8px;
+`;
+
 const StyledInput = styled(Input)`
   width: 100%;
-  cursor: pointer;
   &:hover {
     border-color: #40a9ff;
   }
@@ -89,4 +140,8 @@ const StyledInput = styled(Input)`
 const EditIcon = styled(EditOutlined)`
   color: #1890ff;
   cursor: pointer;
+`;
+
+const EditButton = styled(Button)`
+  flex-shrink: 0;
 `;

@@ -13,10 +13,12 @@ import {
   selectInsuranceAuthLoading,
   selectInsuranceModal,
   closeModal,
-  fetchInsuranceAuthByClientId
+  fetchInsuranceAuthByClientId,
+  updateAuthField
 } from '../../../../../../features/insurance/insuranceAuthSlice';
-import { addInsuranceAuth } from '../../../../../../firebase/insurance/insuranceAuthService';
+import { createClientInsurance, updateClientInsurance, getClientInsuranceByClientId } from '../../../../../../firebase/insurance/clientInsuranceService';
 import Dependent from './components/Dependent/Dependent';
+import useInsuranceEnabled from '../../../../../../hooks/useInsuranceEnabled';
 
 const Row = styled.div`
   display: flex;
@@ -86,6 +88,7 @@ export const InsuranceAuthModal = () => {
   const isLoading = useSelector(selectInsuranceAuthLoading);
   const user = useSelector(selectUser);
   const client = useSelector(selectClient);
+  const insuranceEnabled = useInsuranceEnabled();
 
   const dispatch = useDispatch();
 
@@ -93,6 +96,7 @@ export const InsuranceAuthModal = () => {
   const [hasDependent, setHasDependent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [formComplete, setFormComplete] = useState(false);
 
   // Este estado guardará el ID de la aseguradora seleccionada
   const [selectedInsurance, setSelectedInsurance] = useState(null);
@@ -126,13 +130,132 @@ export const InsuranceAuthModal = () => {
     return selectedInsuranceData.insuranceTypes;
   }, [selectedInsuranceData]);
 
+  // Nueva función para guardar datos específicos inmediatamente
+  const saveSpecificFieldsToClientInsurance = useCallback(async (field, value) => {
+    if (!client?.id || !user) return;
+
+    try {
+      // Convertir fechas a formato ISO si es necesario
+      let processedValue = value;
+      if (field === 'birthDate' && value instanceof dayjs) {
+        processedValue = value.toISOString();
+      }
+
+      // Preparar los datos a guardar
+      const dataToSave = {
+        clientId: client.id,
+        [field]: processedValue
+      };
+
+      // Si ya tenemos un ID de aseguradora e insuranceType, incluirlos en los datos
+      if (field !== 'insuranceId' && authData.insuranceId) {
+        dataToSave.insuranceId = authData.insuranceId;
+      }
+      if (field !== 'insuranceType' && authData.insuranceType) {
+        dataToSave.insuranceType = authData.insuranceType;
+      }
+      if (field !== 'birthDate' && authData.birthDate) {
+        dataToSave.birthDate = authData.birthDate instanceof dayjs 
+          ? authData.birthDate.toISOString() 
+          : authData.birthDate;
+      }
+
+      // Actualizar o crear el registro del seguro del cliente
+      if (authData.clientInsuranceId) {
+        await updateClientInsurance(user, { 
+          id: authData.clientInsuranceId,
+          ...dataToSave
+        });
+      } else {
+        // Crear un nuevo registro
+        const success = await createClientInsurance(user, dataToSave);
+        if (success) {
+          // Si se crea exitosamente, podríamos actualizar el estado con el ID
+          // Pero necesitaríamos recuperar el ID creado, lo que depende de la implementación
+        }
+      }
+
+      // Actualizar Redux después de guardar en Firebase
+      dispatch(updateAuthField({ field, value: processedValue }));
+    } catch (error) {
+      console.error("Error saving specific insurance field:", error);
+      message.error("No se pudo guardar el campo de seguro");
+    }
+  }, [client?.id, user, authData.insuranceId, authData.insuranceType, authData.birthDate, authData.clientInsuranceId, dispatch]);
+
   // Handler para cambio de aseguradora
   const handleInsuranceChange = (value) => {
     // 'value' es el ID de la aseguradora
     setSelectedInsurance(value);
     // Reseteamos el tipo de seguro
     form.setFieldValue('insuranceType', undefined);
+    
+    // Guardar inmediatamente el cambio
+    saveSpecificFieldsToClientInsurance('insuranceId', value);
   };
+
+  // Handler para cambio de tipo de seguro
+  const handleInsuranceTypeChange = (value) => {
+    // Guardar inmediatamente el cambio
+    saveSpecificFieldsToClientInsurance('insuranceType', value);
+  };
+
+  // Handler para cambio de fecha de nacimiento
+  const handleBirthDateChange = (date) => {
+    if (date) {
+      saveSpecificFieldsToClientInsurance('birthDate', date);
+    }
+  };
+
+  // Función para validar que todos los campos requeridos estén completos
+  const validateFormCompletion = useCallback(() => {
+    // Si el seguro no está habilitado, no importa si el formulario está completo
+    if (!insuranceEnabled) {
+      setFormComplete(false);
+      return false;
+    }
+
+    try {
+      // Obtener los valores actuales del formulario
+      const values = form.getFieldsValue();
+      
+      // Lista de campos requeridos
+      const requiredFields = [
+        'insuranceId',
+        'insuranceType',
+        'affiliateNumber',
+        'authNumber',
+        'doctor',
+        'specialty',
+        'indicationDate',
+        'birthDate'
+      ];
+      
+      // Verificar si todos los campos requeridos tienen valor
+      const allFieldsComplete = requiredFields.every(field => {
+        const value = values[field];
+        return value !== undefined && value !== null && value !== '';
+      });
+      
+      setFormComplete(allFieldsComplete);
+      return allFieldsComplete;
+    } catch (error) {
+      console.error('Error validando completitud del formulario:', error);
+      return false;
+    }
+  }, [form, insuranceEnabled]);
+  
+  // Esta función será llamada automáticamente cuando cambie cualquier valor del formulario
+  const handleFormValuesChange = useCallback((changedValues) => {
+    validateFormCompletion();
+  }, [validateFormCompletion]);
+  
+  // También validamos al cargar los datos iniciales
+  useEffect(() => {
+    if (authData) {
+      setTimeout(() => validateFormCompletion(), 300);
+    }
+  }, [authData, validateFormCompletion]);
 
   // Load insurance auth data from Firebase when modal opens
   useEffect(() => {
@@ -166,8 +289,11 @@ export const InsuranceAuthModal = () => {
       // Configuramos los valores del formulario
       form.setFieldsValue(formattedValues);
       setHasDependent(formValues.hasDependent || false);
+      
+      // Validar completitud después de cargar datos
+      setTimeout(() => validateFormCompletion(), 300);
     }
-  }, [open, authData, form]);
+  }, [open, authData, form, validateFormCompletion]);
 
   // Validamos las fechas para que no sean del futuro
   const disabledFutureDate = (current) => {
@@ -197,11 +323,54 @@ export const InsuranceAuthModal = () => {
       // Guardamos en Firebase si tenemos un cliente seleccionado
       if (client?.id) {
         try {
-          await addInsuranceAuth(user, formattedValues, client.id);
-          message.success('Autorización guardada exitosamente');
+          // Obtenemos los datos de seguro existentes para este cliente
+          const existingInsurance = await getClientInsuranceByClientId(user, client.id);
+          
+          // Extraemos solo los campos específicos que queremos guardar
+          const specificInsuranceData = {
+            clientId: client.id,
+            insuranceId: formattedValues.insuranceId,
+            insuranceType: formattedValues.insuranceType,
+            birthDate: formattedValues.birthDate
+          };
+          
+          let success = false;
+          
+          if (existingInsurance) {
+            // Si ya existe un registro, verificamos si hay cambios en alguno de los campos específicos
+            const hasChanges = 
+              existingInsurance.insuranceId !== specificInsuranceData.insuranceId ||
+              existingInsurance.insuranceType !== specificInsuranceData.insuranceType ||
+              existingInsurance.birthDate !== specificInsuranceData.birthDate;
+            
+            if (hasChanges) {
+              // Actualizamos solo si hay cambios
+              success = await updateClientInsurance(user, {
+                id: existingInsurance.id,
+                ...specificInsuranceData
+              });
+            } else {
+              // No hay cambios que guardar
+              success = true;
+            }
+          } else {
+            // Si no existe, creamos un nuevo registro
+            success = await createClientInsurance(user, specificInsuranceData);
+          }
+          
+          if (success) {
+            message.success('Datos de seguro guardados exitosamente');
+          } else {
+            message.error('Error al guardar los datos de seguro');
+            setSubmitting(false);
+            return;
+          }
+          
         } catch (error) {
-          console.error('Error al guardar autorización:', error);
-          message.error('Error al guardar la autorización');
+          console.error("Error al guardar datos de seguro:", error);
+          message.error(error.message || 'Error al guardar los datos de seguro');
+          setSubmitting(false);
+          return;
         }
       } else {
         message.warning('No se puede guardar la autorización sin un cliente seleccionado');
@@ -215,13 +384,25 @@ export const InsuranceAuthModal = () => {
     }
   };
 
+  // Verificar si debemos deshabilitar el formulario
+  // FIX: Corregir la lógica para que el formulario solo se deshabilite cuando el seguro no está habilitado
+  const isFormDisabled = !insuranceEnabled;
+
+  // Para el botón OK, debe estar deshabilitado cuando:
+  // 1. El seguro no esté habilitado
+  // 2. El formulario no esté completo (pero solo si el seguro está habilitado)
+  const isOkButtonDisabled = !insuranceEnabled || (insuranceEnabled && !formComplete);
+
   return (
     <Modal
       title="Autorización de Seguro"
       open={open}
       onCancel={handleCancel}
       onOk={handleOk}
-      okButtonProps={{ loading: submitting }}
+      okButtonProps={{ 
+        loading: submitting,
+        disabled: isOkButtonDisabled
+      }}
       style={{ top: 20 }}
       width={800}
       destroyOnClose
@@ -237,12 +418,23 @@ export const InsuranceAuthModal = () => {
         </div>
       </ClientInfoWidget>
 
+      {!insuranceEnabled && (
+        <div style={{ marginBottom: '20px', padding: '10px', backgroundColor: '#fffbe6', border: '1px solid #ffe58f', borderRadius: '4px' }}>
+          <strong>Seguro no disponible:</strong> El seguro no está habilitado. Verifique su tipo de negocio o active el seguro en la configuración.
+        </div>
+      )}
+
       {isLoading ? (
         <LoadingContainer>
           <Spin tip="Cargando datos de autorización..." />
         </LoadingContainer>
       ) : (
-        <Form form={form} layout="vertical">
+        <Form 
+          form={form} 
+          layout="vertical" 
+          disabled={isFormDisabled}
+          onValuesChange={handleFormValuesChange}
+        >
           <Dependent 
             form={form} 
             hasDependent={hasDependent} 
@@ -283,8 +475,9 @@ export const InsuranceAuthModal = () => {
               >
                 <Select
                   placeholder="Seleccione el tipo de seguro"
-                  disabled={!selectedInsurance}
+                  disabled={!selectedInsurance || isFormDisabled}
                   optionLabelProp="label"
+                  onChange={handleInsuranceTypeChange}
                 >
                   {insuranceTypes.map((type) => (
                     <Select.Option
@@ -371,6 +564,7 @@ export const InsuranceAuthModal = () => {
                   autoComplete="off"
                   format="DD/MM/YYYY"
                   disabledDate={disabledFutureDate}
+                  onChange={handleBirthDateChange}
                 />
               </Form.Item>
             </Col>

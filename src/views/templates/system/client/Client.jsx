@@ -132,10 +132,10 @@ export const Client = ({ client, Close, updateClientMode, onDelete, searchTerm, 
         
         // Fetch insurance auth data for the selected client and store it in the state
         if (client.id && user) {
-            dispatch(fetchInsuranceAuthByClientId({
-                user,
-                clientId: client.id
-            }));
+            // dispatch(fetchInsuranceAuthByClientId({
+            //     user,
+            //     clientId: client.id
+            // }));
         } else {
             dispatch(clearAuthData());
         }

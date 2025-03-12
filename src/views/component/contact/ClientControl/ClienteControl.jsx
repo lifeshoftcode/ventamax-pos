@@ -20,6 +20,7 @@ import styled from 'styled-components'
 import { selectBusinessData } from '../../../../features/auth/businessSlice.js'
 import { clearAuthData } from '../../../../features/insurance/insuranceAuthSlice.js'
 import useInsuranceEnabled from '../../../../hooks/useInsuranceEnabled';
+import { icons } from '../../../../constants/icons/icons.jsx'
 
 export const ClientControl = () => {
   const dispatch = useDispatch()
@@ -114,44 +115,52 @@ export const ClientControl = () => {
     dispatch(toggleCart())
   }
   const limitByWindowWidth = useWindowWidth()
+
+  // No usaremos addonAfter porque no queda bien visualmente
+
   return (
     <Container ref={searchClientRef}>
       <Header>
-        <Input
-          prefix={inputIcon}
-          placeholder="Buscar cliente..."
-          value={mode === CLIENT_MODE_BAR.SEARCH.id ? searchTerm : client.name}
-          onChange={(e) => handleChangeClient(e)}
-          onClick={OpenClientList}
-          style={{ width: '100%' }}
-          allowClear
-          onClear={handleDeleteData}
-        />
-        {mode === CLIENT_MODE_BAR.SEARCH.id && (
-          <AntButton
-            type="primary"
-            icon={<MdPersonAdd />}
-            onClick={openAddClientModal}
-          >
-            Cliente
-          </AntButton>
-        )}
-        {mode === CLIENT_MODE_BAR.UPDATE.id && (
-          <AntButton
-            type="primary"
-            icon={<MdEdit />}
-            onClick={openUpdateClientModal}
-          >
-            Editar
-          </AntButton>
-        )}
-        {!limitByWindowWidth && (
-          <AntButton
-            onClick={handleCloseCart}
-          >
-            Volver
-          </AntButton>
-        )}
+        <InputWrapper>
+          <Input
+            prefix={inputIcon}
+            placeholder="Buscar cliente..."
+            value={mode === CLIENT_MODE_BAR.SEARCH.id ? searchTerm : client.name}
+            onChange={(e) => handleChangeClient(e)}
+            onClick={OpenClientList}
+            style={{ width: '100%' }}
+            allowClear
+            onClear={handleDeleteData}
+          />
+          
+          {mode === CLIENT_MODE_BAR.SEARCH.id && (
+            <ClientButton
+              type="primary"
+              icon={icons.operationModes.add}
+              onClick={openAddClientModal}
+            >
+              Cliente
+            </ClientButton>
+          )}
+          
+          {mode === CLIENT_MODE_BAR.UPDATE.id && (
+            <ClientButton
+              type="primary"
+              icon={icons.operationModes.edit}
+              onClick={openUpdateClientModal}
+            >
+              Cliente
+            </ClientButton>
+          )}
+          
+          {!limitByWindowWidth && (
+            <ClientButton
+              onClick={handleCloseCart}
+            >
+              Volver
+            </ClientButton>
+          )}
+        </InputWrapper>
       </Header>
       <ClientDetails
         mode={mode === CLIENT_MODE_BAR.CREATE.id}
@@ -203,7 +212,6 @@ const Container = styled.div`
 `
 const Header = styled.div`
    width: 100%;
-   gap: 0px;
    display: flex;
    align-items: center; 
    justify-content: space-between;
@@ -213,13 +221,36 @@ const Header = styled.div`
    background-color: var(--Gray8);
    border-bottom-left-radius: var(--border-radius-light);
    padding: 0.5em;
+   
+   .ant-input-affix-wrapper {
+      border-right: none;
+   }
+`
 
-   .ant-input-search {
-       flex: 1;
+const InputWrapper = styled.div`
+   display: flex;
+   width: 100%;
+   
+   .ant-input-affix-wrapper {
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+   }
+`
+
+const ClientButton = styled(AntButton)`
+   border-radius: 0;
+   height: 32px;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   
+   &.ant-btn-primary {
+      background-color: #1890ff;
    }
    
-   .ant-btn {
-       margin-left: 8px;
+   &:last-child {
+      border-top-right-radius: 4px;
+      border-bottom-right-radius: 4px;
    }
 `
 

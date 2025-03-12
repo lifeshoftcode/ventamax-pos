@@ -1,4 +1,4 @@
-import React, { Fragment, useRef, useState, useEffect } from 'react';
+import React, { Fragment, useRef, useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
 import CustomInput from '../../../../templates/system/Inputs/CustomInput';
 import { useDispatch, useSelector } from 'react-redux';
@@ -13,6 +13,7 @@ import { selectUser } from '../../../../../features/auth/userSlice';
 import { PreorderConfirmation } from './components/Delivery/PreorderConfirmation/PreorderConfirmation';
 import { getTotalDiscount } from '../../../../../utils/pricing';
 import useInsuranceEnabled from '../../../../../hooks/useInsuranceEnabled';
+import useInsuranceFormComplete from '../../../../../hooks/useInsuranceFormComplete';
 import { ActionMenu } from './components/ActionMenu/Actionmenu';
 import { icons } from '../../../../../constants/icons/icons';
 import { handleCancelShipping } from '../InvoicePanel/InvoicePanel';
@@ -23,13 +24,13 @@ import { generateInvoicePDF } from '../../../../../utils/pdf/pdfGenerator';
 import { selectBusinessData } from '../../../../../features/auth/businessSlice';
 
 const InvoiceSummary = () => {
-  const [isCartValid, setIsCartValid] = useState(false)
+  const [isCartValid, setIsCartValid] = useState(false);
   const cart = useSelector(selectCart);
-  const user = useSelector(selectUser)
-  const [isOpenPreorderConfirmation, setIsOpenPreorderConfirmation] = useState(false)
+  const user = useSelector(selectUser);
+  const [isOpenPreorderConfirmation, setIsOpenPreorderConfirmation] = useState(false);
   const cartData = useSelector(SelectCartData);
   const billingSettings = cart?.settings?.billing;
-const business = useSelector(selectBusinessData) || {};
+  const business = useSelector(selectBusinessData) || {};
   const total = cartData?.totalPurchase?.value;
   const subTotal = cartData?.totalPurchaseWithoutTaxes?.value;
   const itbis = cartData.totalTaxes.value;
@@ -42,6 +43,77 @@ const business = useSelector(selectBusinessData) || {};
 
   const dispatch = useDispatch();
   const insuranceEnabled = useInsuranceEnabled();
+  // Usamos el hook para validar el formulario de seguro
+  const { shouldDisableButton: insuranceFormIncomplete } = useInsuranceFormComplete();
+
+  // Función mejorada para validar la cobertura de seguro en los productos
+  const validateInsuranceCoverage = useMemo(() => {
+    // Si el seguro no está habilitado, no es necesario validar
+    if (!insuranceEnabled) return { isValid: true, message: null };
+
+    const products = cartData?.products || [];
+    
+    // Verificar si al menos un producto tiene cobertura configurada
+    const productsWithCoverage = products.filter(product => {
+      const insurance = product?.insurance || {};
+      return insurance.mode && insurance.value > 0;
+    });
+
+    // Si no hay productos con cobertura y el seguro está habilitado, mostrar advertencia
+    if (productsWithCoverage.length === 0) {
+      return {
+        isValid: false,
+        message: "Al menos un producto debe tener cobertura de seguro configurada",
+      };
+    }
+
+    // Verificar productos que deberían tener seguro pero no lo tienen configurado correctamente
+    const medicineCategories = ['medicamento', 'medicina', 'farmacia', 'recetado'];
+    const productsThatShouldHaveInsurance = products.filter(product => {
+      // Verificar si el producto pertenece a categoría de medicamentos
+      const categoryMatch = product?.category && 
+        medicineCategories.some(cat => 
+          product.category.toLowerCase().includes(cat)
+        );
+      
+      // Verificar si el producto está marcado para seguro
+      const isMarkedForInsurance = product?.requiresInsurance === true;
+      
+      return (categoryMatch || isMarkedForInsurance);
+    });
+
+    // De los productos que deberían tener seguro, verificar cuáles no tienen configuración adecuada
+    const invalidProducts = productsThatShouldHaveInsurance.filter(product => {
+      const insurance = product?.insurance || {};
+      return !insurance.mode || insurance.value <= 0;
+    });
+
+    if (invalidProducts.length > 0) {
+      const productNames = invalidProducts.map(p => p.productName || 'Producto sin nombre').join(', ');
+      return { 
+        isValid: false, 
+        message: `Los siguientes productos requieren configuración de seguro: ${productNames}`,
+        invalidProducts
+      };
+    }
+
+    // Verificar si hay productos con cobertura mal configurada
+    const productsWithInvalidCoverage = products.filter(product => {
+      const insurance = product?.insurance || {};
+      return insurance.mode && (insurance.value <= 0 || insurance.value > product.pricing?.price);
+    });
+
+    if (productsWithInvalidCoverage.length > 0) {
+      const productNames = productsWithInvalidCoverage.map(p => p.productName || 'Producto sin nombre').join(', ');
+      return { 
+        isValid: false, 
+        message: `Valor de cobertura inválido en: ${productNames}`,
+        invalidProducts: productsWithInvalidCoverage
+      };
+    }
+
+    return { isValid: true, message: null };
+  }, [cartData?.products, insuranceEnabled]);
 
   useEffect(() => {
     const { isValid } = validateInvoiceCart(cartData);
@@ -115,17 +187,30 @@ const business = useSelector(selectBusinessData) || {};
     }
   };
 
+  // Calculamos si el botón debe estar deshabilitado combinando las validaciones
+  const isButtonDisabled = !isCartValid || insuranceFormIncomplete || !validateInsuranceCoverage.isValid;
+
+  // Mensaje de advertencia que incluye ambas validaciones con información más detallada
+  const warningMessage = useMemo(() => {
+    if (insuranceFormIncomplete) {
+      return "Complete todos los datos del formulario de autorización de seguro para continuar.";
+    }
+    if (!validateInsuranceCoverage.isValid) {
+      return validateInsuranceCoverage.message;
+    }
+    return null;
+  }, [insuranceFormIncomplete, validateInsuranceCoverage]);
+
   const billingButtons = {
     direct: {
       text: 'Facturar',
       action: handleInvoicePanelOpen,
-      // action: handleGeneratePDF,
-      disabled: !isCartValid && !billing?.isLoading
+      disabled: isButtonDisabled
     },
     deferred: {
       text: 'Preventa',
       action: () => setIsOpenPreorderConfirmation(true),
-      disabled: !isCartValid && !billing?.isLoading
+      disabled: isButtonDisabled
     },
     default: {
       text: 'Sin accion',
@@ -141,7 +226,7 @@ const business = useSelector(selectBusinessData) || {};
       text: 'Cotización',
       action: () => handlePrintQuotation(),
       icon: icons.quotation.quote,
-      disabled: !isCartValid && !billing?.isLoading
+      disabled: isButtonDisabled
     },
     {
       text: 'Cancelar venta',
@@ -177,10 +262,16 @@ const business = useSelector(selectBusinessData) || {};
             <Label>{useFormatPrice(insuranceExtra)}</Label>
           </LineItem>
         )}
+        {warningMessage && (
+          <WarningMessage>
+            {warningMessage}
+          </WarningMessage>
+        )}
         <TotalLine>
           <Button
             onClick={action}
             disabled={disabled}
+            title={warningMessage || ""}
           >
             {text}
           </Button>
@@ -248,6 +339,18 @@ const Button = styled.button`
     background-color: #0056b3;
   }
 `;
+
+const WarningMessage = styled.div`
+  color: #d48806;
+  font-size: 12px;
+  text-align: center;
+  width: 100%;
+  margin-bottom: 8px;
+  background-color: #fffbe6;
+  border-radius: 4px;
+  padding: 4px;
+`;
+
 const TotalLabel = styled.span`
   font-weight: bold;
   font-size: 1.2em;
@@ -255,6 +358,7 @@ const TotalLabel = styled.span`
   display: grid;
   align-content: center;
 `;
+
 export const Label = styled.span`
   font-weight: 500;
   white-space: nowrap;

@@ -1,21 +1,15 @@
-import { collection, doc, setDoc, getDocs, onSnapshot, query, where, serverTimestamp } from "firebase/firestore";
+import { collection, doc, setDoc, getDocs, onSnapshot, query, where, serverTimestamp, Timestamp } from "firebase/firestore";
 import { nanoid } from "nanoid";
 import { useState, useEffect } from "react";
 import { db } from "../firebaseconfig";
 
 /**
- * Retorna la referencia a la colección "insuranceAuths" dentro del negocio.
- * La ruta es: businesses/{user.businessID}/insuranceAuths
+ * Retorna la referencia a la colección "insuranceAuths".
  *
- * @param {object} user - Objeto usuario que contiene businessID y uid.
  * @returns {CollectionReference} - Referencia a la colección.
  */
-const getInsuranceAuthsCollection = (user) => {
-  if (!user || !user.businessID) {
-    console.warn("Usuario o businessID no disponible aún");
-    return null;
-  }
-  return collection(db, "businesses", user.businessID, "insuranceAuths");
+const getInsuranceAuthsCollection = () => {
+  return collection(db, 'insuranceAuths');
 };
 
 /**
@@ -28,63 +22,54 @@ const getInsuranceAuthsCollection = (user) => {
  * @param {string} clientId - The ID of the client to associate with the authorization.
  * @returns {Promise<string>} - The ID of the added or updated authorization.
  */
+
+const toFirestoreTimestamp = (dateValue) => {
+  if (!dateValue) return null;
+  
+  // Si ya es un Timestamp, devolverlo directamente
+  if (dateValue instanceof Timestamp) return dateValue;
+  
+  // Si es una fecha de JS
+  if (dateValue instanceof Date) return Timestamp.fromDate(dateValue);
+  
+  // Si es un string ISO o cualquier formato que Date pueda parsear
+  if (typeof dateValue === 'string') return Timestamp.fromDate(new Date(dateValue));
+  
+  // Si es un objeto dayjs (verificar propiedad común de dayjs)
+  if (dateValue.$d) return Timestamp.fromDate(dateValue.$d);
+  
+  return null;
+};
+
 export const addInsuranceAuth = async (user, authData, clientId) => {
   try {
-    const authsCollection = getInsuranceAuthsCollection(user);
-    
+    const authsCollection = getInsuranceAuthsCollection();
+
     if (!authsCollection) {
       console.warn("No se pudo agregar autorización: datos de usuario no disponibles");
       return null;
     }
     
-    // Check if client already has an insurance authorization
-    const clientAuthQuery = query(authsCollection, where("clientId", "==", clientId), where("deleted", "==", false));
-    const existingAuthsSnapshot = await getDocs(clientAuthQuery);
-    
     // Format the auth data with proper date formatting
     const formattedAuthData = {
       ...authData,
-      birthDate: authData.birthDate || null,
-      indicationDate: authData.indicationDate || null,
+      birthDate: toFirestoreTimestamp(authData.birthDate),
+      indicationDate: toFirestoreTimestamp(authData.indicationDate),
     };
 
-    // Check if dates are already ISO strings or need conversion
-    if (formattedAuthData.birthDate && typeof formattedAuthData.birthDate !== 'string') {
-      formattedAuthData.birthDate = formattedAuthData.birthDate.toISOString();
-    }
-    
-    if (formattedAuthData.indicationDate && typeof formattedAuthData.indicationDate !== 'string') {
-      formattedAuthData.indicationDate = formattedAuthData.indicationDate.toISOString();
+    const { insuranceId, authNumber } = authData || {};
+
+    const existingAuths = await searchInsuranceAuthGlobally(insuranceId, authNumber);
+
+    if (existingAuths.length > 0) {
+      throw new Error('Ya existe una autorización con el mismo número para esta aseguradora');
     }
 
-    // If client already has an authorization, update it instead of creating a new one
-    if (!existingAuthsSnapshot.empty) {
-      const existingAuth = existingAuthsSnapshot.docs[0].data();
-      const authId = existingAuth.id;
-      
-      const authDoc = doc(authsCollection, authId);
-      const updateTime = new Date().toISOString();
-      
-      await setDoc(
-        authDoc,
-        {
-          ...formattedAuthData,
-          updatedAt: serverTimestamp(),
-          updatedBy: user.uid
-        },
-        { merge: true }
-      );
-      
-      console.log(`Authorization updated for client: ${clientId}, auth ID: ${authId}`);
-      return authId;
-    } 
-    
-    // Otherwise create a new authorization
     const id = nanoid();
-    const createdAt = new Date().toISOString();
     const newDocRef = doc(authsCollection, id);
-    
+
     await setDoc(newDocRef, {
+      businessId: user.businessID,
       id, // Se guarda el ID generado en el documento
       userId: user.uid, // Asocia la autorización al usuario
       clientId, // Asocia la autorización con el cliente actual
@@ -92,10 +77,10 @@ export const addInsuranceAuth = async (user, authData, clientId) => {
       createdBy: user.uid,
       createdAt: serverTimestamp(),
       status: "active",
-      updatedAt: createdAt,
+      updatedAt: serverTimestamp(),
       deleted: false
     });
-    
+
     console.log(`New authorization created for client: ${clientId}, auth ID: ${id}`);
     return id;
   } catch (error) {
@@ -114,12 +99,12 @@ export const addInsuranceAuth = async (user, authData, clientId) => {
  */
 export const updateInsuranceAuth = async (user, authId, updatedData) => {
   try {
-    const authsCollection = getInsuranceAuthsCollection(user);
+    const authsCollection = getInsuranceAuthsCollection();
     if (!authsCollection) {
       console.warn("No se pudo actualizar autorización: datos de usuario no disponibles");
       return;
     }
-    
+
     const authDoc = doc(authsCollection, authId);
     const updateTime = new Date().toISOString();
 
@@ -127,12 +112,12 @@ export const updateInsuranceAuth = async (user, authId, updatedData) => {
     const formattedUpdatedData = {
       ...updatedData
     };
-    
+
     // Check if dates are already ISO strings or need conversion
     if (formattedUpdatedData.birthDate && typeof formattedUpdatedData.birthDate !== 'string') {
       formattedUpdatedData.birthDate = formattedUpdatedData.birthDate.toISOString();
     }
-    
+
     if (formattedUpdatedData.indicationDate && typeof formattedUpdatedData.indicationDate !== 'string') {
       formattedUpdatedData.indicationDate = formattedUpdatedData.indicationDate.toISOString();
     }
@@ -161,7 +146,7 @@ export const updateInsuranceAuth = async (user, authId, updatedData) => {
  */
 export const softDeleteInsuranceAuth = async (user, authId) => {
   try {
-    const authsCollection = getInsuranceAuthsCollection(user);
+    const authsCollection = getInsuranceAuthsCollection();
     if (!authsCollection) {
       console.warn("No se pudo eliminar (soft) autorización: datos de usuario no disponibles");
       return;
@@ -185,7 +170,7 @@ export const softDeleteInsuranceAuth = async (user, authId) => {
 };
 
 /**
- * Listens to real-time updates of insurance authorizations in the given business.
+ * Listens to real-time updates of insurance authorizations.
  *
  * @param {object} params - Parameters object.
  * @param {object} params.user - The user object with businessID and uid.
@@ -195,18 +180,20 @@ export const softDeleteInsuranceAuth = async (user, authId) => {
  * @returns {function} - The unsubscribe function to stop listening.
  */
 export const listenInsuranceAuths = ({ user, clientId, callback, errorCallback }) => {
-  const authsCollection = getInsuranceAuthsCollection(user);
+  const authsCollection = getInsuranceAuthsCollection();
   if (!authsCollection) {
     console.warn("No se pudo escuchar autorizaciones: datos de usuario no disponibles");
     // Retornamos una función de no-op para evitar errores en el unsubscribe
     return () => { };
   }
-  
+
   let queryRef = authsCollection;
   if (clientId) {
-    queryRef = query(authsCollection, where("clientId", "==", clientId));
+    queryRef = query(authsCollection, where("businessId", "==", user.businessID), where("clientId", "==", clientId));
+  } else {
+    queryRef = query(authsCollection, where("businessId", "==", user.businessID));
   }
-  
+
   return onSnapshot(
     queryRef,
     (querySnapshot) => {
@@ -231,7 +218,7 @@ export const useInsuranceAuths = (user, clientId) => {
 
   useEffect(() => {
     if (!user) return;
-    
+
     const unsubscribe = listenInsuranceAuths({
       user,
       clientId,
@@ -240,7 +227,7 @@ export const useInsuranceAuths = (user, clientId) => {
         console.error("Error listening to insurance authorizations:", error);
       }
     });
-    
+
     return () => unsubscribe();
   }, [user, clientId]);
 
@@ -256,30 +243,50 @@ export const useInsuranceAuths = (user, clientId) => {
  */
 export const getInsuranceAuthByClientId = async (user, clientId) => {
   try {
-    const authsCollection = getInsuranceAuthsCollection(user);
-    
+    const authsCollection = getInsuranceAuthsCollection();
+
     if (!authsCollection) {
       console.warn("No se pudo obtener autorización: datos de usuario no disponibles");
       return null;
     }
-    
+
     const clientAuthQuery = query(
-      authsCollection, 
+      authsCollection,
+      where("businessId", "==", user.businessID),
       where("clientId", "==", clientId),
       where("deleted", "==", false)
     );
-    
+
     const querySnapshot = await getDocs(clientAuthQuery);
-    
+
     if (querySnapshot.empty) {
       console.log(`No insurance authorization found for client: ${clientId}`);
       return null;
     }
-    
+
     // Return the first active insurance authorization found
     return querySnapshot.docs[0].data();
   } catch (error) {
     console.error("Error fetching insurance authorization:", error);
     throw error;
   }
+};
+
+/**
+ * Searches for insurance authorizations globally without requiring user.businessID.
+ *
+ * @param {string} clientId - The ID of the client to search for.
+ * @returns {Promise<Array>} - The list of insurance authorizations found.
+ */
+export const searchInsuranceAuthGlobally = async (insuranceId, authNumber) => {
+  const authsCollection = getInsuranceAuthsCollection();
+  const globalQuery = query(
+    authsCollection,
+    where("authNumber", "==", authNumber),
+    where("insuranceId", "==", insuranceId),
+    where("deleted", "==", false)
+  );
+  const snapshot = await getDocs(globalQuery);
+  if (snapshot.empty) return [];
+  return snapshot.docs.map(doc => doc.data());
 };

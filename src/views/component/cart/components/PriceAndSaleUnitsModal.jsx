@@ -4,7 +4,7 @@ import { Modal } from 'antd';
 import { useListenSaleUnits } from '../../../../firebase/products/saleUnits/fbUpdateSaleUnit';
 import { useFormatPrice } from '../../../../hooks/useFormatPrice';
 import { getListPriceTotal, getTotalPrice } from '../../../../utils/pricing';
-import { extraerPreciosConImpuesto } from './ProductCardForCart';
+import { extraerPreciosConImpuesto } from './ProductCardForCart/utils/priceUtils';
 
 // Estilos
 const ModalContainer = styled.div`
@@ -79,11 +79,53 @@ const PriceAndSaleUnitsModal = ({ isVisible, onClose, item, onSelectPrice, onSel
   const [selectedUnitId, setSelectedUnitId] = useState(item.defaultSaleUnitId || 'default');
   const [combinedPrices, setCombinedPrices] = useState([]);
   const [selectedPrice, setSelectedPrice] = useState(null);
-  const [currentItem, setCurrentItem] = useState(item);
   const { data: saleUnits } = useListenSaleUnits(productId);
 
+  // Función helper para determinar qué precio es el actual del producto en el carrito
+  const getCurrentProductPrice = () => {
+    // Si estamos en la unidad por defecto
+    if (selectedUnitId === 'default') {
+      const prices = extraerPreciosConImpuesto(item.pricing) || [];
+      const listPriceVal = prices.find(p => p.type === 'listPrice')?.valueWithTax;
+      const avgPriceVal = prices.find(p => p.type === 'avgPrice')?.valueWithTax;
+      const minPriceVal = prices.find(p => p.type === 'minPrice')?.valueWithTax;
+      // Calcula el precio actualizado con impuestos
+      const currentPrice = getTotalPrice({ pricing: item.pricing });
+
+      if (currentPrice === listPriceVal) return 'listPrice';
+      if (currentPrice === avgPriceVal) return 'avgPrice';
+      if (currentPrice === minPriceVal) return 'minPrice';
+      
+      return 'listPrice';
+    } else {
+      // Si estamos en una unidad de venta específica
+      const selectedUnit = saleUnits?.find(unit => unit.id === selectedUnitId);
+      if (!selectedUnit) return 'listPrice';
+      
+      const prices = extraerPreciosConImpuesto(selectedUnit.pricing) || [];
+      const listPriceVal = prices.find(p => p.type === 'listPrice')?.valueWithTax;
+      const avgPriceVal = prices.find(p => p.type === 'avgPrice')?.valueWithTax;
+      const minPriceVal = prices.find(p => p.type === 'minPrice')?.valueWithTax;
+      // Calcula el precio actualizado con impuestos para la unidad
+      const currentPrice = getTotalPrice({ pricing: selectedUnit.pricing });
+
+      if (currentPrice === listPriceVal) return 'listPrice';
+      if (currentPrice === avgPriceVal) return 'avgPrice';
+      if (currentPrice === minPriceVal) return 'minPrice';
+      
+      return 'listPrice';
+    }
+  };
+
   const getDefaultPrice = (prices) => {
-    return prices.find(price => price.type === 'listPrice') || prices[0];
+    // Intentar determinar el tipo de precio actualmente seleccionado
+    const currentPriceType = getCurrentProductPrice();
+    
+    // Buscar ese tipo de precio en los precios disponibles
+    const currentPrice = prices.find(price => price.type === currentPriceType);
+    
+    // Si lo encontramos, usarlo; si no, usar listPrice o el primero disponible
+    return currentPrice || prices.find(price => price.type === 'listPrice') || prices[0];
   };
   
   const handleSelectUnit = (unit) => {
@@ -98,7 +140,11 @@ const PriceAndSaleUnitsModal = ({ isVisible, onClose, item, onSelectPrice, onSel
       // Obtener el precio por defecto
       const defaultPrice = getDefaultPrice(enabledPrices);
       setSelectedPrice(defaultPrice);
-
+      
+      // Llamar a onSelectPrice con el precio por defecto
+      if (defaultPrice) {
+        onSelectPrice(defaultPrice);
+      }
     }
   };
 
@@ -114,28 +160,40 @@ const PriceAndSaleUnitsModal = ({ isVisible, onClose, item, onSelectPrice, onSel
       // Obtener el precio por defecto
       const defaultPrice = getDefaultPrice(enabledPrices);
       setSelectedPrice(defaultPrice);
-  
+      
+      // Llamar a onSelectPrice con el precio por defecto
+      if (defaultPrice) {
+        onSelectPrice(defaultPrice);
+      }
     }
   };
 
   const handleSelectPrice = (price) => {
     setSelectedPrice(price);
+    // Pasamos todo el objeto de precio para que ProductCardForCart pueda extraer los valores correctos
     onSelectPrice(price);
   };
 
   useEffect(() => {
+    if (!isVisible) return; // No hacer nada si el modal no está visible
+    
     const selectedItemPricing = selectedUnitId === 'default' ? item.pricing : saleUnits?.find(unit => unit.id === selectedUnitId)?.pricing;
     if (selectedItemPricing) {
       const prices = extraerPreciosConImpuesto(selectedItemPricing);
       const enabledPrices = prices.filter(price => price.enabled);
       setCombinedPrices(enabledPrices);
 
-      // Selecciona un precio por defecto (listPrice)
-      const defaultPrice = enabledPrices.find(price => price.type === 'listPrice');
-
-      setSelectedPrice(defaultPrice || prices[0]);
+      // Determinar el precio a seleccionar basado en el precio actual del producto
+      const defaultPrice = getDefaultPrice(enabledPrices);
+      setSelectedPrice(defaultPrice);
     }
-  }, [selectedUnitId, saleUnits]);
+  }, [selectedUnitId, saleUnits, item, isVisible]);
+
+  // Determina si un precio está seleccionado
+  const isPriceSelected = (price) => {
+    if (!selectedPrice) return false;
+    return price.type === selectedPrice.type;
+  };
 
   return (
     <Modal
@@ -193,7 +251,7 @@ const PriceAndSaleUnitsModal = ({ isVisible, onClose, item, onSelectPrice, onSel
             {combinedPrices.map((price, index) => (
               <PriceOption
                 key={index}
-                selected={price.type === selectedPrice?.type}
+                selected={isPriceSelected(price)}
                 onClick={() => handleSelectPrice(price)}
               >
                 <span>{price.label}: {useFormatPrice(price.valueWithTax)}</span>
