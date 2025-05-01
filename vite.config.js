@@ -27,7 +27,7 @@ export default defineConfig({
       '@templates': path.resolve(__dirname, './src/views/templates'),
       '@hooks': path.resolve(__dirname, './src/hooks'),
       '@utils': path.resolve(__dirname, './src/utils'),
-      '@validate': path.resolve(__dirname, './src/utils'),
+      // '@validate': path.resolve(__dirname, './src/utils'),
       '@fbConfig': path.resolve(__dirname, './src/firebase'),
       '@schema': path.resolve(__dirname, './src/schema'),
       '@routes': path.resolve(__dirname, './src/routes'),
@@ -37,11 +37,8 @@ export default defineConfig({
     preprocessorOptions: {
       less: {
         modifyVars: {
-          // Aquí puedes definir tus variables de estilo personalizadas
           'btn-padding-base': '10px',
           'btn-padding-large': '6px'
-          
-          
         },
         javascriptEnabled: true,
       },
@@ -49,18 +46,26 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0'
-  },
-  build: {
+  },  build: {
     sourcemap: false,
     chunkSizeWarningLimit: 1600,
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // Agrupar todos los paquetes de Font Awesome en un solo chunk para evitar problemas de inicialización
+          if (id.includes('@fortawesome')) {
+            return 'fortawesome-bundle';
+          }
+          // Para el resto de los módulos, mantener el comportamiento original
           if (id.includes('node_modules')) {
             return id.toString().split('node_modules/')[1].split('/')[0].toString();
           }
         }
       }
+    },
+    // Optimización para evitar problemas de hoisting y circulares
+    commonjsOptions: {
+      transformMixedEsModules: true,
     }
   },
   define: {

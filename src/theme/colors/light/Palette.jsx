@@ -24,8 +24,7 @@ import { baseColors } from './baseColors';
         hint: 'rgba(0, 0, 0, 0.38)',
     },
     // Color del divisor, utilizado para separar secciones de la interfaz
-    divider: 'rgba(0, 0, 0, 0.12)',
-    // Fondo de diferentes secciones de la UI
+    divider: 'rgba(0, 0, 0, 0.12)',    // Fondo de diferentes secciones de la UI
     bg: {
         shade: baseColors.white,
         shade2: baseColors.blue[100],
@@ -34,11 +33,15 @@ import { baseColors } from './baseColors';
         color2: baseColors.blue[50],
         color3: "#67B8DE",
         color4: baseColors.blue[500],
+        // Propiedades adicionales para el Centro de Notificaciones
+        light: "#ffffff",
+        card: "#ffffff",
     },
     border: {
         base: '1px solid #ced2d6',
         highlighted: '2px solid #a0aec0',
         accent: '2px dashed #718096',
+        light: '#eaeaea',
     },
 
     action: {

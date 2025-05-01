@@ -7,8 +7,8 @@ import { selectUser } from '../../../../../../../features/auth/userSlice'
 import { useSelector } from 'react-redux'
 import { useFormatPrice } from '../../../../../../../hooks/useFormatPrice'
 import { Paragraph, Spacing, Subtitle } from '../Style'
-import { getDiscount, getProductsDiscount, getProductsPrice, getProductsTax, getTotalDiscount } from '../../../../../../../utils/pricing'
-import { fbGetPendingBalance } from '../../../../../../../firebase/accountsReceivable/fbGetPendingBalance'
+import { getProductsPrice, getProductsTax, getTotalDiscount } from '../../../../../../../utils/pricing'
+import { usePendingBalance } from '../../../../../../../firebase/accountsReceivable/fbGetPendingBalance'
 import { selectInsuranceEnabled } from '../../../../../../../features/cart/cartSlice'
 
 export const PaymentArea = ({ data }) => {
@@ -20,13 +20,9 @@ export const PaymentArea = ({ data }) => {
     const subtotal = getProductsPrice(data?.products || []) + getProductsTax(data?.products || []);
     const discount = getTotalDiscount(subtotal, data?.discount?.value || 0);
     const formatNumber = (num) => useFormatPrice(num, "");
-    useEffect(() => {
-        const fetchPendingBalance = async () => {
-            if (!businessID || !clientId) return
-            await fbGetPendingBalance(businessID, clientId, setPendingBalance)
-        }
-        fetchPendingBalance()
-    }, [businessID, clientId])
+
+    usePendingBalance(businessID, clientId, setPendingBalance);
+
     const paymentLabel = {
         cash: "Efectivo",
         card: "Tarjeta",

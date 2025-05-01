@@ -1,5 +1,5 @@
 import { motion } from "framer-motion"
-import { useSelector } from "react-redux"
+import { useSelector, useDispatch } from "react-redux"
 import styled from "styled-components"
 import { selectUser } from "../../../../features/auth/userSlice"
 import { MenuLink } from "./MenuLink"
@@ -11,6 +11,7 @@ import { icons } from "../../../../constants/icons/icons"
 import ROUTES_PATH from "../../../../routes/routesName"
 import { useNavigate } from "react-router-dom"
 import { SelectSettingCart } from "../../../../features/cart/cartSlice"
+import { openNotificationCenter } from "../../../../features/notification/notificationCenterSlice"
 
 const sidebarVariant = {
     open: {
@@ -33,19 +34,19 @@ const sidebarVariant = {
     }
 };
 
-export const SideBar = ({ isOpen }) => {
+export const SideBar = ({ isOpen, handleOpenMenu }) => {
+    const dispatch = useDispatch();
     const user = useSelector(selectUser);
-    const { billing: { billingMode } } = useSelector(SelectSettingCart)
+    const { billing: { billingMode } } = useSelector(SelectSettingCart);
+    const businessType = user?.business?.businessType || null;
     const links = getMenuData();
     const { SETTINGS } = ROUTES_PATH.SETTING_TERM;
-    const navigate = useNavigate();
-
-    // Filtrar los enlaces basados en 'key' y 'condition'
+    const navigate = useNavigate();    // Filtrar los enlaces basados en 'key' y 'condition'
     const filteredLinks = links.reduce((acc, item) => {
         // Verificar si el elemento principal tiene una 'key' y una 'condition' y evaluarla
         let includeItem = true;
         if (item.key && item.condition) {
-            includeItem = item.condition({ billingMode });
+            includeItem = item.condition({ billingMode, businessType });
         }
 
         // Si el elemento no cumple la condición, lo omitimos
@@ -87,10 +88,14 @@ export const SideBar = ({ isOpen }) => {
         }
         acc[item.group].push(item);
         return acc;
-    }, {});
-
+    }, {}); 
     const handleGoToSetting = () => {
         navigate(SETTINGS)
+    }
+
+    const handleOpenNotifications = () => {
+        dispatch(openNotificationCenter('taxReceipt'));
+        handleOpenMenu()
     }
 
     return (
@@ -105,13 +110,22 @@ export const SideBar = ({ isOpen }) => {
                         <EmptyBox />
                         <WebName></WebName>
                     </div>
-                    <Button
-                        startIcon={icons.operationModes.setting}
-                        color='info'
-                        size='icon32'
-                        borderRadius='normal'
-                        onClick={handleGoToSetting}
-                    />
+                    <ButtonGroup>
+                        <Button
+                            startIcon={icons.system.notification}
+                            color='info'
+                            size='icon32'
+                            borderRadius='normal'
+                            onClick={handleOpenNotifications}
+                        />
+                        <Button
+                            startIcon={icons.operationModes.setting}
+                            color='info'
+                            size='icon32'
+                            borderRadius='normal'
+                            onClick={handleGoToSetting}
+                        />
+                    </ButtonGroup>
                 </Head>
                 <UserSection user={user}></UserSection>
                 <Body>
@@ -135,7 +149,7 @@ export const SideBar = ({ isOpen }) => {
 
 const Container = styled(motion.div)`
     position: fixed;
-    z-index: 9999;
+    z-index: 9900;
     top: 0;
     left: 0;
 
@@ -155,6 +169,12 @@ const Container = styled(motion.div)`
     border-right: 1px solid rgb(0, 0, 0, 0.1);
     box-shadow: 5px 0 5px rgba(0, 0, 0, 0.1), 10px 0 5px rgba(0, 0, 0, 0.05);
 `
+
+const ButtonGroup = styled.div`
+    display: flex;
+    gap: 0.4em;
+`
+
 const Wrapper = styled.div`
     /*Box */
     width: 100%;
@@ -215,13 +235,4 @@ const EmptyBox = styled.div`
     height: 2.75em;
     width:3em;
     background-color: ${props => props.theme.bg.color}; 
-    `
-
-const GroupTitle = styled.h4`
-    font-size: 1.1em;
-    padding: 0.4em 0.8em;
-    margin: 0;
-    background-color: ${props => props.theme.bg.color}; 
-    color: ${props => props.theme.text.color};
-    border-bottom: 1px solid rgb(0, 0, 0, 0.1);
     `

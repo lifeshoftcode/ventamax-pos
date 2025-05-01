@@ -14,8 +14,28 @@ import changelogs from "./paths/Changelogs"
 import utility from "./paths/Utility";
 import accountReceivable from './paths/AccountReceivable'
 import insurance from './paths/Insurance'
+import { processRoute } from "./requiereAuthProvider";
 
-export const routes = [
+// Procesa recursivamente las rutas y sus hijos para aplicar la protección
+const processRoutes = (routes) => {
+    return routes.map(route => {
+        // Procesa la ruta actual
+        const processedRoute = processRoute(route);
+        
+        // Si tiene hijos, procesa cada uno de ellos
+        if (processedRoute.children && processedRoute.children.length > 0) {
+            return {
+                ...processedRoute,
+                children: processRoutes(processedRoute.children)
+            };
+        }
+        
+        return processedRoute;
+    });
+};
+
+// Lista de rutas sin procesar
+const rawRoutes = [
     ...basic,
     ...auth,
     ...inventory,
@@ -36,5 +56,9 @@ export const routes = [
         element: <NotFound />,
         title: "Página no encontrada",
         metaDescription: "Lo sentimos, la página que estás buscando no existe.",
+        isPublic: true // NotFound debería ser accesible públicamente
     }
-]
+];
+
+// Exporta las rutas procesadas
+export const routes = processRoutes(rawRoutes);

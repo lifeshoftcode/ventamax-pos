@@ -7,7 +7,6 @@ export { AddPurchase } from './pages/OrderAndPurchase/CreatePurchase/CreatePurch
 export { Home } from './pages/Home/Home'
 export { Inventory } from './pages/Inventario/pages/ItemsManager/Inventario'
 export { MultimediaManager } from './pages/Inventario/pages/MultimediaManager/MultimediaManager'
-export { Login } from './pages/Login/Login'
 export { NotFound } from './pages/NotFound/NotFound'
 export { Registro } from './pages/Registro/Registro'
 export { Sales } from './pages/Venta/Ventas'

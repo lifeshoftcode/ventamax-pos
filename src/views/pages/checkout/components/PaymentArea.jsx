@@ -3,13 +3,12 @@ import styled from 'styled-components'
 import { Row } from './Table/Row'
 import { Line, P, SubTitle } from '../Receipt'
 import { Col } from './Table/Col'
-import { fbGetPendingBalance } from '../../../../firebase/accountsReceivable/fbGetPendingBalance'
+import { usePendingBalance } from '../../../../firebase/accountsReceivable/fbGetPendingBalance'
 import { selectUser } from '../../../../features/auth/userSlice'
 import { useSelector } from 'react-redux'
 import { useFormatPrice } from '../../../../hooks/useFormatPrice'
-import { useFormatNumber} from '../../../../hooks/useFormatNumber'
 import { Paragraph, Spacing, Subtitle } from '../Style'
-import { getDiscount, getProductsDiscount, getProductsPrice, getProductsTax, getTotalDiscount } from '../../../../utils/pricing'
+import { getProductsPrice, getProductsTax, getTotalDiscount } from '../../../../utils/pricing'
 
 export const PaymentArea = ({ data }) => {
     const [pendingBalance, setPendingBalance] = useState(0)
@@ -19,13 +18,9 @@ export const PaymentArea = ({ data }) => {
     const subtotal = getProductsPrice(data?.products || []) + getProductsTax(data?.products || []);
     const discount = getTotalDiscount(subtotal, data?.discount?.value || 0);
     const formatNumber = (num) => useFormatPrice(num, "")
-    useEffect(() => {
-        const fetchPendingBalance = async () => {
-            if (!businessID || !clientId) return
-            await fbGetPendingBalance(businessID, clientId, setPendingBalance)
-        }
-        fetchPendingBalance()
-    }, [businessID, clientId])
+
+    usePendingBalance(businessID, clientId, setPendingBalance);
+
     const paymentLabel = {
         cash: "Efectivo",
         card: "Tarjeta",

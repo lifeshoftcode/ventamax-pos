@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import styled from 'styled-components'
 import { TbPlus } from 'react-icons/tb'
 import { useDispatch, useSelector } from 'react-redux'
@@ -6,7 +6,6 @@ import { ProductFilter } from '../../../ProductFilter/ProductFilter'
 import { Button } from '../../../../templates/system/Button/Button'
 import { addProductToProductOutflow, selectProduct, SelectProductSelected } from '../../../../../features/productOutflow/productOutflow'
 import { tableHeaderColumns } from './tableConfig/tableHeaderConfig'
-import { useClickOutSide } from '../../../../../hooks/useClickOutSide'
 import { InputV4 } from '../../../../templates/system/Inputs/GeneralInput/InputV4'
 
 export const OutputProductEntry = () => {

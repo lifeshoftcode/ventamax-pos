@@ -1,27 +1,20 @@
-import React, { useRef, useState } from 'react'
-import { MdDelete, MdEdit } from 'react-icons/md'
+import { useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import styled from 'styled-components'
 import { toggleAddProductOutflow } from '../../../../features/modals/modalSlice'
-import productOutflow, { deleteData, deleteProductFromProductOutflow, SelectProductList, SelectProductOutflow, updateProductFromProductOutflow } from '../../../../features/productOutflow/productOutflow'
+import { deleteData, deleteProductFromProductOutflow, SelectProductList, SelectProductOutflow, updateProductFromProductOutflow } from '../../../../features/productOutflow/productOutflow'
 import { fbAddProductOutFlow } from '../../../../firebase/ProductOutflow/fbAddProductOutflow'
-import { fbDeleteItemFromProductOutflow } from '../../../../firebase/ProductOutflow/fbDeleteItemFromProductOutflow'
-import { fbGetProductOutflow } from '../../../../firebase/ProductOutflow/fbGetProductOutflow'
 import { fbUpdateProductOutflow } from '../../../../firebase/ProductOutflow/fbUpdateProductOutflow'
-import { fbUpdateStock } from '../../../../firebase/ProductOutflow/fbUpdateStock'
-import { useFormatNumber } from '../../../../hooks/useFormatNumber'
 import useScroll from '../../../../hooks/useScroll'
 import { CenteredText } from '../../../templates/system/CentredText'
 import { FormattedValue } from '../../../templates/system/FormattedValue/FormattedValue'
-import { ProductFilter } from '../../ProductFilter/ProductFilter'
 import { Modal } from '../Modal'
 import { OutputProductEntry } from './OutputProductEntry/OutputProductEntry'
 import { fbRemoveOutputRestoreQuantity } from '../../../../firebase/ProductOutflow/fbRemoveOutputRestoreQuantity'
 import { selectUser } from '../../../../features/auth/userSlice'
-import { ButtonGroup } from '../../../templates/system/Button/Button'
-import * as antd from 'antd'
+import { Button, Input } from 'antd'
 import { icons } from '../../../../constants/icons/icons'
-const { Button, Input } = antd
+
 export const ProductOutflowModal = ({ isOpen, mode = 'create' }) => {
   const outFlowList = useSelector(SelectProductList)
   const outFlowProduct = useSelector(SelectProductOutflow)

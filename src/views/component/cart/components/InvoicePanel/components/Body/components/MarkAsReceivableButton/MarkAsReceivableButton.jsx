@@ -1,4 +1,4 @@
-import * as antd from 'antd';
+import { Button, Alert, notification } from 'antd';
 import { useDispatch, useSelector } from 'react-redux';
 import { SelectCartData, toggleReceivableStatus } from '../../../../../../../../../features/cart/cartSlice';
 import { calculateInvoiceChange } from '../../../../../../../../../utils/invoice';
@@ -6,32 +6,83 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 import { resetAR, selectAR, setAR } from '../../../../../../../../../features/accountsReceivable/accountsReceivableSlice';
 import styled from 'styled-components';
 import { selectUser } from '../../../../../../../../../features/auth/userSlice';
-import { fbGetCreditLimit } from '../../../../../../../../../firebase/accountsReceivable/fbGetCreditLimit';
 import { fbGetActiveARCount } from '../../../../../../../../../firebase/accountsReceivable/fbGetActiveARCount';
-import { useFormatPrice } from '../../../../../../../../../hooks/useFormatPrice';
-import { useFormatNumber } from '../../../../../../../../../hooks/useFormatNumber';
-import ColoredNumber from '../../../../../../../../templates/system/ColoredNumber/ColoredNumber';
-const { Button, Alert } = antd;
+import { ARValidateMessage } from './components/ARValidateMessage';
+import { useQuery } from '@tanstack/react-query';
+
+
+// Hook personalizado para manejar la lógica de AR
+const useARValidation = (cartData, creditLimit) => {
+    const user = useSelector(selectUser);
+    const change = useMemo(() => calculateInvoiceChange(cartData), [cartData]);
+    const client = cartData?.client;
+    const clientId = client?.id;
+    const { currentBalance } = useSelector(selectAR);
+    
+    const isGenericClient = clientId === 'GC-0000' || clientId === null;
+    const isChangeNegative = change < 0;
+    
+    // React Query para obtener el recuento de AR activos
+    const { data: activeAccountsReceivableCount = 0 } = useQuery
+    (
+        {
+        queryKey: ['activeARCount', user.businessID, clientId],
+        queryFn: () => fbGetActiveARCount(user.businessID, clientId),
+        enabled: Boolean(creditLimit?.invoice?.status && clientId && user.businessID),
+        staleTime: 60000,
+        }
+    );
+    
+    // Calcular si está dentro del límite de factura
+    const isWithinInvoiceCount = !creditLimit?.invoice?.status || 
+      activeAccountsReceivableCount <= (creditLimit?.invoice?.value || 0);
+    
+    // Calcular si está dentro del límite de crédito
+    const creditLimitValue = creditLimit?.creditLimit?.status && currentBalance !== null ? 
+      (currentBalance) + (-change) : 0;
+    
+    const isWithinCreditLimit = !creditLimit?.creditLimit?.status || 
+      creditLimitValue <= creditLimit?.creditLimit?.value;
+    
+    return {
+      isGenericClient,
+      isChangeNegative,
+      isWithinCreditLimit,
+      isWithinInvoiceCount,
+      activeAccountsReceivableCount,
+      creditLimitValue,
+      clientId,
+    };
+  };
 
 export const MarkAsReceivableButton = ({creditLimit = null}) => {
     const dispatch = useDispatch();
-    const [activeAccountsReceivableCount, setActiveAccountsReceivableCount] = useState(0);
-    const [isWithinCreditLimit, setIsWithinCreditLimit] = useState(null);
-    const [isWithinInvoiceCount, setIsWithinInvoiceCount] = useState(null);
-    const [creditLimitValue, setCreditLimitValue] = useState(0);
-    const {
-        currentBalance,
-    } = useSelector(selectAR)
+    // const [activeAccountsReceivableCount, setActiveAccountsReceivableCount] = useState(0);
+    // const [isWithinCreditLimit, setIsWithinCreditLimit] = useState(null);
+    // const [isWithinInvoiceCount, setIsWithinInvoiceCount] = useState(null);
+    // const [creditLimitValue, setCreditLimitValue] = useState(0);
     const cartData = useSelector(SelectCartData);
     const user = useSelector(selectUser);
     const change = useMemo(() => calculateInvoiceChange(cartData), [cartData]);
     const client = cartData?.client;
 
-    const isChangeNegative = change < 0;
-    const clientId = cartData?.client?.id;
-    const isGenericClient = clientId === 'GC-0000' || clientId === null;
+    const {
+        isGenericClient,
+        isChangeNegative,
+        isWithinCreditLimit,
+        isWithinInvoiceCount,
+        activeAccountsReceivableCount,
+        creditLimitValue,
+        clientId,
+      } = useARValidation(cartData, creditLimit);
+    
+    // const isChangeNegative = change < 0;
+    // const clientId = cartData?.client?.id;
+    // const isGenericClient = clientId === 'GC-0000' || clientId === null;
+
     const isAddedToReceivables = cartData?.isAddedToReceivables;
     const receivableStatus = isAddedToReceivables && isWithinCreditLimit;
+    const { currentBalance } = useSelector(selectAR);
 
     useEffect(() => {
         if (!cartData.isAddedToReceivables || !creditLimit) {
@@ -43,10 +94,10 @@ export const MarkAsReceivableButton = ({creditLimit = null}) => {
         const fetchInvoiceAvailableCount = async () => {
             if (creditLimit?.invoice?.status) {
                 const invoiceAvailableCount = await fbGetActiveARCount(user.businessID, clientId)
-                setActiveAccountsReceivableCount(invoiceAvailableCount);
-                setIsWithinInvoiceCount(invoiceAvailableCount <= creditLimit?.invoice?.value || 0);
+                // setActiveAccountsReceivableCount(invoiceAvailableCount);
+                // setIsWithinInvoiceCount(invoiceAvailableCount <= creditLimit?.invoice?.value || 0);
             }else{
-                setIsWithinInvoiceCount(true)
+                // setIsWithinInvoiceCount(true)
             
             }
         }
@@ -55,16 +106,16 @@ export const MarkAsReceivableButton = ({creditLimit = null}) => {
     useEffect(() => {
         if (creditLimit?.creditLimit?.status && currentBalance !== null) {
             const adjustedCreditLimit = (currentBalance) + (-change);
-            setIsWithinCreditLimit(adjustedCreditLimit <= creditLimit?.creditLimit?.value);
-            setCreditLimitValue(adjustedCreditLimit);
+            // setIsWithinCreditLimit(adjustedCreditLimit <= creditLimit?.creditLimit?.value);
+            // setCreditLimitValue(adjustedCreditLimit);
         }else {
-            setIsWithinCreditLimit(true)
+            // setIsWithinCreditLimit(true)
         }
     }, [creditLimit, currentBalance, change]);
 
     function handleClick() {
         if (!creditLimit?.creditLimit?.status || !creditLimit?.invoice?.status) {
-            antd.notification.error({
+            notification.error({
                 message: 'Error',
                 description: 'Los límites de crédito o las facturas no son válidos'
             });
@@ -72,14 +123,14 @@ export const MarkAsReceivableButton = ({creditLimit = null}) => {
         }
         const invoiceId = cartData.id;
         if (isGenericClient) {
-            antd.notification.error({
+            notification.error({
                 message: 'Error',
                 description: 'No se puede agregar a CXC a un cliente genérico'
             })
             return
         }
         if (!clientId && !invoiceId) {
-            antd.notification.error({
+            notification.error({
                 message: 'Error',
                 description: 'No se puede agregar a CXC sin cliente o factura'
             })
@@ -132,63 +183,3 @@ const Container = styled.div`
     display: grid;
     gap: 0.4em;
 `
-export const ARValidateMessage = ({
-    isGenericClient,
-    clientId,
-    invoiceId,
-    isWithinCreditLimit,
-    isWithinInvoiceCount,
-    activeAccountsReceivableCount,
-    creditLimit,
-    currentBalance,
-    creditLimitValue
-}) => {
-    return (
-        <>
-            {
-                isGenericClient && <Alert
-                    message="No se puede agregar a CXC a un cliente genérico"
-                    type="error"
-                    showIcon
-                />
-            }
-            {
-                !clientId && !invoiceId && <Alert
-                    message="No se puede agregar a CXC sin cliente o factura"
-                    type="error"
-                    showIcon
-                />
-            }
-            {
-               (creditLimit != null && creditLimit?.creditLimit?.status) && !isWithinCreditLimit && <Alert
-                message={
-                    <>
-                      El saldo de la factura excede el límite de crédito:{" "}
-                      <ColoredNumber value={useFormatPrice(creditLimitValue)} color={'red'} /> / {" "}
-                      <ColoredNumber value={useFormatPrice(creditLimit?.creditLimit?.value)}/>
-                      
-                    </>
-                  }
-                    type="error"
-                    showIcon
-                />
-            }
-            {
-               (creditLimit != null && creditLimit?.invoice?.status) && !isWithinInvoiceCount && <Alert
-                    message={`El límite de cuenta por cobrar ha sido alcanzado. Facturas actuales: ${useFormatNumber(activeAccountsReceivableCount)} / ${useFormatNumber(creditLimit?.invoice?.value)}`}
-                    type="error"
-                    showIcon
-                />
-            }
-            {
-                (creditLimit == null ) && <Alert   
-                    message="Para agregar a CXC, el cliente debe tener un límite de crédito configurado."
-                    description="Editar Cliente -> Info. Financiera -> Límite de Crédito"
-                    type="error"
-                    showIcon    
-                />
-            }
-        </>
-    )
-}
-

@@ -286,7 +286,6 @@ const BusinessProfileEditor = () => {
 
   return (
     <Wrapper>
-      <MenuApp sectionName={"Configuración del Negocio"} />
       <PageContainer>
         {formContent}
       </PageContainer>
@@ -298,11 +297,7 @@ export default BusinessProfileEditor;
 
 const Wrapper = styled.div`
   display: grid;
-  max-height: 100vh;
-  grid-template-rows: min-content 1fr;
-  
-  overflow: hidden;
-  background: #f5f5f5;
+
 `;
 
 const PageContainer = styled.div`

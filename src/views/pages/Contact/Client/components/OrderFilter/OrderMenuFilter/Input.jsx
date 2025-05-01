@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react'
 import { MdClose } from 'react-icons/md'
 import styled from 'styled-components'

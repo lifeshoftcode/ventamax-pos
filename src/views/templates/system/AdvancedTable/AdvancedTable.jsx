@@ -77,7 +77,7 @@ export const AdvancedTable = ({
 
   //Reordenamiento de Columnas
   const [isReorderMenuOpen, setIsReorderMenuOpen] = useState(false);
-  const [columnOrder, setColumnOrder, resetColumnOrder] = useColumnOrder(columns, tableName, user.uid);
+  const [columnOrder, setColumnOrder, resetColumnOrder] = useColumnOrder(columns, tableName, user?.uid);
 
   //Funciones UI
   const toggleReorderMenu = () => { setIsReorderMenuOpen(!isReorderMenuOpen); };

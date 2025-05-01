@@ -117,7 +117,12 @@ text-overflow: ellipsis;
 font-size: 14px;
 padding: 0.4em 0.8em;
 border-radius: var(--border-radius);
-
+  
+  span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 `
 const Action = styled.div`
   display: flex;

@@ -6,7 +6,7 @@ import { deleteProduct, changeProductPrice } from '../../../../../features/cart/
 import { useFormatPrice } from '../../../../../hooks/useFormatPrice';
 import { icons } from '../../../../../constants/icons/icons';
 import { motion } from 'framer-motion';
-import * as antd from 'antd';
+import { Tooltip, Badge, Button } from 'antd';
 import { getTotalPrice } from '../../../../../utils/pricing';
 import { selectTaxReceiptEnabled } from '../../../../../features/taxReceipt/taxReceiptSlice';
 import PriceAndSaleUnitsModal from '../PriceAndSaleUnitsModal';
@@ -15,8 +15,7 @@ import { extraerPreciosConImpuesto } from './utils/priceUtils';
 import { PriceEditor } from './components/PriceEditor/PriceEditor';
 import { WeightInput } from './components/WeightInput/WeightInput';
 import { InsuranceCoverage } from './components/InsuranceCoverage/InsuranceCoverage';
-
-const { Button } = antd;
+import { MessageOutlined } from '@ant-design/icons';
 
 const variants = {
     initial: { opacity: 0, y: -90 },
@@ -24,13 +23,12 @@ const variants = {
     exit: { opacity: 0, y: 150, transition: { duration: 0.5 } },
 };
 
-export const ProductCardForCart = ({ item }) => {
-    const dispatch = useDispatch();
-    const [isModalVisible, setModalVisible] = useState(false);
+export const ProductCardForCart = ({ item, onOpenCommentModal, onOpenDeleteModal }) => {    const dispatch = useDispatch();
     const insuranceEnabled = useInsuranceEnabled();
     const taxReceiptEnabled = useSelector(selectTaxReceiptEnabled);
     const [selectedUnit, setSelectedUnit] = useState(null);
     const [precios, setPrecios] = useState([]);
+    const [isModalVisible, setModalVisible] = useState(false);
 
     const updatePricing = (pricing) => {
         setPrecios(extraerPreciosConImpuesto(pricing, taxReceiptEnabled));
@@ -50,10 +48,8 @@ export const ProductCardForCart = ({ item }) => {
 
     const handleSelectPrice = (price) => {
         updatePricing(price.pricing);
-        // Aquí actualizamos el precio del producto en el carrito
-        // Verificamos que tipo de precio se seleccionó y usamos ese valor
         let newPrice;
-        
+
         switch (price.type) {
             case 'listPrice':
                 newPrice = price.pricing.listPrice;
@@ -67,7 +63,7 @@ export const ProductCardForCart = ({ item }) => {
             default:
                 newPrice = price.pricing.listPrice;
         }
-        
+
         // Actualizar el precio en el carrito
         if (newPrice && newPrice !== 'N/A') {
             dispatch(changeProductPrice({
@@ -75,7 +71,7 @@ export const ProductCardForCart = ({ item }) => {
                 price: parseFloat(newPrice)
             }));
         }
-        
+
         // Cerrar el modal después de seleccionar el precio
         setModalVisible(false);
     };
@@ -84,22 +80,39 @@ export const ProductCardForCart = ({ item }) => {
         <Container variants={variants} initial="initial" animate="animate" transition={{ duration: 0.6 }}>
             <Row>
                 <HeaderContainer>
-                    <Title>{item.name}</Title>
+                    <TitleContainer>
+                        <Title>{item.name}</Title>                        {item.comment && (
+                            <CommentPreview title={item.comment}>
+                                {item.comment}
+                            </CommentPreview>
+                        )}
+                    </TitleContainer>
                     <Price>{useFormatPrice(getTotalPrice(item, taxReceiptEnabled))}</Price>
-                    <Button
-                        type="text"
-                        size="small"
-                        icon={icons.operationModes.discard}
-                        onClick={() => dispatch(deleteProduct(item.cid))}
-                        danger
-                    />
+                    <ButtonGroup>
+                        <Tooltip title={item.comment ? `Comentario: ${item.comment}` : 'Agregar comentario'}>
+                            <Badge dot={Boolean(item.comment)} color="#1890ff" offset={[-2, 2]}>
+                                <Button
+                                    type="text"
+                                    size="small"
+                                    icon={<MessageOutlined style={{ color: item.comment ? '#1890ff' : '#8c8c8c', fontSize: '16px' }} />}                            onClick={() => onOpenCommentModal(item)}
+                                />
+                            </Badge>
+                        </Tooltip>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={icons.operationModes.discard}
+                            onClick={() => onOpenDeleteModal(item)}
+                            danger
+                        />
+                    </ButtonGroup>
                 </HeaderContainer>
             </Row>
             <Row>
                 <Group>
-                    <PriceEditor 
-                        item={item} 
-                        onModalOpen={() => setModalVisible(true)} 
+                    <PriceEditor
+                        item={item}
+                        onModalOpen={() => setModalVisible(true)}
                     />
                     {
                         item?.weightDetail?.isSoldByWeight ? (
@@ -116,9 +129,9 @@ export const ProductCardForCart = ({ item }) => {
                     }
                 </Group>
             </Row>
-            
+
             {insuranceEnabled && <InsuranceCoverage item={item} />}
-            
+
             <PriceAndSaleUnitsModal
                 isVisible={isModalVisible}
                 onClose={() => setModalVisible(false)}
@@ -154,12 +167,50 @@ const Group = styled.div`
     display: grid;
     align-items: center;
     gap: 0.4em;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 120px;
+`;
+const TitleContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0; // Importante para que el texto se corte correctamente
+  flex: 1;
+`;
+
+const CommentPreview = styled.div`
+  color: #8c8c8c;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: 2px;
+  max-width: calc(100% - 8px); // Dejamos un pequeño margen
+  line-height: 1;
 `;
 
 const HeaderContainer = styled.div`
     display: grid;
-    grid-template-columns: 1fr min-content min-content;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 8px;
+    align-items: start;
+    width: 100%;
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.04);
+    }
+  }
 `;
 
 const Title = styled.span`

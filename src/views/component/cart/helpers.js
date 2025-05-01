@@ -1,4 +1,4 @@
-import { CancelShipping, toggleCart } from "../../../features/cart/cartSlice";
+import { resetCart, toggleCart } from "../../../features/cart/cartSlice";
 import { deleteClient, handleClient } from "../../../features/clientCart/clientCartSlice";
 import { addNotification } from "../../../features/notification/NotificationSlice";
 import { IncreaseEndConsumer, IncreaseTaxCredit, clearTaxReceiptData } from "../../../features/taxReceipt/taxReceiptSlice";
@@ -43,7 +43,7 @@ export const savingDataToFirebase = async (dispatch, user, bill, taxReceipt) => 
 
 export const handleClearDataFromState = async (dispatch, viewportWidth) => {
     try {
-        dispatch(CancelShipping())
+        dispatch(resetCart())
         dispatch(clearTaxReceiptData())
         dispatch(deleteClient())
         if (viewportWidth < 800) dispatch(toggleCart());

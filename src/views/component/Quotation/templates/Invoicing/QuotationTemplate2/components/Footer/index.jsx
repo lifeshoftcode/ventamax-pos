@@ -108,6 +108,7 @@ const TextWithUpLine = ({ label }) => {
         </p>
     );
 };
+
 const Group = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));

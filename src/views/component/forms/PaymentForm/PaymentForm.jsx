@@ -35,6 +35,7 @@ export const PaymentForm = () => {
             dispatch(fetchLastInstallmentAmount({ user, arId: paymentDetails.arId }));
         }
     }, [isOpen, user, paymentDetails.arId]);
+    
     useEffect(() => {
         if (!isOpen) {
             setSubmitted(false);
@@ -88,6 +89,7 @@ export const PaymentForm = () => {
             totalPaid
         }));
     };
+
     const validate = () => {
         if (paymentDetails.totalAmount <= 0) {
             throw new Error('El monto total debe ser mayor a cero.');
@@ -118,10 +120,12 @@ export const PaymentForm = () => {
             throw new Error('Los comentarios no pueden exceder los 500 caracteres.');
         }
     }
+
     const handleClear = () => {
         dispatch(closePaymentModal());
         form.resetFields();
     };
+
     const handlePrint = useReactToPrint({
         content: () => componentToPrintRef.current,
         onAfterPrint: () => {
@@ -133,6 +137,7 @@ export const PaymentForm = () => {
            handleClear();
         }
     })
+
     const handleSubmit = async () => {
         setLoading(true);
         try {
@@ -142,7 +147,6 @@ export const PaymentForm = () => {
             setSubmitted(true)
 
             if (paymentDetails.printReceipt) {
-                console.log("receipt => ", receipt)
                 setTimeout(() => handlePrint(), 1000)
             } else {
                 dispatch(closePaymentModal());
@@ -173,7 +177,6 @@ export const PaymentForm = () => {
             style={{ top: 10, }}
             title={`${PAYMENT_SCOPE[paymentDetails.paymentScope]}`}
             onCancel={() => dispatch(closePaymentModal())}
-
             styles={modalStyles}
             footer={[
                 <Button key="back" onClick={() => dispatch(closePaymentModal())}>
@@ -239,6 +242,7 @@ export const PaymentForm = () => {
                     <PaymentFields
                         handleAmountChange={handleAmountChange}
                     />
+                    
                     <ShowcaseList
                         showcases={[
                             {
@@ -255,6 +259,7 @@ export const PaymentForm = () => {
                             },
                         ]}
                     />
+                    
                     <Form.Item>
                         <Checkbox
                             checked={paymentDetails.printReceipt}
@@ -265,7 +270,8 @@ export const PaymentForm = () => {
                     </Form.Item>
                 </FormWrapper>
             </Form>
-            <div   >
+            
+            <div style={{ display: 'none' }}>
                 <AccountsReceivablePaymentReceipt data={receipt} ref={componentToPrintRef} />
             </div>
         </Modal>

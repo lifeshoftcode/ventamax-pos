@@ -67,8 +67,6 @@ const columns = [
 export const UserList = () => {
   const [users, setUsers] = useState([])
   const userActual = useSelector(selectUser)
-  const { abilities } = userAccess();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
   useEffect(() => {
     fbGetUsers(setUsers, userActual)
@@ -90,17 +88,17 @@ export const UserList = () => {
   }
 
   return (
-   
- 
-        <AdvancedTable
-          tableName={'Usuarios'}
-          data={data}
-          columns={columns}
-          pagination={true}
-          onRowClick={(row) => handleEditUser(row.user)}
-        />
-   
-  
+
+
+    <AdvancedTable
+      tableName={'Usuarios'}
+      data={data}
+      columns={columns}
+      pagination={true}
+      onRowClick={(row) => handleEditUser(row.user)}
+    />
+
+
   )
 }
 

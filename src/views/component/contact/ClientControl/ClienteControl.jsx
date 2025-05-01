@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react'
-import { useFbGetClients } from '../../../../firebase/client/useFbGetClients'
-import { getClient, setChange, toggleCart, totalPurchase, updateInsuranceStatus, selectInsuranceEnabled } from '../../../../features/cart/cartSlice'
+import { useState, useEffect, useRef } from 'react'
+import styled from 'styled-components'
 import { useDispatch, useSelector } from 'react-redux'
-import { useRef } from 'react'
+import { setClient as setClientInClientCart, setChange, toggleCart, totalPurchase, updateInsuranceStatus, selectInsuranceEnabled } from '../../../../features/cart/cartSlice'
 import { ClientDetails } from './ClientDetails/ClientDetails.jsx'
 import { updateObject } from '../../../../utils/object/updateObject'
 import { deleteClient, selectClient, selectClientMode, selectClientSearchTerm, selectIsOpen, selectLabelClientMode, setClient, setClientMode, setClientSearchTerm, setIsOpen } from '../../../../features/clientCart/clientCartSlice'
@@ -10,13 +9,9 @@ import { CLIENT_MODE_BAR } from '../../../../features/clientCart/clientMode'
 import { useWindowWidth } from '../../../../hooks/useWindowWidth'
 import { toggleClientModal } from '../../../../features/modals/modalSlice.js'
 import { OPERATION_MODES } from '../../../../constants/modes.js'
-import * as antd from 'antd'
-const { Select } = antd
 import { fbGetTaxReceipt } from '../../../../firebase/taxReceipt/fbGetTaxReceipt.js'
 import { selectNcfType, selectTaxReceipt, selectTaxReceiptType } from '../../../../features/taxReceipt/taxReceiptSlice.js'
-import { Input, Button as AntButton, Checkbox } from 'antd';
-import { MdPersonAdd, MdEdit } from 'react-icons/md';
-import styled from 'styled-components'
+import { Input, Button as AntButton, Checkbox, Select } from 'antd';
 import { selectBusinessData } from '../../../../features/auth/businessSlice.js'
 import { clearAuthData } from '../../../../features/insurance/insuranceAuthSlice.js'
 import useInsuranceEnabled from '../../../../hooks/useInsuranceEnabled';
@@ -30,11 +25,8 @@ export const ClientControl = () => {
   const taxReceipt = useSelector(selectTaxReceipt)
   const taxReceiptSettingEnabled = taxReceipt?.settings?.taxReceiptEnabled;
   const searchTerm = useSelector(selectClientSearchTerm)
-
-  const clientLabel = useSelector(selectLabelClientMode)
   const [inputIcon, setInputIcon] = useState()
   const taxReceiptData = fbGetTaxReceipt()
-  const isOpen = useSelector(selectIsOpen)
   const nfcType = useSelector(selectNcfType)
   const insuranceEnabled = useInsuranceEnabled();
   const closeMenu = () => dispatch(setIsOpen(false))
@@ -84,7 +76,7 @@ export const ClientControl = () => {
     }
   }, [mode])
 
-  useEffect(() => { dispatch(getClient(client)) }, [client])
+  useEffect(() => { dispatch(setClientInClientCart(client)) }, [client])
 
   useEffect(() => {
     if (!client?.id) {
@@ -93,7 +85,6 @@ export const ClientControl = () => {
   }, [client, dispatch])
 
   const searchClientRef = useRef(null)
-  //   useClickOutSide(searchClientRef, isOpen === true, closeMenu)
 
   const OpenClientList = () => {
     switch (mode) {
@@ -111,12 +102,10 @@ export const ClientControl = () => {
         break;
     }
   }
-  const handleCloseCart = () => {
-    dispatch(toggleCart())
-  }
-  const limitByWindowWidth = useWindowWidth()
 
-  // No usaremos addonAfter porque no queda bien visualmente
+  const handleCloseCart = () =>  dispatch(toggleCart())
+
+  const limitByWindowWidth = useWindowWidth();
 
   return (
     <Container ref={searchClientRef}>
@@ -259,9 +248,13 @@ const SelectContainer = styled.div`
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 0 10px;
+  padding: 0 6px;
 
   .ant-select {
     width: 200px;
+  }
+
+  .ant-select:hover {
+    border-color: var(--primary-color);
   }
 `

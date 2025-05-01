@@ -1,8 +1,5 @@
 import { WebName } from "../system/WebName/WebName"
 import { Account, Button } from "../../"
-import { ButtonSetting } from "../../../assets"
-import { MdPeople, MdSettings } from "react-icons/md"
-import { FaUserCog } from "react-icons/fa"
 import ROUTES_PATH from "../../../routes/routesName"
 import { useNavigate } from "react-router-dom"
 import styled from "styled-components"
@@ -16,8 +13,8 @@ export const MenuWebsite = () => {
     const navigate = useNavigate()
     const dispatch = useDispatch()
     const { dialog, onClose, setDialogConfirm } = useDialog();
-    const { SETTINGS } = ROUTES_PATH.SETTING_TERM
-    const handleSetting = () => navigate(SETTINGS)
+    const { SETTING } = ROUTES_PATH.SETTING_TERM
+    const handleSetting = () => navigate(SETTING)
 
     const handleLogout = () => {
         dispatch(logout());

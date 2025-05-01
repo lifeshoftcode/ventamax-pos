@@ -1,48 +1,48 @@
+import { useState, useLayoutEffect } from "react";
 import { DateTime } from "luxon";
 
-const usePaymentDates = (frequency, installments, startDate = DateTime.now()) => {
-    const MAX_INSTALLMENTS = 3000
+export default function usePaymentDates(
+  frequency = "monthly",
+  installments = 1,
+  userStartDate = null,
+  forceRecalculate = false
+) {
+  const [paymentDates, setPaymentDates] = useState([]);
+  const [nextPaymentDate, setNextPaymentDate] = useState(null);
 
-    if (installments >= MAX_INSTALLMENTS) {
-        return {
-            paymentDates: 0,
-            nextPaymentDate: 0
-        }
+  useLayoutEffect(() => {
+    if (installments < 1 || installments > 36) {
+      setPaymentDates([]);
+      setNextPaymentDate(null);
+      return;
     }
 
-    const calculateInterval = (freq) => {
-        switch (freq) {
-            case 'monthly':
-                return { months: 1 };
-            case 'weekly':
-                return { weeks: 1 };
-            case 'annual':
-                return { years: 1 };
-            default:
-                return { days: 0 }; // Fallback, aunque sería mejor manejar un error aquí
-        }
-    };
+    const baseDate = forceRecalculate || !userStartDate
+      ? DateTime.now().startOf("day")
+      : DateTime.fromMillis(userStartDate).startOf("day");
 
-    const calculatePaymentDates = () => {
-        let dates = [];
-        let interval = calculateInterval(frequency);
+    const interval = {
+      weekly: { days: 7 },
+      annual: { years: 1 },
+      monthly: { months: 1 }
+    }[frequency] || { months: 1 };
 
-        for (let i = 0; i < installments; i++) {
-            dates.push(startDate.plus({ ...interval, [Object.keys(interval)[0]]: i + 1 }).toMillis());
-        }
+    const dates = [];
+    for (let i = 0; i < installments; i++) {
+      let installmentDate;
+      if (frequency === "weekly") {
+        installmentDate = baseDate.plus({ days: 7 * (i + 1) });
+      } else if (frequency === "annual") {
+        installmentDate = baseDate.plus({ years: i + 1 });
+      } else {
+        installmentDate = baseDate.plus({ months: i + 1 });
+      }
+      dates.push(installmentDate.toMillis());
+    }
 
-        return dates;
-    };
+    setPaymentDates(dates);
+    setNextPaymentDate(dates[0] || null);
+  }, [frequency, installments, userStartDate, forceRecalculate]);
 
-    const getNextPaymentDate = (paymentDates) => {
-        const today = DateTime.now().toMillis();
-        return paymentDates.find(date => date > today) || null;
-    };
-
-    const paymentDates = calculatePaymentDates();
-    const nextPaymentDate = getNextPaymentDate(paymentDates);
-
-    return { paymentDates, nextPaymentDate };
-};
-
-export default usePaymentDates;
+  return { paymentDates, nextPaymentDate };
+}

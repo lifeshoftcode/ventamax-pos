@@ -1,49 +1,51 @@
-import React, { useRef } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { selectBusinessData } from '../../../../../../features/auth/businessSlice';
 import { useSelector } from 'react-redux';
 import Header from './components/Header';
 import Content from './components/Content';
 import Footer from './components/Footer';
+import { calcFooterHeight, calcHeaderHeight } from './documentHeightCalculator';
 
 const Container = styled.div`
-position: relative;
+  position: relative;
   width: 100%;
   margin: 0;
   padding: 16px;
-
-  @media print {
-    padding: 0;
-  }
+  @media print { padding: 0; }
 `;
 
-const PrintLayout = styled.table`
-  width: 100%;
-  height: 100%;
-
-  border-collapse: collapse;
+const PrintLayout = styled.div`
+ & table {
+   width: 100% !important;  
+  }
+  @media print {
+    thead { display: table-header-group; }
+    tfoot { display: table-footer-group; }
+    /* la tabla interna de Content: */
+    > tbody > tr > td > table {
+      display: table-row-group !important;
+    }
+  }
 `;
 
 const HeaderSpace = styled.div`
-  @media print {
-    height: 310px; // 250px
-  }
+  @media print { height: ${props => props.height}px; }
 `;
 
 const FooterSpace = styled.div`
-  height: 180px; // Adjust based on your footer height
+   @media print { height: ${props => props.height}px; }
 `;
 
 const FixedHeader = styled.div`
-
   padding: 16px;
-  
+  margin-bottom: 16px;
   @media print {
-    z-index: 10000;
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
+    z-index: 10000;
   }
 `;
 
@@ -64,9 +66,18 @@ const FixedFooter = styled.div`
 `;
 
 export const QuotationTemplate2 = React.forwardRef(({ data, ignoreHidden }, ref) => {
-  const business = useSelector(selectBusinessData) || {};
+  const business = useSelector(selectBusinessData) || {}
+  const [headerHeight, setHeaderHeight] = useState(0)
+  const [footerHeight, setFooterHeight] = useState(0)
 
-  return data ? (
+  useLayoutEffect(() => {
+    setHeaderHeight(calcHeaderHeight(business, data))
+    setFooterHeight(calcFooterHeight(data))
+  }, [business, data])
+
+  if (!data) return null
+
+  return (
     <Container style={{ display: ignoreHidden ? 'block' : 'none' }}>
       <PrintLayout ref={ref}>
         <FixedHeader>
@@ -75,7 +86,7 @@ export const QuotationTemplate2 = React.forwardRef(({ data, ignoreHidden }, ref)
         <thead>
           <tr>
             <td>
-              <HeaderSpace />
+              <HeaderSpace height={headerHeight} />
             </td>
           </tr>
         </thead>
@@ -89,7 +100,7 @@ export const QuotationTemplate2 = React.forwardRef(({ data, ignoreHidden }, ref)
         <tfoot>
           <tr>
             <td>
-              <FooterSpace />
+              <FooterSpace height={footerHeight} />
             </td>
           </tr>
         </tfoot>
@@ -98,5 +109,5 @@ export const QuotationTemplate2 = React.forwardRef(({ data, ignoreHidden }, ref)
         </FixedFooter>
       </PrintLayout>
     </Container>
-  ) : null;
+  );
 });

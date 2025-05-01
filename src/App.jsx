@@ -2,7 +2,7 @@ import { scan } from 'react-scan'; // import this BEFORE react
 import { Fragment, useEffect } from 'react';
 
 //importando componentes de react-router-dom
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 
 //redux config
 import { useDispatch, useSelector } from 'react-redux'
@@ -25,10 +25,22 @@ import SEO from './Seo/Seo';
 import { Modal } from 'antd';
 import { SessionManager } from './views/templates/system/SessionManager';
 import { useAutoStockSync } from './firebase/warehouse/stockSyncService';
+import { useNavigationTracker } from './hooks/routes/useNavigationTracker';
+import { useTaxReceiptsFix } from './hooks/useTaxReceiptsFix';
+import NotificationCenter from './views/templates/NotificationCenter/NotificationCenter';
+
+
+// Componente para rastrear la navegación dentro del Router
+const NavigationTracker = () => {
+  useNavigationTracker();
+  return null;
+};
 
 function App() {
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
+
+  useTaxReceiptsFix();
 
   useEffect(() => {
     dispatch(ReloadImageHiddenSetting())
@@ -62,6 +74,7 @@ function App() {
   return (
     <Fragment>
       <Router>
+        <NavigationTracker />
         <SessionManager />
         <SEO />
         <AnimatePresence mode="wait">
@@ -78,10 +91,10 @@ function App() {
                 </Route>
               ))}
             </Routes>
-        </AnimatePresence>
-        <AnimatePresence>
+        </AnimatePresence>        <AnimatePresence>
           <ModalManager />
         </AnimatePresence>
+        <NotificationCenter />
       </Router>
     </Fragment>
   )

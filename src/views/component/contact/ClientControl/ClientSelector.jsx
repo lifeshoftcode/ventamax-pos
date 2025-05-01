@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { MdClose, MdPersonAdd, MdContentCopy, MdFilterList } from 'react-icons/md'
 import styled, { createGlobalStyle } from 'styled-components'
-
 import { Client } from '../../../templates/system/client/Client'
 import { useDispatch, useSelector } from 'react-redux'
 import { selectClient, selectClientMode, selectClientSearchTerm, selectIsOpen, setClientMode, setIsOpen } from '../../../../features/clientCart/clientCartSlice'
@@ -13,7 +12,7 @@ import { toggleClientModal } from '../../../../features/modals/modalSlice'
 import { OPERATION_MODES } from '../../../../constants/modes'
 import { fbDeleteClient } from '../../../../firebase/client/fbDeleteClient'
 import { selectUser } from '../../../../features/auth/userSlice'
-const { Text, Title } = Typography
+const { Title } = Typography
 const GlobalStyle = createGlobalStyle`
   .ant-dropdown {
     z-index: 10000001 !important;

@@ -11,7 +11,18 @@ import { doc, getDoc } from 'firebase/firestore';
  */
 export async function fbGetClient(user, clientId) {
     try {
+        console.log('fbGetClient - Recibiendo clientId:', clientId);
+        console.log('fbGetClient - Tipo de clientId:', typeof clientId);
+        console.log('fbGetClient - user.businessID:', user.businessID);
+        
+        // Verificar si clientId es una cadena válida
+        if (!clientId || typeof clientId !== 'string' || clientId.trim() === '') {
+            console.error('fbGetClient - clientId inválido:', clientId);
+            return null;
+        }
+        
         const clientRef = doc(db, 'businesses', user.businessID, 'clients', clientId)
+        console.log('fbGetClient - clientRef creado correctamente');
         const clientSnapshot = await getDoc(clientRef);
         const clientExist = clientSnapshot.exists();
         if (clientExist) {

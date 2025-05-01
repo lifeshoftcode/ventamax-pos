@@ -2,7 +2,7 @@ import React, { Fragment, useRef, useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
 import CustomInput from '../../../../templates/system/Inputs/CustomInput';
 import { useDispatch, useSelector } from 'react-redux';
-import { CancelShipping, SelectCartData, SelectSettingCart, selectCart, setCartId, toggleCart, toggleInvoicePanelOpen } from '../../../../../features/cart/cartSlice';
+import { SelectCartData, SelectSettingCart, selectCart, setCartId, toggleInvoicePanelOpen } from '../../../../../features/cart/cartSlice';
 import { useFormatPrice } from '../../../../../hooks/useFormatPrice';
 import { Delivery } from './components/Delivery/Delivery';
 import { validateInvoiceCart } from '../../../../../utils/invoiceValidation';
@@ -22,6 +22,8 @@ import { useReactToPrint } from 'react-to-print';
 import { addQuotation } from '../../../../../firebase/quotation/quotationService';
 import { generateInvoicePDF } from '../../../../../utils/pdf/pdfGenerator';
 import { selectBusinessData } from '../../../../../features/auth/businessSlice';
+import WarningPill from './components/WarningPill/WarningPill';
+import { downloadQuotationPdf } from '../../../../../firebase/quotation/downloadQuotationPDF';
 
 const InvoiceSummary = () => {
   const [isCartValid, setIsCartValid] = useState(false);
@@ -29,6 +31,7 @@ const InvoiceSummary = () => {
   const user = useSelector(selectUser);
   const [isOpenPreorderConfirmation, setIsOpenPreorderConfirmation] = useState(false);
   const cartData = useSelector(SelectCartData);
+  const insuranceExtra = cartData?.totalInsurance?.value || 0;
   const billingSettings = cart?.settings?.billing;
   const business = useSelector(selectBusinessData) || {};
   const total = cartData?.totalPurchase?.value;
@@ -39,7 +42,6 @@ const InvoiceSummary = () => {
   const [quotationData, setQuotationData] = useState();
   const discount = getTotalDiscount(subTotal, discountPercent);
   const { billing } = useSelector(SelectSettingCart);
-  const insuranceExtra = cartData?.totalInsurance?.value || 0;
 
   const dispatch = useDispatch();
   const insuranceEnabled = useInsuranceEnabled();
@@ -52,7 +54,7 @@ const InvoiceSummary = () => {
     if (!insuranceEnabled) return { isValid: true, message: null };
 
     const products = cartData?.products || [];
-    
+
     // Verificar si al menos un producto tiene cobertura configurada
     const productsWithCoverage = products.filter(product => {
       const insurance = product?.insurance || {};
@@ -71,14 +73,14 @@ const InvoiceSummary = () => {
     const medicineCategories = ['medicamento', 'medicina', 'farmacia', 'recetado'];
     const productsThatShouldHaveInsurance = products.filter(product => {
       // Verificar si el producto pertenece a categoría de medicamentos
-      const categoryMatch = product?.category && 
-        medicineCategories.some(cat => 
+      const categoryMatch = product?.category &&
+        medicineCategories.some(cat =>
           product.category.toLowerCase().includes(cat)
         );
-      
+
       // Verificar si el producto está marcado para seguro
       const isMarkedForInsurance = product?.requiresInsurance === true;
-      
+
       return (categoryMatch || isMarkedForInsurance);
     });
 
@@ -90,23 +92,38 @@ const InvoiceSummary = () => {
 
     if (invalidProducts.length > 0) {
       const productNames = invalidProducts.map(p => p.productName || 'Producto sin nombre').join(', ');
-      return { 
-        isValid: false, 
+      return {
+        isValid: false,
         message: `Los siguientes productos requieren configuración de seguro: ${productNames}`,
         invalidProducts
       };
-    }
-
-    // Verificar si hay productos con cobertura mal configurada
+    }    // Verificar si hay productos con cobertura mal configurada
     const productsWithInvalidCoverage = products.filter(product => {
       const insurance = product?.insurance || {};
-      return insurance.mode && (insurance.value <= 0 || insurance.value > product.pricing?.price);
+
+      // Si no hay modo de seguro configurado, no validamos
+      if (!insurance.mode) return false;
+
+      // Si el valor es menor o igual a 0, siempre es inválido
+      if (insurance.value <= 0) return true;
+
+      // Para modo de porcentaje, el valor debe estar entre 1 y 100
+      if (insurance.mode === 'porcentaje' && (insurance.value < 1 || insurance.value > 100)) {
+        return true;
+      }
+
+      // Para modo de monto, el valor debe ser menor al precio del producto
+      if (insurance.mode === 'monto' && insurance.value > product.pricing?.price) {
+        return true;
+      }
+
+      return false;
     });
 
     if (productsWithInvalidCoverage.length > 0) {
       const productNames = productsWithInvalidCoverage.map(p => p.productName || 'Producto sin nombre').join(', ');
-      return { 
-        isValid: false, 
+      return {
+        isValid: false,
         message: `Valor de cobertura inválido en: ${productNames}`,
         invalidProducts: productsWithInvalidCoverage
       };
@@ -159,17 +176,40 @@ const InvoiceSummary = () => {
     }
   })
 
-    const handleGeneratePDF = () => {
-      generateInvoicePDF({ business, data: cartData });
-    };
-  
-
   async function handlePrintQuotation() {
+    
     const data = await addQuotation(user, cartData, billingSettings);
     console.log("data", data);
     setQuotationData(data);
     setTimeout(() => handlePrint(), 1000);
   };
+  async function handleDownloadQuotation() {
+        const data = await addQuotation(user, cartData, billingSettings);
+    await downloadQuotationPdf(business, data);
+    setTimeout(() => {
+        Modal.confirm({
+        title: '¿Limpiar cotización?',
+        content: '¿Desea limpiar los datos de la cotización?',
+        okText: 'Limpiar',
+        cancelText: 'Mantener',
+        onOk: () => {
+          handleCancelShipping({ dispatch, closeInvoicePanel: false });
+          notification.success({
+            message: 'Cotización eliminada',
+            description: 'Los datos de la cotización han sido eliminados.',
+            duration: 4
+          });
+        },
+        onCancel: () => {
+          notification.success({
+            message: 'Cotización conservada',
+            description: 'Los datos de la cotización se han mantenido.',
+            duration: 4
+          });
+        }
+      });
+    }, 1000);
+  }
 
   const handleSavePreOrder = async () => {
     const { isValid, message } = validateInvoiceCart(cartData);
@@ -224,7 +264,8 @@ const InvoiceSummary = () => {
   const menuOptions = [
     billingSettings?.quoteEnabled && {
       text: 'Cotización',
-      action: () => handlePrintQuotation(),
+      // action: handlePrintQuotation,
+      action: handleDownloadQuotation,
       icon: icons.quotation.quote,
       disabled: isButtonDisabled
     },
@@ -262,11 +303,7 @@ const InvoiceSummary = () => {
             <Label>{useFormatPrice(insuranceExtra)}</Label>
           </LineItem>
         )}
-        {warningMessage && (
-          <WarningMessage>
-            {warningMessage}
-          </WarningMessage>
-        )}
+        {warningMessage && <WarningPill message={warningMessage} />}
         <TotalLine>
           <Button
             onClick={action}
@@ -338,17 +375,6 @@ const Button = styled.button`
   :not(:disabled):hover {
     background-color: #0056b3;
   }
-`;
-
-const WarningMessage = styled.div`
-  color: #d48806;
-  font-size: 12px;
-  text-align: center;
-  width: 100%;
-  margin-bottom: 8px;
-  background-color: #fffbe6;
-  border-radius: 4px;
-  padding: 4px;
 `;
 
 const TotalLabel = styled.span`

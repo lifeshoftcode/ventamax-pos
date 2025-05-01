@@ -126,12 +126,12 @@ export const DateRangeFilter = ({ setDates, dates }) => {
 const Header = styled.div`
     background-color: white;
     padding: 0.5em 1em ;
-    position: sticky;
-    top: 0;
+  
 `
 
 const Body = styled.div`
 padding: 1em;
+overflow-y: auto;
 `
 
 const Options = styled.div`
@@ -145,22 +145,22 @@ const StyledButton = styled.div`
 `;
 
 const StyledMenu = styled.ul`
-/*box */
     max-width: 800px;
     width: 100%;
     height: calc(100vh - 12em);
     align-content: start;
     overflow-y: scroll;
+    display: flex;
+    flex-direction: column;
     background-color: #F1F1F1;
     border: 1px solid #ccc;
     border-radius: var(--border-radius);
     padding: 0;
     list-style: none;
- 
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.212);
     z-index: 100000;
     transition: opacity 0.2s ease-in-out;
- 
+    overflow-y: hidden;
 `;
 
 const StyledMenuItem = styled.li`

@@ -1,4 +1,3 @@
-import React from 'react'
 import { MdRadioButtonChecked, MdRadioButtonUnchecked } from 'react-icons/md'
 import { Button } from '../../../../../templates/system/Button/Button'
 import { useDispatch } from 'react-redux'

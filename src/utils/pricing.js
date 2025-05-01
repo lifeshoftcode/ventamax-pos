@@ -4,6 +4,11 @@ export function limit(value) {
   return asInt / 100;
 }
 
+export const roundDecimals = (n, dec = 2) => {
+  const factor = Math.pow(10, dec);
+  return Math.round((Number(n) + Number.EPSILON) * factor) / factor;
+};
+
 function isValidNumber(value) {
   return !isNaN(parseFloat(value)) && isFinite(value);
 }
@@ -215,4 +220,8 @@ export function getInsuranceExtra(product) {
 
 export function getProductsInsuranceExtra(products = []) {
   return products.reduce((acc, product) => acc + getInsuranceExtra(product), 0);
+}
+
+export function getChange(total, payment) {
+  return payment - total;
 }

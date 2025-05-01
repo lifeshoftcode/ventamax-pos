@@ -1,11 +1,11 @@
-import {  useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import styled from 'styled-components'
 import { useDispatch, useSelector } from 'react-redux'
 import { selectClient, setClient } from '../../../../../features/clientCart/clientCartSlice'
 import { updateObject } from '../../../../../utils/object/updateObject'
 import { InputV4 } from '../../../../templates/system/Inputs/GeneralInput/InputV4'
 import { AnimatePresence, motion } from 'framer-motion'
-import { fbGetPendingBalance } from '../../../../../firebase/accountsReceivable/fbGetPendingBalance'
+import { usePendingBalance } from '../../../../../firebase/accountsReceivable/fbGetPendingBalance'
 import { selectUser } from '../../../../../features/auth/userSlice'
 import { useFormatPrice } from '../../../../../hooks/useFormatPrice'
 import { setAccountPayment } from '../../../../../features/accountsReceivable/accountsReceivablePaymentSlice'
@@ -28,18 +28,9 @@ export const ClientDetails = ({ mode }) => {
       isExpanded,
       () => setIsExpanded(false),
       'mousedown'
-    )
-  
-    useEffect(() => {
-      const fetchPendingBalance = async () => {
-        if (!client || !businessID) return
-        const unsubscribe = fbGetPendingBalance(businessID, client.id, setPendingBalance)
-        return () => {
-          unsubscribe()
-        }
-      }
-      fetchPendingBalance()
-    }, [client, businessID])
+    );
+    
+    usePendingBalance(businessID, client.id, setPendingBalance);
   
     const handlePayment = () => {
       dispatch(setAccountPayment({

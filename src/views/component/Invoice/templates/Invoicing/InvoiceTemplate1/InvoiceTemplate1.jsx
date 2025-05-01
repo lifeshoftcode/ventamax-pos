@@ -11,13 +11,14 @@ import { ReceiptComponent } from './Style'
 import { ThankYouMessage } from './components/ThankYouMessage'
 import { selectBusinessData } from '../../../../../../features/auth/businessSlice'
 import { selectInsuranceData } from '../../../../../../features/insurance/insuranceSlice'
-import { selectInsuranceEnabled } from '../../../../../../features/cart/cartSlice'
+import { selectInsuranceEnabled, SelectInvoiceComment } from '../../../../../../features/cart/cartSlice'
 
 
 export const InvoiceTemplate1 = React.forwardRef(({ data, ignoreHidden }, ref) => {
     const business = useSelector(selectBusinessData) || ""
     const insuranceStatus = data?.insuranceEnabled;
     const insuranceData = useSelector(selectInsuranceData)
+    const invoiceComment = useSelector(SelectInvoiceComment)
     
     function getReceiptInfo(code) {
         if (!code) {
@@ -75,6 +76,12 @@ export const InvoiceTemplate1 = React.forwardRef(({ data, ignoreHidden }, ref) =
                                 <P align="center">No. Autorización: {insuranceData.authNumber}</P>
                             )}
                         </InsuranceInfo>
+                    )}
+                    {invoiceComment && (
+                        <CommentSection>
+                            <P align="center" className="comment-title">Comentario de Factura:</P>
+                            <P align="center" className="comment-text">{invoiceComment}</P>
+                        </CommentSection>
                     )}
                     <WarrantySignature data={data} />
                     <ThankYouMessage message={business?.invoice?.invoiceMessage} />
@@ -147,4 +154,21 @@ const InsuranceInfo = styled.div`
     padding: 0.5em 0;
     border-top: 1px dashed black;
     border-bottom: 1px dashed black;
+`;
+
+const CommentSection = styled.div`
+    margin: 0.5em 0;
+    padding: 0.5em 0;
+    border-top: 1px dashed black;
+    border-bottom: 1px dashed black;
+    
+    .comment-title {
+        font-weight: 600;
+    }
+    
+    .comment-text {
+        font-style: italic;
+        word-wrap: break-word;
+        white-space: pre-wrap;
+    }
 `;

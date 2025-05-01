@@ -50,6 +50,7 @@ const initialState = {
     data: [],
     ncfCode: null,
     ncfType: "",
+    availableTypes: [] // Lista de tipos de comprobantes disponibles
 }
 
 export const taxReceiptSlice = createSlice({
@@ -57,17 +58,28 @@ export const taxReceiptSlice = createSlice({
     initialState,
     reducers: {
         getTaxReceiptData: (state, action) => {
-            state.data = action.payload
+            state.data = action.payload;
+            // Actualizar la lista de tipos de comprobantes disponibles
+            state.availableTypes = action.payload.map(item => item.data.name);
         },
         IncreaseEndConsumer: (state, action) => {
-            const name = action.payload;
             if (state.settings.taxReceiptEnabled) {
-                updateComprobante(state, 'CONSUMIDOR FINAL');
+                // Si se proporciona un nombre específico del comprobante, usar ese
+                const name = action.payload || 'CONSUMIDOR FINAL';
+                updateComprobante(state, name);
             }
         },
-        IncreaseTaxCredit: (state) => {
+        IncreaseTaxCredit: (state, action) => {
             if (state.settings.taxReceiptEnabled) {
-                updateComprobante(state, 'CREDITO FISCAL');
+                // Si se proporciona un nombre específico del comprobante, usar ese
+                const name = action.payload || 'CREDITO FISCAL';
+                updateComprobante(state, name);
+            }
+        },
+        // Nuevo action para aumentar cualquier comprobante por su nombre
+        IncreaseSpecificReceipt: (state, action) => {
+            if (state.settings.taxReceiptEnabled && action.payload) {
+                updateComprobante(state, action.payload);
             }
         },
         toggleTaxReceiptSettings: (state, action) => {
@@ -87,7 +99,16 @@ export const taxReceiptSlice = createSlice({
     }
 })
 
-export const { getTaxReceiptData, clearTaxReceiptData, IncreaseEndConsumer, IncreaseTaxCredit, selectTaxReceiptType, updateTaxCreditInFirebase, toggleTaxReceiptSettings } = taxReceiptSlice.actions;
+export const { 
+    getTaxReceiptData, 
+    clearTaxReceiptData, 
+    IncreaseEndConsumer, 
+    IncreaseTaxCredit,
+    IncreaseSpecificReceipt, 
+    selectTaxReceiptType, 
+    updateTaxCreditInFirebase, 
+    toggleTaxReceiptSettings 
+} = taxReceiptSlice.actions;
 
 //selectors
 export default taxReceiptSlice.reducer
@@ -97,3 +118,4 @@ export const selectNcfType = (state) => state.taxReceipt.ncfType;
 export const selectNcfCode = (state) => state.taxReceipt.ncfCode;
 export const selectTaxReceiptEnabled = (state) => state.taxReceipt.settings.taxReceiptEnabled;
 export const selectTaxReceipt = (state) => state.taxReceipt;
+export const selectAvailableReceiptTypes = (state) => state.taxReceipt.availableTypes;

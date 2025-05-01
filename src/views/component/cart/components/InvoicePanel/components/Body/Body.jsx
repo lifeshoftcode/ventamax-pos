@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useState } from 'react'
+import { Fragment } from 'react'
 import styled from 'styled-components'
 import { ChargedSection } from './components/ChargedSection/ChargedSection'
 import { PaymentMethods } from './components/PaymentMethods/PaymentMethods'
@@ -6,6 +6,8 @@ import { PaymentSummary } from './components/PaymentSummary/PaymentSummary'
 import { PrintControl } from './components/PrintControl/PrintControl'
 import { MarkAsReceivableButton } from './components/MarkAsReceivableButton/MarkAsReceivableButton'
 import { ReceivableManagementPanel } from './components/ReceivableManagementPanel/ReceivableManagementPanel'
+import { InsuranceManagementPanel } from './components/InsuranceManagementPanel/InsuranceManagementPanel'
+import { InvoiceComment } from './components/InvoiceComment/InvoiceComment'
 import { fbGetCreditLimit } from '../../../../../../../firebase/accountsReceivable/fbGetCreditLimit'
 import { selectUser } from '../../../../../../../features/auth/userSlice'
 import { useSelector } from 'react-redux'
@@ -14,14 +16,15 @@ import { useQuery } from '@tanstack/react-query'
 import { useCreditLimitCheck } from '../../../../../../../hooks/accountsReceivable/useCheckAccountReceivable'
 import { SelectCartData } from '../../../../../../../features/cart/cartSlice'
 import { userAccess } from '../../../../../../../hooks/abilities/useAbilities'
-import * as antd from 'antd'
-const { Alert, Form } = antd
+import useInsuranceEnabled from '../../../../../../../hooks/useInsuranceEnabled'
+import { Alert, Form } from 'antd'
 
 export const Body = ({ form }) => {
     const user = useSelector(selectUser);
     const client = useSelector(selectClient);
     const cartData = useSelector(SelectCartData);
     const clientId = client.id;
+    const insuranceEnabled = useInsuranceEnabled();
 
     const { abilities } = userAccess();
 
@@ -95,6 +98,8 @@ export const Body = ({ form }) => {
                         )
                     )
                 }
+                {insuranceEnabled && <InsuranceManagementPanel form={form} />}
+                <InvoiceComment />
                 <PrintControl />
             </Container>
         </Form>

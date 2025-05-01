@@ -90,7 +90,8 @@ const initialState = {
         insuranceEnabled: false,
         totalInsurance: {
             value: 0
-        }
+        },
+        invoiceComment: ''
     },
 }
 /*los estados pueden ser:

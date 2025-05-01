@@ -1,10 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { AiOutlineClose } from 'react-icons/ai';
-import { NoteViewer } from './components/NoteViewer';
-import { InfoCard } from './Card';
 import { Button } from '../../../templates/system/Button/Button';
-import { MdClose } from 'react-icons/md';
 import { Header } from './Header';
 
 const ModalWrapper = styled.div`

@@ -8,7 +8,9 @@ const insurance = [
         title: 'Configuración de Seguro',
         icon: icons.insurance.insurance,
         route: INSURANCE_CONFIG,
-        group: 'insurance'
+        group: 'insurance',
+        key: 'insurance',
+        condition: ({ businessType }) => businessType === 'pharmacy',
     },
 ]
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import styled from 'styled-components'
-import { Button, ButtonGroup } from '../../../templates/system/Button/Button'
+import { Button } from '../../../templates/system/Button/Button'
 import { PlusIconButton } from '../../../templates/system/Button/PlusIconButton'
 import { v4 } from 'uuid'
 import { addIngredientTypePizza } from '../../../../firebase/firebaseconfig.jsx'
@@ -8,10 +8,11 @@ import { fbGetCustomProduct } from '../../../../firebase/products/customProduct/
 import { useEffect } from 'react'
 import { isEmpty } from '@firebase/util'
 import { IngredientCard } from '../../../templates/system/Product/typePizza/IngredientCard'
-import { IoIosArrowBack, IoMdClose } from 'react-icons/io'
+import { IoIosArrowBack } from 'react-icons/io'
 import { selectUser } from '../../../../features/auth/userSlice'
 import { useSelector } from 'react-redux'
 import { InputV4 } from '../../../templates/system/Inputs/GeneralInput/InputV4.jsx'
+
 export const AddCustomProductModal = ({ isOpen, handleOpen }) => {
     const user = useSelector(selectUser)
     const [product, setProduct] = useState('')

@@ -1,4 +1,4 @@
-import { CancelShipping, } from '../../../../features/cart/cartSlice'
+import { resetCart, } from '../../../../features/cart/cartSlice'
 import { useDispatch } from 'react-redux'
 import { Button } from './Button'
 import { clearTaxReceiptData } from '../../../../features/taxReceipt/taxReceiptSlice'
@@ -8,7 +8,7 @@ export const CancelPurchaseBtn = () => {
     const dispatch = useDispatch();
 
     const handleCancelShipping = () => {
-        dispatch(CancelShipping())
+        dispatch(resetCart())
         dispatch(clearTaxReceiptData())
     }
     return (

@@ -1,6 +1,5 @@
 import { TbPlus } from "react-icons/tb"
 import { Button } from "../../../../../templates/system/Button/Button"
-import { Tooltip } from "../../../../../templates/system/Button/Tooltip"
 import { useSelector } from "react-redux"
 import { SelectProductSelected } from "../../../../../../features/productOutflow/productOutflow"
 

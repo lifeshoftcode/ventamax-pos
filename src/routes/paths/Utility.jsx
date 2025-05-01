@@ -1,5 +1,4 @@
 import { Utility } from "../../views/pages/Utility/Utility";
-import validateRouteAccess from "../requiereAuthProvider";
 import ROUTES_NAME from "../routesName";
 
 const {
@@ -9,7 +8,7 @@ const {
 
 
 const Routes = [
-    { path: UTILITY_REPORT, element: validateRouteAccess(<Utility />), },
+    { path: UTILITY_REPORT, element: <Utility /> },
 ]
 
 export default Routes;

@@ -1,40 +1,9 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import styled from "styled-components";
 import { FaWindowClose } from "react-icons/fa";
-import { Route, useNavigate } from "react-router-dom";
-
-
-const items = () => {
-  const navigate = useNavigate();
-  const options = [
-    {
-      label: "Free space",
-      fn: () => navigate("/"),
-    },
-    {
-      label: "Task Manager",
-      icon: <FaWindowClose />,
-    },
-    {
-      label: "Control Panel",
-      icon: <FaWindowClose />,
-    },
-    {
-      label: "Task Manager",
-      icon: <FaWindowClose />,
-    },
-    {
-      label: "Control Panel",
-      icon: <FaWindowClose />,
-    },
-  ];
-  return options;
-}
-
 
 const RunMenu = ({ onClose }) => {
   const [searchValue, setSearchValue] = useState("");
-  console.log(JSON.stringify(options))
 
   return (
     <Container>

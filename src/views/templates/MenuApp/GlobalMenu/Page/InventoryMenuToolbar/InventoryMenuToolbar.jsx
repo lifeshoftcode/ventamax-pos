@@ -43,6 +43,7 @@ export const InventoryMenuToolbar = ({ side = 'left' }) => {
         try {
             setShowProgress(true);
             const productData = await importProductData(file, 'es');
+            console.log('productData', productData);
             await fbAddActiveIngredients(user, productData);
             await fbAddProducts(user, productData, 10000, (progress) => {
                 setImportProgress(progress.stats);
@@ -56,9 +57,10 @@ export const InventoryMenuToolbar = ({ side = 'left' }) => {
         }
     };
 
-    const handleCreateTemplate = async () => {
+    const handleCreateTemplate = async (language = 'es', optionalFields = []) => {
         try {
-            await createProductTemplate('es');
+            await createProductTemplate(language, optionalFields);
+            message.success('Plantilla creada exitosamente.');
         } catch (error) {
             console.error('Error al crear la plantilla:', error);
             message.error('Hubo un problema al crear la plantilla.');

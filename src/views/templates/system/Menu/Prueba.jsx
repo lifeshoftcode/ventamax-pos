@@ -1,246 +1,110 @@
-import * as antd from 'antd';
 import { useSelector } from 'react-redux';
 import { selectUser } from '../../../../features/auth/userSlice';
 import { useState } from 'react';
-import { ProcessViewer } from '../../../../components/ProcessViewer';
 import styled from 'styled-components';
-import { db } from '../../../../firebase/firebaseconfig';
-import { collection, getDocs, query, writeBatch } from 'firebase/firestore';
-import { fbInitializedProductInventory } from '../../../../firebase/products/fbInitializeProductInventory';
-import { fbInitializedProductInventoryForAllBusinesses } from '../../../../firebase/products/fbInitializedProductInventoryForAllBusinesses';
-import { updateDoc } from 'firebase/firestore';
-import { cleanInventoryData } from '../../../../firebase/inventoryDataCleaner/inventoryDataCleanerService';
-import { InvoiceTemplate3 } from '../../../component/Invoice/templates/Invoicing/InvoiceTemplate3/InvoiceTemplate3';
-import { InvoiceTemplate4 } from '../../../component/Invoice/templates/Invoicing/InvoiceTemplate4/InvoiceTemplate4';
-import UpdateProducts from './UpdateProducts/UpdateProducts';
-import { ProductMaintenance } from './ProductMaintenance';
-
-const { FloatButton } = antd
-
-const handleDeleteProducts = async (user) => {
-  try {
-    if (!user?.businessID) return;
-    const productsRef = collection(db, `businesses/${user?.businessID}/products`);
-    const querySnapshot = await getDocs(productsRef);
-
-    if (querySnapshot.empty) {
-      console.log("No hay productos para eliminar");
-      return;
-    }
-
-    let batch = writeBatch(db);
-    let deletedCount = 0;
-    const batchLimit = 500; // Límite máximo de operaciones por batch
-
-    querySnapshot.forEach(async (doc, index) => {
-      batch.delete(doc.ref);
-      deletedCount++;
-
-      // Comprometer batch cada 500 operaciones
-      if ((index + 1) % batchLimit === 0) {
-        await batch.commit();
-        batch = writeBatch(db); // Reiniciar batch
-      }
-    });
-
-    // Comprometer las operaciones restantes
-    if (deletedCount > 0) {
-      await batch.commit();
-    }
-
-    console.log(`Se eliminaron ${deletedCount} productos exitosamente`);
-  } catch (error) {
-    console.error("Error eliminando productos: ", error);
-    throw error; // Propagar el error para manejo superior
-  }
-};
-
-const handleUpdateStockStatus = async (user, setProcessState) => {
-  try {
-    setProcessState({
-      status: "Iniciando actualización de estados",
-      progress: 0
-    });
-
-    const stockCollection = collection(db, `businesses/${user.businessID}/productsStock`);
-    const querySnapshot = await getDocs(stockCollection);
-
-    if (querySnapshot.empty) {
-      setProcessState({
-        status: "No hay productos para actualizar",
-        progress: 100
-      });
-      return;
-    }
-
-    const totalDocs = querySnapshot.size;
-    let batch = writeBatch(db);
-    const batchLimit = 500;
-    let counter = 0;
-    let updatedCount = 0;
-
-    for (const doc of querySnapshot.docs) {
-      const data = doc.data();
-      if (!data.hasOwnProperty("status")) {
-        batch.update(doc.ref, { status: "active" });
-        updatedCount++;
-        counter++;
-
-        setProcessState({
-          status: `Actualizando productos: ${updatedCount}/${totalDocs}`,
-          progress: Math.round((counter / totalDocs) * 100),
-          currentProduct: {
-            id: doc.id,
-            name: data.name || 'Producto sin nombre',
-            stock: data.stock || 0
-          }
-        });
-
-        if (counter % batchLimit === 0) {
-          await batch.commit();
-          batch = writeBatch(db);
-        }
-      }
-    }
-
-    if (counter % batchLimit !== 0) {
-      await batch.commit();
-    }
-
-    setProcessState({
-      status: `Actualización completada. Se actualizaron ${updatedCount} productos`,
-      progress: 100
-    });
-
-    console.log(`Se actualizaron ${updatedCount} productosStock exitosamente`);
-  } catch (error) {
-    console.error("Error actualizando productosStock: ", error);
-    setProcessState({
-      status: "Error en la actualización",
-      progress: 100,
-      error: true
-    });
-  }
-};
-
-const handleUpdateProductPrice = async (user, setProcessState) => {
-  try {
-    setProcessState({
-      status: "Iniciando actualización de precios",
-      progress: 0
-    });
-
-    const productsCollection = collection(db, `businesses/${user.businessID}/products`);
-    const querySnapshot = await getDocs(productsCollection);
-
-    if (querySnapshot.empty) {
-      setProcessState({
-        status: "No hay productos para actualizar",
-        progress: 100
-      });
-      return;
-    }
-
-    const totalDocs = querySnapshot.size;
-    let batch = writeBatch(db);
-    const batchLimit = 500;
-    let counter = 0;
-    let updatedCount = 0;
-
-    for (const doc of querySnapshot.docs) {
-      const data = doc.data();
-      // Verificar si tiene pricing.listPrice y actualizar pricing.price
-      if (data.pricing?.listPrice) {
-        batch.update(doc.ref, {
-          'pricing.price': data.pricing.listPrice
-        });
-
-        updatedCount++;
-        counter++;
-
-        setProcessState({
-          status: `Actualizando productos: ${updatedCount}/${totalDocs}`,
-          progress: Math.round((counter / totalDocs) * 100),
-          currentProduct: {
-            id: doc.id,
-            name: data.name || 'Producto sin nombre',
-            pricing: {
-              price: data.pricing.listPrice,
-              listPrice: data.pricing.listPrice
-            }
-          }
-        });
-
-        if (counter % batchLimit === 0) {
-          await batch.commit();
-          batch = writeBatch(db);
-        }
-      }
-    }
-
-    if (counter % batchLimit !== 0) {
-      await batch.commit();
-    }
-
-    setProcessState({
-      status: `Actualización completada. Se actualizaron ${updatedCount} productos`,
-      progress: 100
-    });
-
-    console.log(`Se actualizaron ${updatedCount} productos exitosamente`);
-  } catch (error) {
-    console.error("Error actualizando productos: ", error);
-    setProcessState({
-      status: "Error en la actualización",
-      progress: 100,
-      error: true
-    });
-  }
-}
+import { testInvoiceFunction } from '../../../../firebase/functions/invoice/processInvoice';
+import { Button, Input, Space, Card, Divider } from 'antd';
 
 export const Prueba = () => {
   const user = useSelector(selectUser)
   const [processState, setProcessState] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [dateRange, setDateRange] = useState({ start: null, end: null });
+  const [testData, setTestData] = useState('');
+  const [functionResponse, setFunctionResponse] = useState(null);
+  
+  // Función para manejar el cambio de fecha única
+  const handleDateChange = (date) => {
+    setSelectedDate(date);
+    console.log("Fecha seleccionada:", date);
+  };
+  
+  // Función para manejar el cambio de rango de fechas
+  const handleRangeChange = (range) => {
+    setDateRange(range);
+    console.log("Fecha inicio:", range.start);
+    console.log("Fecha fin:", range.end);
+  };
 
-  const handleSubmit = async () => {
+  const handleProcessInvoice = async () => {
     try {
-      //  await fbInitializedProductInventory(user, setProcessState);
-      // await fbInitializedProductInventoryForAllBusinesses(setProcessState);
-      // await handleDeleteProducts(user);
-      // await handleUpdateStockStatus(user, setProcessState);
-      // await cleanInventoryData('7zydYrerx10N0Rg9vD2pQ')
-      // await handleUpdateProductPrice(user, setProcessState);
-      // setProcessState({
-      //   status: "Inventario limpiado exitosamente",
-      //   progress: 100
-      // });
+      setFunctionResponse(null); // Reset previous response
+      const result = await testInvoiceFunction(testData);
+      console.log("Respuesta de la función:", result);
+      setFunctionResponse(result);
     } catch (error) {
-      console.error(error);
-    } finally {
-      setTimeout(() => setProcessState(null), 2000);
+      console.error("Error al llamar la función:", error);
+      setFunctionResponse({
+        error: true,
+        message: error.message || 'Error al procesar la solicitud'
+      });
     }
   }
 
   return (
     <Container>
-      {user?.businessID}
-      {/* <FileProcessor />
-      <RncSearch />  */}
-      {/* <InvoiceTemplate3 />
-      
-      <InvoiceTemplate4 /> */}
-      {/* <UpdateProducts /> */}
-      < ProductMaintenance />
-      {/* <GridVirtualizerFixed /> */}
-      {/* <OrderManagement /> */}
-      {/* <Receipt data={invoice} ignoreHidden={true} />  */}
-      prueba
-      {processState && <ProcessViewer {...processState} />}
-      <FloatButton onClick={handleSubmit}>Iniciar</FloatButton>
+      <h1>Prueba de Cloud Functions</h1>
+      <Card title="Información del Usuario" style={{ marginBottom: '20px' }}>
+        <p><strong>Nombre:</strong> {user?.displayName}</p>
+        <p><strong>UID:</strong> {user?.uid}</p>
+        <p><strong>Business ID:</strong> {user?.businessID}</p>
+        <p><strong>Business Name:</strong> {user?.businessName}</p>
+      </Card>
+
+      <Card title="Probar Cloud Function">
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Input 
+            placeholder="Ingresa datos para enviar al backend" 
+            value={testData} 
+            onChange={(e) => setTestData(e.target.value)}
+            onPressEnter={handleProcessInvoice}
+          />
+          <Button type="primary" onClick={handleProcessInvoice}>
+            Enviar datos al backend
+          </Button>
+        </Space>
+      </Card>
+
+      {functionResponse && (
+        <Card title="Respuesta del Backend" style={{ marginTop: '20px' }}>
+          <pre>{JSON.stringify(functionResponse, null, 2)}</pre>
+        </Card>
+      )}
     </Container>
   )
 }
 
 const Container = styled.div`
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+`
 
+const Section = styled.section`
+  margin-bottom: 30px;
+  padding: 20px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  background-color: white;
+  
+  h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+    color: #333;
+  }
+  
+  p {
+    margin-bottom: 15px;
+    color: #666;
+  }
+`
+
+const SelectedValue = styled.div`
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  font-size: 0.9rem;
 `

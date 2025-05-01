@@ -19,17 +19,14 @@ export const InsuranceAuthFields = () => {
   const client = useSelector(selectClient);
   const authData = useSelector(selectInsuranceAuthData);
   const insuranceData = useSelector(selectInsuranceData);
-  const [authNumber, setAuthNumber] = useState(authData?.authNumber || '');
   const [clientInsurance, setClientInsurance] = useState(null);
 
-  // Obtener datos de seguro del cliente cuando el cliente cambia
   useEffect(() => {
     const fetchClientInsurance = async () => {
       if (client?.id) {
         const insuranceData = await getClientInsuranceByClientId(user, client.id);
         if (insuranceData) {
           setClientInsurance(insuranceData);
-          // Actualizar solo los datos específicos que necesitamos
           dispatch(setAuthData({
             insuranceId: insuranceData.insuranceId,
             insuranceType: insuranceData.insuranceType,
@@ -48,10 +45,8 @@ export const InsuranceAuthFields = () => {
 
   const handleOpenModal = () => {
     dispatch(openModal({
-      initialValues: { 
-        authNumber: authNumber, 
+      initialValues: {
         clientId: client?.id,
-        // Incluir los datos del seguro del cliente si están disponibles
         insuranceId: clientInsurance?.insuranceId || authData?.insuranceId,
         insuranceType: clientInsurance?.insuranceType || authData?.insuranceType,
         birthDate: clientInsurance?.birthDate || authData?.birthDate
@@ -64,8 +59,7 @@ export const InsuranceAuthFields = () => {
   };
 
   const handleInputChange = (e) => {
-    setAuthNumber(e.target.value);
-    dispatch(setAuthData({ authNumber: e.target.value }));
+    dispatch(setAuthData({ authNumber: e.target.value.trim() }));
   };
 
   return (
@@ -85,9 +79,9 @@ export const InsuranceAuthFields = () => {
             value={authData?.authNumber}
             onChange={handleInputChange}
           />
-          <EditButton 
-            type="primary" 
-            icon={<EditOutlined />} 
+          <EditButton
+            type="primary"
+            icon={<EditOutlined />}
             onClick={handleOpenModal}
           >
             Editar
@@ -109,6 +103,7 @@ const Container = styled.div`
   background-color: #fff;
   padding: 0.4em;
   border-radius: 0.4em;
+  z-index: 4;
   border: 1px solid #e8e8e8;
 `;
 
@@ -135,11 +130,6 @@ const StyledInput = styled(Input)`
   &:hover {
     border-color: #40a9ff;
   }
-`;
-
-const EditIcon = styled(EditOutlined)`
-  color: #1890ff;
-  cursor: pointer;
 `;
 
 const EditButton = styled(Button)`

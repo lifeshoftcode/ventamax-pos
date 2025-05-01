@@ -1,10 +1,8 @@
-import React, { Fragment } from 'react'
 import { MenuWebsite } from '../../templates/MenuWebsite/MenuWebsite'
 import styled from 'styled-components'
 import PersonalizedGreeting from './components/PersonalizedGreeting/PersonalizedGreeting'
 import Footer from './Footer/Footer'
 import { DashboardShortcuts } from './components/DashboardShortcuts/DashboardShortcuts'
-import { Helmet } from 'react-helmet-async'
 
 export const Home = () => {
   return (
@@ -42,7 +40,7 @@ const WelcomeSectionInner = styled.div`
   align-items: start;
   align-content: start;
   margin: 0 auto;
-  gap: 2em;
+  gap: 1em;
   max-width: 1200px;
   width: 100%;  
   padding: 1em 1em;

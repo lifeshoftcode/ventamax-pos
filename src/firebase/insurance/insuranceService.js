@@ -1,4 +1,4 @@
-import { updateDoc, doc, serverTimestamp, setDoc, collection, onSnapshot } from 'firebase/firestore';
+import { updateDoc, doc, serverTimestamp, setDoc, collection, onSnapshot, getDoc } from 'firebase/firestore';
 import { db } from '../firebaseconfig';
 import { nanoid } from '@reduxjs/toolkit';
 import { selectUser } from '../../features/auth/userSlice';
@@ -30,6 +30,27 @@ export const saveInsuranceConfig = async (user, insuranceData) => {
         return id;
     } catch (error) {
         console.error('Error saving insurance:', error);
+        throw error;
+    }
+}
+
+export const getInsurance = async (user, insuranceId) => {
+    if(!user.businessID) {
+        throw new Error('No se encontró un ID de negocio');
+    }
+    if(!insuranceId) {
+        throw new Error('No se encontró un ID de seguro');
+    }
+    try {
+        const insuranceRef = doc(db, 'businesses', user.businessID, 'insuranceConfig', insuranceId);
+        const insuranceDoc = await getDoc(insuranceRef);
+        if (insuranceDoc.exists()) {
+            return insuranceDoc.data();
+        } else {
+            throw new Error('No se encontró el documento de seguro');
+        }
+    } catch (error) {
+        console.error('Error al obtener el seguro:', error);
         throw error;
     }
 }

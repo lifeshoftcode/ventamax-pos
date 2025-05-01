@@ -12,7 +12,7 @@ import {
 import { selectCategoryGrouped } from '../../../features/setting/settingSlice'
 import { useGetProducts } from '../../../firebase/products/fbGetProducts'
 import useFilter from '../../../hooks/search/useSearch' // Cambiar importación
-import { addProduct, CancelShipping, toggleCart } from '../../../features/cart/cartSlice'
+import { addProduct, resetCart, toggleCart } from '../../../features/cart/cartSlice'
 import { useBarcodeScanner } from '../../../hooks/barcode/useBarcodeScanner'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
@@ -89,7 +89,7 @@ export const Sales = () => {
   useEffect(() => {
     const handleCancelShipping = () => {
       if (viewport <= 800) dispatch(toggleCart());
-      dispatch(CancelShipping())
+      dispatch(resetCart())
       dispatch(clearTaxReceiptData())
       dispatch(deleteClient())
     }
@@ -109,6 +109,7 @@ export const Sales = () => {
           borderRadius={'bottom-right'}
           searchData={searchData}
           setSearchData={setSearchData}
+          showNotificationButton={true}
         />
         < ProductControlEfficient
           productsLoading={productsLoading}

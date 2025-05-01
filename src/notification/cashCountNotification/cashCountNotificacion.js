@@ -8,7 +8,6 @@ class CashCountStrategy {
     }
 
     handleConfirm() {
-        // Implementación base, puede ser vacía o lanzar una excepción
     }
 }
 

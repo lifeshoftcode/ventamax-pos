@@ -32,10 +32,9 @@ const Container = styled.div`
     max-width: 1440px;
     width: 100%;
     margin: 0 auto;
-    padding: 0.6em;
+  
     
     @media (max-width: 768px) {
         gap: 0.8em;
-        padding: 0.4em;
     }
 `

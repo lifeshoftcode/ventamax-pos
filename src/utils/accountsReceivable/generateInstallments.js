@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 import { DateTime } from 'luxon';
-import usePaymentDates from '../../views/component/cart/components/InvoicePanel/components/Body/components/ReceivableManagementPanel/usePaymentDates';
+import { calculatePaymentDates } from '../../views/component/cart/components/InvoicePanel/components/Body/components/ReceivableManagementPanel/receivableUtils';
 
 const roundToTwo = (num) => {
     return Math.round(num * 100) / 100;
@@ -9,8 +9,8 @@ const roundToTwo = (num) => {
 export function generateInstallments({ ar, user }) {
     const { totalInstallments, totalReceivable, paymentFrequency } = ar;
 
-    // Generación de fechas de pago utilizando usePaymentDates
-    const { paymentDates } = usePaymentDates(paymentFrequency, totalInstallments);
+    // Generación de fechas de pago utilizando calculatePaymentDates
+    const { paymentDates } = calculatePaymentDates(paymentFrequency, totalInstallments);
 
     // Cálculo del monto de cada cuota
     const precisePart = totalReceivable / totalInstallments;

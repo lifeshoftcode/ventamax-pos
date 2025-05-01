@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Modal, Form, Input, DatePicker, Select, Upload, Button, message, Spin } from 'antd';
-import { UploadOutlined, PlusOutlined, UserOutlined } from '@ant-design/icons';
+import { Modal, Form, Input, DatePicker, Select, message, Spin } from 'antd';
+import { UserOutlined } from '@ant-design/icons';
 import styled from 'styled-components';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectUser } from '../../../../../../features/auth/userSlice';
@@ -19,6 +19,9 @@ import {
 import { createClientInsurance, updateClientInsurance, getClientInsuranceByClientId } from '../../../../../../firebase/insurance/clientInsuranceService';
 import Dependent from './components/Dependent/Dependent';
 import useInsuranceEnabled from '../../../../../../hooks/useInsuranceEnabled';
+// Importamos el componente FileUploader
+import FileUploader from '../../../../../component/FileUploader/FileUploader';
+import { setInsuranceAR } from '../../../../../../features/insurance/insuranceAccountsReceivableSlice';
 
 const Row = styled.div`
   display: flex;
@@ -32,9 +35,9 @@ const Col = styled.div`
 
 // Componente estilizado rediseñado con una estética más corporativa, minimalista y moderna
 const ClientInfoWidget = styled.div`
-  padding: 10px 0;
+  padding: 10px 0 0;
   margin-bottom: 20px;
-  border-bottom: 1px solid #eaeaea;
+  /* border-bottom: 1px solid #eaeaea; */
   display: flex;
   align-items: center;
   
@@ -81,6 +84,16 @@ const LoadingContainer = styled.div`
   padding: 20px;
 `;
 
+// Nuevo componente para los encabezados de sección
+const SectionHeader = styled.h3`
+  font-size: 16px;
+  color: #262626;
+  margin-top: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+`;
+
 export const InsuranceAuthModal = () => {
   // Se obtienen los valores desde el slice
   const { open } = useSelector(selectInsuranceModal);
@@ -102,6 +115,7 @@ export const InsuranceAuthModal = () => {
   const [selectedInsurance, setSelectedInsurance] = useState(null);
   // Añadimos un estado para guardar la aseguradora seleccionada completa
   const [selectedInsuranceData, setSelectedInsuranceData] = useState(null);
+  const [prescriptionFiles, setPrescriptionFiles] = useState([]);
 
   // Escuchamos la configuración de seguros (aseguradoras + tipos)
   const { data: insuranceConfigData, loading: configLoading } = useListenInsuranceConfig();
@@ -174,7 +188,7 @@ export const InsuranceAuthModal = () => {
           // Pero necesitaríamos recuperar el ID creado, lo que depende de la implementación
         }
       }
-
+      dispatch(setInsuranceAR({insuranceId: authData.insuranceId}))
       // Actualizar Redux después de guardar en Firebase
       dispatch(updateAuthField({ field, value: processedValue }));
     } catch (error) {
@@ -228,7 +242,7 @@ export const InsuranceAuthModal = () => {
         'doctor',
         'specialty',
         'indicationDate',
-        'birthDate'
+        // Eliminamos birthDate de los campos requeridos
       ];
       
       // Verificar si todos los campos requeridos tienen valor
@@ -301,6 +315,49 @@ export const InsuranceAuthModal = () => {
     return current && current > dayjs();
   };
 
+  // Función para manejar la adición de archivos de receta
+  const handleAddPrescriptionFiles = (newFiles) => {
+    // Guardar los archivos en el estado local
+    setPrescriptionFiles(prev => [...prev, ...newFiles]);
+    
+    // También actualizar el campo en el formulario para mantener la consistencia
+    const currentFiles = form.getFieldValue('prescription') || [];
+    form.setFieldValue('prescription', [...currentFiles, ...newFiles]);
+    
+    validateFormCompletion();
+  };
+
+  // Función para manejar la eliminación de archivos de receta
+  const handleRemovePrescriptionFile = (fileId) => {
+    setPrescriptionFiles(prev => prev.filter(file => file.id !== fileId));
+    
+    const currentFiles = form.getFieldValue('prescription') || [];
+    form.setFieldValue('prescription', currentFiles.filter(file => file.id !== fileId));
+    
+    validateFormCompletion();
+  };
+
+  // Cargar los archivos de prescripción cuando se abra el modal
+  useEffect(() => {
+    if (open && authData?.prescription) {
+      const files = Array.isArray(authData.prescription) 
+        ? authData.prescription 
+        : [authData.prescription];
+      
+      setPrescriptionFiles(
+        files.map(file => ({
+          ...file,
+          // Asegurarnos de que cada archivo tenga un ID
+          id: file.id || Math.random().toString(36).substr(2, 9),
+          // Si el archivo es un objeto File, necesitamos extraer su nombre
+          name: file.name || (file.file && file.file.name) || 'Archivo de receta'
+        }))
+      );
+    } else {
+      setPrescriptionFiles([]);
+    }
+  }, [open, authData?.prescription]);
+
   const handleCancel = () => {
     dispatch(closeModal());
   };
@@ -315,6 +372,8 @@ export const InsuranceAuthModal = () => {
         ...values,
         birthDate: values.birthDate ? values.birthDate.toISOString() : null,
         indicationDate: values.indicationDate ? values.indicationDate.toISOString() : null,
+        // Incluimos los archivos de receta
+        prescription: prescriptionFiles
       };
 
       // Guardamos en el estado de Redux
@@ -435,12 +494,9 @@ export const InsuranceAuthModal = () => {
           disabled={isFormDisabled}
           onValuesChange={handleFormValuesChange}
         >
-          <Dependent 
-            form={form} 
-            hasDependent={hasDependent} 
-            onDependentChange={setHasDependent} 
-          />
-
+          {/* SECCIÓN 1: INFORMACIÓN DEL SEGURO */}
+          <SectionHeader>Información del Seguro</SectionHeader>
+          
           {/* Grupo de información de seguro */}
           <Row>
             <Col>
@@ -515,7 +571,7 @@ export const InsuranceAuthModal = () => {
             </Col>
           </Row>
 
-          {/* Grupo de información médica */}
+          {/* Grupo de información médica - Ahora en sección de seguro */}
           <Row>
             <Col>
               <Form.Item
@@ -537,7 +593,7 @@ export const InsuranceAuthModal = () => {
             </Col>
           </Row>
 
-          {/* Grupo de fechas */}
+          {/* Fecha de indicación - Ahora en sección de seguro */}
           <Row>
             <Col>
               <Form.Item
@@ -554,10 +610,48 @@ export const InsuranceAuthModal = () => {
               </Form.Item>
             </Col>
             <Col>
+              {/* Reemplazamos el Upload por el FileUploader con modo compacto y en una línea */}
+             
+            </Col>
+          </Row>
+          <Row>
+          <Col>
+          <Form.Item name="prescription" label="Receta">
+                <FileUploader 
+                  files={prescriptionFiles}
+                  onAddFiles={handleAddPrescriptionFiles}
+                  onRemoveFiles={handleRemovePrescriptionFile}
+                  defaultFileType="prescription"
+                  fileTypes={["prescription", "document", "identification", "insurance"]}
+                  fileTypeLabels={{
+                    prescription: "Receta", 
+                    document: "Documento",
+                    identification: "Identificación",
+                    insurance: "Seguro"
+                  }}
+                  acceptedFileTypes=".pdf,.jpg,.jpeg,.png"
+                  uploaderTitle="cargar"
+                  successMessage="Archivo de receta agregado"
+                  showFileList={true}
+                  maxFiles={3}
+                  compact={true}
+                  alwaysShowTypeSelector={true}
+                  inlineLayout={true}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* SECCIÓN 2: INFORMACIÓN DEL CLIENTE */}
+          <SectionHeader>Información del Cliente</SectionHeader>
+          
+          {/* Solo fecha de nacimiento en la sección del cliente */}
+          <Row>
+            <Col>
               <Form.Item
                 name="birthDate"
                 label="Fecha de Nacimiento"
-                rules={[{ required: true, message: 'Por favor seleccione la fecha de nacimiento' }]}
+                rules={[{ required: false, message: 'Por favor seleccione la fecha de nacimiento' }]}
               >
                 <DatePicker
                   style={{ width: '100%' }}
@@ -570,25 +664,13 @@ export const InsuranceAuthModal = () => {
             </Col>
           </Row>
 
-          {/* Campo de receta */}
-          <Form.Item name="prescription" label="Receta">
-            <Upload
-              beforeUpload={(file) => {
-                // Puedes validar el tipo de archivo aquí si es necesario
-                return false; // Prevenir la carga automática
-              }}
-              fileList={form.getFieldValue('prescription') ? [form.getFieldValue('prescription')] : []}
-              onChange={({ fileList }) => {
-                if (fileList.length > 0) {
-                  form.setFieldValue('prescription', fileList[0]);
-                } else {
-                  form.setFieldValue('prescription', null);
-                }
-              }}
-            >
-              <Button icon={<UploadOutlined />}>Adjuntar Receta</Button>
-            </Upload>
-          </Form.Item>
+          {/* SECCIÓN 3: INFORMACIÓN DEL DEPENDIENTE */}
+          <SectionHeader>Información del Dependiente (opcional)</SectionHeader>
+          <Dependent 
+            form={form} 
+            hasDependent={hasDependent} 
+            onDependentChange={setHasDependent} 
+          />
         </Form>
       )}
     </Modal>

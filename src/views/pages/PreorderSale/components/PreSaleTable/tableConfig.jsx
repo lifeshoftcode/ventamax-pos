@@ -6,7 +6,7 @@ import { useState } from "react";
 import { selectUser } from "../../../../../features/auth/userSlice";
 import * as antd from "antd";
 import { icons } from "../../../../../constants/icons/icons";
-import { setCart, setCartId, toggleInvoicePanelOpen } from "../../../../../features/cart/cartSlice";
+import { loadCart, setCartId, toggleInvoicePanelOpen } from "../../../../../features/cart/cartSlice";
 import { validateInvoiceCart } from "../../../../../utils/invoiceValidation";
 import { ConfirmModal } from "../../../../component/modals/ConfirmModal/ConfirmModal";
 import { fbCancelPreorder } from "../../../../../firebase/invoices/fbCancelPreorder";
@@ -30,7 +30,7 @@ const EditButton = ({ value }) => {
         const { isValid, message } = validateInvoiceCart(data)
         if (isValid) {
             dispatch(toggleInvoicePanelOpen())
-            dispatch(setCart(data))
+            dispatch(loadCart(data))
             dispatch(setCartId())
         } else {
             antd.notification.error({

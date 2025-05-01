@@ -6,6 +6,7 @@ import { CreateOrderToolbar } from "./Page/CreateOrderToolbar";
 import { CreatePurchaseToolbar } from "./Page/CreatePurchaseToolbar";
 import { ExpensesCategoriesToolbar } from "./Page/ExpensesCategoriesToolbar";
 import { ExpensesListToolbar } from "./Page/ExpensesListToolbar";
+import GeneralConfigToolbar from "./Page/GeneralConfigToolbar";
 import { InsuranceConfigToolbar } from "./Page/InsuranceConfigToolbar";
 import { InventoryMenuToolbar } from "./Page/InventoryMenuToolbar/InventoryMenuToolbar";
 import { OrderToolbar } from "./Page/OrderToolbar";
@@ -16,6 +17,8 @@ import { RegistroToolbar } from "./Page/RegistroToolbar";
 import UsersAdminToolbar from "./Page/UsersAdminToolbar";
 import { VentaMenuToolbar } from "./Page/VentaMenuToolbar";
 import { WarehouseToolbar } from "./Page/WarehouseToolbar";
+import { AccountReceivableToolbar } from "./Page/AccountReceivableToolbar/AccountReceivableToolbar";
+
 const componentsConfig = [
   {
     id: 'ventaMenuToolBar',
@@ -32,6 +35,10 @@ const componentsConfig = [
   {
     id: 'cashReconciliationToolBar',
     component: CashReconciliationToolbar
+  },
+  {
+    id: 'accountReceivableToolBar',
+    component: AccountReceivableToolbar
   },
   {
     id: 'purchaseToolBar',
@@ -84,6 +91,10 @@ const componentsConfig = [
   {
     id: 'insuranceConfigToolBar',
     component: InsuranceConfigToolbar
+  },
+  {
+    id: 'generalConfigToolBar',
+    component: GeneralConfigToolbar
   }
 ];
 

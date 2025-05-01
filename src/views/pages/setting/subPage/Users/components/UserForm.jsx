@@ -128,7 +128,7 @@ export const SignUpModal = () => {
                             rules={[
                                 { required: true, message: 'Por favor, ingresa tu nombre de usuario!' },
                                 { min: 3, message: 'El nombre de usuario debe tener al menos 3 caracteres!' },
-                                { max: 20, message: 'El nombre de usuario debe tener como máximo 30 caracteres!' },
+                                { max: 30, message: 'El nombre de usuario debe tener como máximo 30 caracteres!' },
                             ]}
                             help="Elige un identificador único para acceder al sistema."
                         >

@@ -1,19 +1,20 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-
+import { connectFunctionsEmulator, getFunctions } from 'firebase/functions'
 //TODO ***AUTH**************************************
 import { getAuth, createUserWithEmailAndPassword, updateProfile, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 //TODO ***FIRESTORE***********************************
 import { collection, deleteDoc, doc, getDoc, getDocs, getFirestore, limit, onSnapshot, orderBy, query, setDoc, updateDoc, where, enableIndexedDbPersistence, arrayUnion, arrayRemove, increment, Timestamp, Firestore, runTransaction, initializeFirestore, persistentLocalCache, persistentSingleTabManager } from "firebase/firestore";
 //TODO ***STORAGE***********************************
 import { getStorage, } from "firebase/storage"
-
+import { getVertexAI, getGenerativeModel } from "firebase/vertexai";
 import { useEffect } from "react";
 import { nanoid } from "nanoid";
 import { useDispatch } from "react-redux";
 import { login, logout } from "../features/auth/userSlice";
 import { useNavigate } from "react-router-dom";
 import { fbGetDocFromReference } from "./provider/fbGetProviderFromReference";
+import { onEnv } from "../utils/env";
 // import { getVertexAI, getGenerativeModel } from "firebase/";
 
 const firebaseConfig = {
@@ -30,6 +31,14 @@ const app = initializeApp(firebaseConfig);
 
 export const storage = getStorage(app);
 export const auth = getAuth(app)
+export const functions = getFunctions(app);
+export const vertexAI = getVertexAI(app);
+
+onEnv("dev", () => connectFunctionsEmulator(functions, '127.0.0.1', 5001));
+
+export const generativeModel = getGenerativeModel(vertexAI, {
+  model: "gemini-2.5-flash-preview-04-17",
+});
 
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() })

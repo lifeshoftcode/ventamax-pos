@@ -1,12 +1,10 @@
-import React, { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { IoMdTrash } from 'react-icons/io'
-import { useDispatch } from 'react-redux'
 import styled from 'styled-components'
 import { Button } from '../../templates/system/Button/Button'
 import { useFormatPrice } from '../../../hooks/useFormatPrice'
 
 export const ProductCard = ({ item, handleDeleteProduct, handleUpdateProduct }) => {
-    const dispatch = useDispatch()
 
     return (
         <Container>
@@ -19,7 +17,7 @@ export const ProductCard = ({ item, handleDeleteProduct, handleUpdateProduct }) 
                 <span>
                     <Input
                         value={item.newStock}
-                        onChange={e => handleUpdateProduct({ value: {newStock: Number(e.target.value)}, productID: item.id })}
+                        onChange={e => handleUpdateProduct({ value: { newStock: Number(e.target.value) }, productID: item.id })}
                     />
                 </span>
             </Col>
@@ -28,7 +26,7 @@ export const ProductCard = ({ item, handleDeleteProduct, handleUpdateProduct }) 
                     <Input
                         value={item.initialCost}
                         handleBlur={(value) => useFormatPrice(value)}
-                        onChange={e => handleUpdateProduct({ value: {initialCost: Number(e.target.value)}, productID: item.id })}
+                        onChange={e => handleUpdateProduct({ value: { initialCost: Number(e.target.value) }, productID: item.id })}
                     />
                 </span>
             </Col>

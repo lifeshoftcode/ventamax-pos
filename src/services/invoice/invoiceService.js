@@ -10,6 +10,9 @@ import { fbAddAR } from "../../firebase/accountsReceivable/fbAddAR";
 import { fbAddInstallmentAR } from "../../firebase/accountsReceivable/fbAddInstallmentAR";
 import { fbGenerateInvoiceFromPreorder } from "../../firebase/invoices/fbGenerateInvoiceFromPreorder";
 import { Timestamp } from "firebase/firestore";
+import { DateTime } from "luxon";
+import { getInsurance } from "../../firebase/insurance/insuranceService";
+import { addInsuranceAuth } from "../../firebase/insurance/insuranceAuthService";
 
 const NCF_TYPES = {
     'CREDITO FISCAL': 'CREDITO FISCAL',
@@ -21,11 +24,14 @@ export async function processInvoice({
     cart,
     client,
     accountsReceivable,
+    insuranceAR,
+    insuranceAuth,
     ncfType,
     taxReceiptEnabled = false,
     setLoading = () => { },
     dispatch,
-    dueDate = null
+    dueDate = null,
+    insuranceEnabled = false,
 }) {
     try {
         setLoading({ status: true, message: "Procesando factura..." });
@@ -48,7 +54,24 @@ export async function processInvoice({
 
         await adjustProductInventory({ user, products: cart.products, invoice });
 
-        await manageReceivableAccounts({ user, accountsReceivable, invoice })
+        // Procesar cuentas por cobrar normales si existen
+        console.log("cart?.isAddedToReceivables", cart?.isAddedToReceivables)
+        console.log("accountsReceivable?.totalInstallments", accountsReceivable?.totalInstallments)
+        if (cart?.isAddedToReceivables && accountsReceivable?.totalInstallments) {
+            await manageReceivableAccounts({ user, accountsReceivable, invoice });
+        }
+
+        // Procesar cuentas por cobrar de seguros médicos si existen
+        if (insuranceEnabled && insuranceAR?.totalInstallments) {
+            const arData = {
+                ...insuranceAR,
+                clientId: client.id,
+                invoiceId: invoice.id,
+            };
+            const authDataId = await addInsuranceAuth(user, insuranceAuth, clientData.clientId)
+
+            await manageInsuranceReceivableAccounts({ user, arData, invoice, insuranceAuth, authDataId });
+        }
 
         return { invoice }
 
@@ -95,39 +118,33 @@ async function validateCashReconciliation({ user, dispatch, transaction }) {
         throw new Error(`Error al validar cuadre de caja: ${error.message}`);
     }
 }
-async function handleTaxReceiptGeneration({ user, taxReceiptEnabled, ncfType, transaction = null }) {
-    if (!taxReceiptEnabled) {
-        return null;
-    }
-    if (!user || !taxReceiptEnabled || !NCF_TYPES[ncfType]) {
-        return null;
-    }
+
+async function handleTaxReceiptGeneration({ user, taxReceiptEnabled, ncfType }) {
+    if (!user || !taxReceiptEnabled) return null;
+    
     try {
-        return await fbGetAndUpdateTaxReceipt(user, NCF_TYPES[ncfType], transaction);
+        return await fbGetAndUpdateTaxReceipt(user, ncfType);
     } catch (error) {
         console.error(`Error processing tax receipt for type ${ncfType}:`, error.message);
         throw new Error('Failed to process tax receipt');
     }
 }
-async function retrieveAndUpdateClientData({ user, client, transaction = null }) {
-    const clientId = client.id;
-    if (!client) {
-        console.log('No client selected');
-        return { client: GenericClient };
-    }
-    if (!clientId) {
-        return { client: GenericClient };
-    }
+
+async function retrieveAndUpdateClientData({ user, client }) {
+    if (!client) { return { client: GenericClient }; }
+    if (!client.id) { return { client: GenericClient }; }
     try {
         await fbUpsertClient(user, client);
-        return { client };
+        return { clientId: client.id, client };
     } catch (error) {
         throw new Error(`Error al actualizar los datos del cliente: ${error.message}`);
     }
 }
+
 async function adjustProductInventory({ user, products, invoice }) {
     await fbUpdateProductsStock(products, user, invoice)
 }
+
 async function generateFinalInvoice({ user, cart, cashCount, ncfCode, clientData, dueDate }) {
     try {
         const cartWithDueDate = dueDate ? checkIfHasDueDate({ cart, dueDate }) : cart;
@@ -153,6 +170,55 @@ async function manageReceivableAccounts({ user, accountsReceivable, invoice }) {
         await fbAddInstallmentAR({ user, ar })
     } catch (error) {
         throw new Error(`Error al gestionar cuentas por cobrar: ${error.message}`);
+    }
+}
+
+async function manageInsuranceReceivableAccounts({ user, arData, invoice, insuranceAuth, authDataId }) {
+    try {
+        // Log the input object to see what's being passed
+        console.log("------------------------------------------------insuranceAR Object:", JSON.stringify(arData));
+        console.log("insuranceAuth Object:", JSON.stringify(insuranceAuth));
+        if (!arData?.totalInstallments) {
+            throw new Error('Datos de cuotas de seguro faltantes');
+        }
+
+        const { insuranceName } = await getInsurance(user, insuranceAuth.insuranceId);
+
+        // Normalizar la estructura para que sea compatible con fbAddAR
+        const normalizedAR = {
+            ...arData,
+            invoiceId: invoice.id,
+            clientId: invoice?.client?.id,
+            paymentFrequency: arData.paymentFrequency || 'monthly',
+            totalInstallments: arData.totalInstallments || 1,
+            installmentAmount: arData.installmentAmount || 0,
+            totalReceivable: arData.totalReceivable || 0,  // Usado en lugar de amount
+            currentBalance: arData.currentBalance || arData.totalReceivable || 0, // Usado en lugar de arBalance
+            createdAt: arData.createdAt || DateTime.now().toMillis(),
+            updatedAt: arData.updatedAt || DateTime.now().toMillis(),
+            paymentDate: arData.paymentDate,
+            isActive: arData.isActive !== undefined ? arData.isActive : true, // Usado en lugar de status
+            isClosed: arData.isClosed !== undefined ? arData.isClosed : false,
+            type: 'insurance',
+            insurance: {
+                authId: authDataId,
+                name: insuranceName,
+                insuranceId: insuranceAuth.insuranceId,
+                authNumber: insuranceAuth.authNumber,
+            },
+            comments: arData.comments || ''
+        };
+
+        // Log the normalized object to verify it has the correct properties
+        console.log("Normalized AR Object:", JSON.stringify(normalizedAR, null, 2));
+
+        // Usar las mismas funciones que para cuentas por cobrar normales
+        const ar = await fbAddAR({ user, accountsReceivable: normalizedAR });
+        await fbAddInstallmentAR({ user, ar });
+        console.log("ar created: ------------------- ", ar)
+    } catch (error) {
+        console.error("Error en manageInsuranceReceivableAccounts:", error);
+        throw new Error(`Error al gestionar cuentas por cobrar de seguro: ${error.message}`);
     }
 }
 

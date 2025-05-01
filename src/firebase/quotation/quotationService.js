@@ -43,16 +43,19 @@ export async function addQuotation(user, quotationData, quotationSettings) {
         const id = nanoid();
         const quotationRef = doc(db, 'businesses', user.businessID, 'quotations', id);
 
+        const validityDays = quotationSettings?.quoteValidity ?? 30; // Default to 30 days if undefined/null
+        const defaultNote = quotationSettings?.quoteDefaultNote ?? ''; // Default to empty string if undefined/null
+
         const data = {
             ...quotationData,
             id,
             numberID: await getNextID(user, 'quotations'),
-            createdAt: serverTimestamp(),
+            date: serverTimestamp(),
             createdBy: user.uid,
-            note: quotationSettings.quoteDefaultNote,
-            validity: quotationSettings.quoteValidity,
-            expirationDate: calculateExpirationDate(quotationSettings.quoteValidity)
-        }
+            note: defaultNote,
+            validity: validityDays,
+            expirationDate: calculateExpirationDate(validityDays)
+        };
 
         await setDoc(quotationRef, data);
 

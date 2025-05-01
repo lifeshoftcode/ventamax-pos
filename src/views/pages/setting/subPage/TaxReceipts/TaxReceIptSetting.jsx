@@ -1,87 +1,54 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import styled from 'styled-components'
-import { getTaxReceiptData,  selectTaxReceiptEnabled } from '../../../../../features/taxReceipt/taxReceiptSlice'
-import { Button, MenuApp } from '../../../../index'
-import { TableTaxReceipt } from './components/TableTaxReceipt/TableTaxReceipt'
+
+import { getTaxReceiptData, selectTaxReceiptEnabled } from '../../../../../features/taxReceipt/taxReceiptSlice'
 import { fbGetTaxReceipt } from '../../../../../firebase/taxReceipt/fbGetTaxReceipt'
 import { fbUpdateTaxReceipt } from '../../../../../firebase/taxReceipt/fbUpdateTaxReceipt'
 import { selectUser } from '../../../../../features/auth/userSlice'
 import { useCompareArrays } from '../../../../../hooks/useCompareArrays'
-import { ButtonGroup } from '../../../../templates/system/Button/Button'
 import { fbEnabledTaxReceipt } from '../../../../../firebase/Settings/taxReceipt/fbEnabledTaxReceipt'
-import Typography from '../../../../templates/system/Typografy/Typografy'
-import { Switch } from '../../../../templates/system/Switch/Switch'
-import { Breadcrumb } from '../../../../templates/system/Breadcrumb/Breadcrumb'
 import { useDialog } from '../../../../../Context/Dialog/DialogContext'
 
-// Aquí separamos los botones en sus propios componentes
-const UpdateButton = ({ arrayAreEqual, handleSubmit }) => (
-  <Button
-    title='Actualizar'
-    borderRadius={'normal'}
-    onClick={handleSubmit}
-    disabled={arrayAreEqual ? true : false}
-  />
-);
+import { Spin, Typography } from 'antd'
+import AddReceiptDrawer from './components/AddReceiptModal/AddReceiptModal'
+import { message } from 'antd'
+import { ReceiptSettingsSection } from './components/ReceiptSettingsSection/ReceiptSettingsSection'
+import { ReceiptTableSection } from './components/ReceiptTableSection/ReceiptTableSection'
+import { filterPredefinedReceipts, generateNewTaxReceipt } from './utils/taxReceiptUtils'
+import { useLoadingStatus } from '../../../../../hooks/useLoadingStatus'
 
-const CancelButton = ({ arrayAreEqual, handleCancel }) => (
-  <Button
-    title='Cancelar'
-    borderRadius={'normal'}
-    onClick={handleCancel}
-    disabled={arrayAreEqual ? true : false}
-  />
-);
-
-// Aquí separamos las secciones en sus propios componentes
-const ReceiptSettingsSection = ({ taxReceiptEnabled, handleTaxReceiptEnabled }) => (
-  <DisabledSettingContainer>
-    <div>
-      <Typography variant='h4'>
-        Opción para Deshabilitar Comprobantes
-      </Typography>
-      <Typography variant='body1' size='small' >
-        Activa o desactiva los comprobantes en el punto de venta
-      </Typography>
-      {/* <FormattedValue value={'Opción para Deshabilitar Comprobantes'} type={'title'} size={'small'} /> */}
-      {/* <FormattedValue value={'Activa o desactiva los comprobantes en el punto de venta'} type={'paragraph'} /> */}
-    </div>
-    <div>
-      <Switch
-        checked={taxReceiptEnabled}
-        onChange={handleTaxReceiptEnabled}
-      />
-    </div>
-  </DisabledSettingContainer>
-);
-
-const ReceiptTableSection = ({ taxReceiptEnabled, taxReceiptLocal, setTaxReceiptLocal, handleSubmit, handleCancel, arrayAreEqual }) => (
-  taxReceiptEnabled && (
-    <Container>
-      <TableTaxReceipt array={taxReceiptLocal} setData={setTaxReceiptLocal} />
-      <ButtonGroup>
-        <UpdateButton arrayAreEqual={arrayAreEqual} handleSubmit={handleSubmit} />
-        <CancelButton arrayAreEqual={arrayAreEqual} handleCancel={handleCancel} />
-      </ButtonGroup>
-    </Container>
-  )
-);
+const { Title, Paragraph } = Typography;
 
 export const TaxReceiptSetting = () => {
-  const dispatch = useDispatch()
-  const [taxReceiptLocal, setTaxReceiptLocal] = useState([])
-  const user = useSelector(selectUser)
-  const { taxReceipt } = fbGetTaxReceipt()
-  const taxReceiptEnabled = useSelector(selectTaxReceiptEnabled)
-  const { dialog, setDialogConfirm, onClose } = useDialog();
+  const dispatch = useDispatch();
+  const user = useSelector(selectUser);
+  const taxReceiptEnabled = useSelector(selectTaxReceiptEnabled);
+  const { taxReceipt, isLoading : loadingReceipts } = fbGetTaxReceipt();
+  const { setDialogConfirm, onClose } = useDialog();
+
+  const [taxReceiptLocal, setTaxReceiptLocal] = useState([]);
+  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const isUnchanged = useCompareArrays(taxReceiptLocal, taxReceipt);
 
   useEffect(() => {
     dispatch(getTaxReceiptData(taxReceipt))
     setTaxReceiptLocal(taxReceipt)
-  }, [taxReceipt])
+  }, [taxReceipt, dispatch])
 
-  const handleSubmit = () => fbUpdateTaxReceipt(user, taxReceiptLocal);
+  const handleSave = useCallback(async () => {
+    setIsSaving(true);
+    try {
+      await fbUpdateTaxReceipt(user, taxReceiptLocal);
+      message.success('Comprobantes fiscales actualizados correctamente');
+    } catch (error) {
+      message.error('Error al actualizar los comprobantes fiscales. Por favor, inténtalo de nuevo más tarde.');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [user, taxReceiptLocal]);
 
   const handleCancel = () => setTaxReceiptLocal(taxReceipt);
 
@@ -96,62 +63,101 @@ export const TaxReceiptSetting = () => {
           fbEnabledTaxReceipt(user)
           onClose()
         },
-        
-        
       })
     } else {
       fbEnabledTaxReceipt(user)
     }
-
-
   };
 
-  const arrayAreEqual = useCompareArrays(taxReceiptLocal, taxReceipt)
+  const handleAddNewTaxReceipt = () => {
+    const newItem = generateNewTaxReceipt(taxReceiptLocal);
+    setTaxReceiptLocal([...taxReceiptLocal, newItem]);
+    message.success('Nuevo comprobante agregado. No olvides guardar los cambios.');
+  };
+
+  const handleOpenAddPredefinedReceipt = () => setIsAddModalVisible(true);
+  const handleCloseAddPredefinedReceipt = () => setIsAddModalVisible(false);
+
+  function handleAddPredefinedReceipts(newReceipts) {
+    const { unique, duplicateNames, duplicateSeries } = filterPredefinedReceipts(
+      newReceipts,
+      taxReceiptLocal
+    );
+
+    let warningMsg = '';
+    if (duplicateNames.length) {
+      warningMsg += `Se omitieron ${duplicateNames.length} comprobante(s) con nombre(s) duplicado(s): ${duplicateNames.join(', ')}. `;
+    }
+    if (duplicateSeries.length) {
+      warningMsg += `Se omitieron ${duplicateSeries.length} comprobante(s) con serie(s) duplicada(s): ${duplicateSeries.join(', ')}.`;
+    }
+    if (warningMsg) {
+      message.warning(warningMsg);
+    }
+
+    if (unique.length) {
+      setTaxReceiptLocal([...taxReceiptLocal, ...unique]);
+      message.success(
+        `${unique.length} comprobante(s) añadidos correctamente. No olvides guardar los cambios.`
+      );
+    } else if (!warningMsg) {
+      message.error('No se agregaron comprobantes. Todos ya existen en el sistema.');
+    }
+  }
+
+  const loadEntries = [
+    { loading: loadingReceipts, tip: 'Cargando comprobantes fiscales...' },
+    { loading: isSaving, tip: 'Guardando comprobantes fiscales...' },
+  ]
+
+  const { isLoading } = useLoadingStatus(loadEntries);
 
   return (
-    <Container>
-      <MenuApp sectionName={'Comprobantes'}></MenuApp>
-      <Main>
-        <Breadcrumb />
+    <Spin spinning={isLoading}>
+      <Page>
         <Head>
-          <Typography variant='h2'>
+          <Title level={3} style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 600 }}>
             Configuración de Comprobantes
-          </Typography>
-          <Typography>
+          </Title>
+          <Paragraph style={{ fontSize: '16px', margin: 0, lineHeight: '1.5', color: 'rgba(0, 0, 0, 0.65)' }}>
             Ajusta cómo se generan y muestran los comprobantes en el punto de venta.
-          </Typography>
-
+          </Paragraph>
         </Head>
 
-        <ReceiptSettingsSection taxReceiptEnabled={taxReceiptEnabled} handleTaxReceiptEnabled={handleTaxReceiptEnabled} />
-        <ReceiptTableSection taxReceiptEnabled={taxReceiptEnabled} taxReceiptLocal={taxReceiptLocal} setTaxReceiptLocal={setTaxReceiptLocal} handleSubmit={handleSubmit} handleCancel={handleCancel} arrayAreEqual={arrayAreEqual} />
-   
-      </Main>
-    </Container>
+        <ReceiptSettingsSection
+          enabled={taxReceiptEnabled}
+          onToggle={handleTaxReceiptEnabled}
+        />
+
+        <ReceiptTableSection
+          enabled={taxReceiptEnabled}
+          itemsLocal={taxReceiptLocal}
+          setItemsLocal={setTaxReceiptLocal}
+          onSave={handleSave}
+          onCancel={handleCancel}
+          isUnchanged={isUnchanged}
+          onAddBlank={handleAddNewTaxReceipt}
+          onAddPredefined={handleOpenAddPredefinedReceipt}
+        />
+
+        <AddReceiptDrawer
+          visible={isAddModalVisible}
+          onCancel={handleCloseAddPredefinedReceipt}
+          onAddReceipt={handleAddPredefinedReceipts}
+          existingReceipts={taxReceiptLocal}
+        />
+      </Page>
+    </Spin>
   )
 }
-const Container = styled.div`
+
+const Page = styled.div`
   display: grid;
   gap: 1.6em;
+  padding: 1em;
 `
-const Footer = styled.div``
 const Head = styled.div`
   display: grid;
   width: 100%;
 `
-const DisabledSettingContainer = styled.div`
-display: flex;
-justify-content: space-between;
-align-items: center;
-gap: 1em;
-`
 
-const Main = styled.div`
-  display: grid;
-  gap: 2.2em;
-  margin: 0 auto;
-  max-width: 1000px;
-  width: 100%;
-  padding: 0 1em;
- 
-`

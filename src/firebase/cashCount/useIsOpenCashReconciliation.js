@@ -48,7 +48,7 @@ export function useIsOpenCashReconciliation() {
     return { status: value, cashCount: cashReconciliation };
 }
 
-export async function checkOpenCashReconciliation(user, transaction = null) {
+export async function checkOpenCashReconciliation(user) {
     try {
         if (!user || !user.businessID || !user.uid) {
             throw new Error('Datos del usuario incompletos');

@@ -28,6 +28,6 @@ export async function fbAddAR({ user, accountsReceivable }) {
         await setDoc(arRef, arData)
         return ar;
     } catch (error) {
-        throw error;
+                throw error;
     }
 }

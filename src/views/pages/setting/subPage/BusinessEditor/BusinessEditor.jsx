@@ -7,7 +7,7 @@ import { MenuApp } from '../../../..';
 const BusinessEditor = () => {
   return (
     <Fragment>
-      <MenuApp/>
+
       < BusinessProfileEditor />
     </Fragment>
   );

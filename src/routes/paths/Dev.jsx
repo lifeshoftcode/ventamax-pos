@@ -5,12 +5,14 @@ import { CreateBusiness } from "../../views/controlPanel/CreateBusinessControl/C
 import { Dev } from "../../views/controlPanel/Dev/Dev";
 import BusinessCreator from "../../views/pages/setting/subPage/BusinessEditor/BusinessCreator";
 import { Doc } from "../../views/templates/system/AdvancedTable/Doc";
+import AppConfig from "../../views/controlPanel/AppConfig/AppConfig";
+import LoginImageConfig from "../../views/controlPanel/AppConfig/LoginImageConfig";
 
 import Menu from "../../views/templates/system/Menu/Menu";
 import { Prueba } from "../../views/templates/system/Menu/Prueba";
 
 import RoutesName from "../routesName"
-const { CREATE_BUSINESS, BUSINESSES, CHANGELOG_CREATE, CHANGELOG_MANAGE, ALL_USERS } = RoutesName.DEV_VIEW_TERM;
+const { CREATE_BUSINESS, BUSINESSES, CHANGELOG_CREATE, CHANGELOG_MANAGE, ALL_USERS, APP_CONFIG } = RoutesName.DEV_VIEW_TERM;
 
 const routes = [
     {
@@ -36,10 +38,17 @@ const routes = [
     {
         path: ALL_USERS,
         element: <AllUsersControl />,
-    },
-    {
+    },    {
         path: CHANGELOG_CREATE,
         element: <ChangeLogCreate />,
+    },
+    {
+        path: APP_CONFIG.ROOT,
+        element: <AppConfig />,
+    },
+    {
+        path: APP_CONFIG.LOGIN_IMAGE,
+        element: <LoginImageConfig />,
     }
 ]
 export default routes;

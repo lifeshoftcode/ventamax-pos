@@ -39,6 +39,8 @@ function defineBaseAbilities(can) {
   can('access', BILLS);
   can('access', CLIENTS);
   can('access', INVENTORY_ITEMS);
+  //que pueda contra esto: 'manage', 'accountReceivable'
+  can('manage', 'accountReceivable');
 }
 
 export function defineAbilitiesForCashier(user) {

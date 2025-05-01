@@ -1,45 +1,13 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { initialState, defaultDelivery } from "./default/default";
 import { GenericClient } from "../clientCart/clientCartSlice";
-import { getProductsPrice, getProductsTax, getProductsTotalPrice, getTax, getTotalItems, getProductsInsuranceExtra } from "../../utils/pricing";
+import { roundDecimals } from "../../utils/pricing";
 import { nanoid } from "nanoid";
-
-const limitTwoDecimal = (number) => {
-    return Number(number.toFixed(2))
-}
+import { updateAllTotals } from "./utils/updateAllTotals";
 
 const calculateChange = (payment, totalPurchase) => (payment - totalPurchase);
 
-// Función agrupadora para actualizar todos los totales
-const updateAllTotals = (state, paymentValue = null) => {
-    const taxReceiptEnabled = state.settings.taxReceipt.enabled;
-    const products = state.data.products;
-    const discountPercentage = state?.data?.discount?.value;
-    const delivery = state?.data?.delivery?.value;
-    
-    // Get base total without insurance and then subtract coverage
-    const baseTotal = getProductsTotalPrice(products, discountPercentage, delivery, taxReceiptEnabled);
-    const insuranceExtra = getProductsInsuranceExtra(products);
-    state.data.totalPurchase.value = baseTotal - insuranceExtra;
-    
-    // Save insurance coverage separately for display (coverage is a discount)
-    state.data.totalInsurance = { value: insuranceExtra };
-
-    state.data.totalTaxes.value = getProductsTax(products, taxReceiptEnabled);
-    state.data.totalShoppingItems.value = getTotalItems(products);
-    state.data.totalPurchaseWithoutTaxes.value = getProductsPrice(products);
-    
-    const cashPaymentMethod = state.data.paymentMethod
-        .findIndex((method) => method.method === 'cash' && method.status === true);
-    if (cashPaymentMethod !== -1) {
-        state.data.paymentMethod[cashPaymentMethod].value = state.data.totalPurchase.value;
-    }
-    state.data.payment.value = paymentValue !== null ? paymentValue : state.data.totalPurchase.value;
-    state.data.change.value = state.data.payment.value - state.data.totalPurchase.value;
-};
-
-
-const cartSlice = createSlice({
+export const cartSlice = createSlice({
     name: 'factura',
     initialState,
     reducers: {
@@ -47,14 +15,14 @@ const cartSlice = createSlice({
             const isOpen = state.isOpen;
             state.isOpen = !isOpen;
         },
-        setCart: (state, actions) => {
+        loadCart: (state, actions) => {
             const cart = actions.payload;
             if (cart?.id) {
                 state.data = cart;
             }
-            updateAllTotals(state)
+
         },
-        getClient: (state, actions) => {
+        setClient: (state, actions) => {
             const client = actions.payload;
             if (client?.id) {
                 state.data.client = client;
@@ -64,12 +32,12 @@ const cartSlice = createSlice({
             } else {
                 state.data.delivery = defaultDelivery
             }
-            updateAllTotals(state)
+
         },
         setDefaultClient: (state) => {
             state.data.client = GenericClient
         },
-        addPaymentValue: (state, actions) => {
+        setPaymentAmount: (state, actions) => {
             const paymentValue = actions.payload
             const isPreOrderEnabled = state.settings.isPreOrderEnabled;
 
@@ -82,11 +50,21 @@ const cartSlice = createSlice({
                 state.data.payment.value = Number(paymentValue)
                 paymentMethod.value = Number(paymentValue)
             }
-            updateAllTotals(state, paymentValue)
+
         },
         changePaymentValue: (state, actions) => {
             const paymentValue = actions.payload
             state.data.payment.value = Number(paymentValue)
+        },
+        updateProductFields: (state, action) => {
+            const { id, data } = action.payload;
+            const product = state.data.products.find(
+                p => p.id === id || p.cid === id
+            );
+            if (product) {
+                Object.assign(product, data);
+            }
+
         },
         addTaxReceiptInState: (state, actions) => {
             state.data.NCF = actions.payload
@@ -149,7 +127,6 @@ const cartSlice = createSlice({
                     product.pricing.price = price
                 }
             }
-            updateAllTotals(state)
         },
         changePaymentMethod: (state) => {
             const paymentMethod = state.data.paymentMethod
@@ -168,22 +145,22 @@ const cartSlice = createSlice({
             const products = state.data.products;
 
             if (checkingID) {
-                if(checkingID?.weightDetail?.isSoldByWeight){
+                if (checkingID?.weightDetail?.isSoldByWeight) {
                     const productData = {
                         ...product,
                         cid: nanoid(8)
                     }
                     state.data.products = [...products, productData]
-                }else{
-                    
+                } else {
+
                     // Object.assign(checkingID, product);
                     checkingID.productStockId = product.productStockId;
                     checkingID.batchId = product.batchId;
                     checkingID.stock = product.stock;
-                    checkingID.amountToBuy +=  1;
+                    checkingID.amountToBuy += 1;
                 }
-              
-            } else { 
+
+            } else {
                 const productData = {
                     ...product,
                     cid: checkingID?.weightDetail?.isSoldByWeight
@@ -193,7 +170,6 @@ const cartSlice = createSlice({
                 }
                 state.data.products = [...products, productData]
             }
-            updateAllTotals(state)
         },
         deleteProduct: (state, action) => {
             const productFound = state.data.products.find((product) => product.cid === action.payload)
@@ -204,7 +180,6 @@ const cartSlice = createSlice({
                 state.data.id = null
                 state.data.products = []
             }
-            updateAllTotals(state)
         },
         onChangeValueAmountToProduct: (state, action) => {
             const { id, value } = action.payload
@@ -212,7 +187,6 @@ const cartSlice = createSlice({
             if (productFound) {
                 productFound.amountToBuy = Number(value)
             }
-            updateAllTotals(state)
         },
         addAmountToProduct: (state, action) => {
             const { id } = action.payload
@@ -220,7 +194,6 @@ const cartSlice = createSlice({
             if (productFound) {
                 productFound.amountToBuy = productFound.amountToBuy + 1;
             }
-            updateAllTotals(state)
         },
         diminishAmountToProduct: (state, action) => {
             const { id } = action.payload
@@ -231,38 +204,31 @@ const cartSlice = createSlice({
                     state.data.products.splice(state.data.products.indexOf(productFound), 1)
                 }
             }
-            updateAllTotals(state)
         },
-        // CancelShipping: (state) => state = initialState,
-        CancelShipping: (state) => {
-            return {
-                ...initialState,
-                settings: {
-                    ...initialState.settings,
-                    ...state.settings,
-                    billing: {
-                        ...state.settings.billing
-                    }
-                }
+        resetCart: (state) => ({
+
+            ...initialState,
+            settings: {
+                ...initialState.settings,
+                ...state.settings,
+                billing: { ...state.settings.billing }
             }
-        },
+        }),
         changeProductWeight: (state, action) => {
             const { id, weight } = action.payload
             const product = state.data.products.find((product) => product.cid === id)
             if (product) {
                 product.weightDetail.weight = weight
             }
-            updateAllTotals(state)
         },
         totalPurchaseWithoutTaxes: (state) => {
             const ProductsSelected = state.data.products;
             const result = ProductsSelected.reduce((total, product) => total + product.cost.total, 0);
-            state.data.totalPurchaseWithoutTaxes.value = limitTwoDecimal(result);
+            state.data.totalPurchaseWithoutTaxes.value = roundDecimals(result);
         },
         addDiscount: (state, action) => {
             const value = action.payload;
             state.data.discount.value = Number(value);
-            updateAllTotals(state)
         },
         addSourceOfPurchase: (state, actions) => {
             const source = actions.payload
@@ -290,13 +256,10 @@ const cartSlice = createSlice({
             if (product) {
                 product.insurance = { mode, value };
             }
-            updateAllTotals(state);
         },
         updateInsuranceStatus: (state, action) => {
-            // Update insurance status in cart data
             state.data.insuranceEnabled = action.payload;
-            
-            // If insurance is disabled, reset any insurance-related values on products
+
             if (!action.payload) {
                 state.data.products.forEach(product => {
                     if (product.insurance) {
@@ -304,19 +267,26 @@ const cartSlice = createSlice({
                     }
                 });
             }
-            
-            // Recalculate totals when insurance status changes
-            updateAllTotals(state);
         },
-        
+        recalcTotals: (state, action) => {
+            const paymentValue = action.payload ?? null;
+            updateAllTotals(state, paymentValue);
+        },
+        addInvoiceComment: (state, action) => {
+            state.data.invoiceComment = action.payload;
+        },
+        deleteInvoiceComment: (state) => {
+            state.data.invoiceComment = '';
+        },
+
     }
 })
 
 export const {
     addAmountToProduct,
     setCartId,
-    getClient,
-    addPaymentValue,
+    setClient,
+    setPaymentAmount,
     addPaymentMethod,
     addDiscount,
     addPaymentMethodAutoValue,
@@ -324,7 +294,7 @@ export const {
     addProduct,
     addSourceOfPurchase,
     addTaxReceiptInState,
-    CancelShipping,
+    resetCart,
     changeProductPrice,
     changeProductWeight,
     deleteProduct,
@@ -334,12 +304,13 @@ export const {
     onChangeValueAmountToProduct,
     selectClientInState,
     setChange,
-    setCart,
+    loadCart,
     toggleInvoicePanelOpen,
     totalPurchase,
     totalPurchaseWithoutTaxes,
     totalShoppingItems,
     setTaxReceiptEnabled,
+    updateProductFields,
     totalTaxes,
     updateClientInState,
     saveBillInFirebase,
@@ -349,7 +320,10 @@ export const {
     setDefaultClient,
     setBillingSettings,
     updateProductInsurance,
-    updateInsuranceStatus
+    recalcTotals,
+    updateInsuranceStatus,
+    addInvoiceComment,
+    deleteInvoiceComment
 } = cartSlice.actions
 
 export const SelectProduct = (state) => state.cart.data.products;
@@ -368,6 +342,7 @@ export const SelectNCF = (state) => state.cart.data.NCF;
 export const SelectCartPermission = () => state.cart.permission
 export const SelectCartIsOpen = (state) => state.cart.isOpen
 export const SelectCartData = (state) => state.cart.data
+export const SelectInvoiceComment = (state) => state.cart.data.invoiceComment
 export const SelectSettingCart = (state) => state.cart.settings
 export const selectCart = (state) => state.cart
 export const selectInsuranceEnabled = (state) => state.cart.data.insuranceEnabled;

@@ -2,40 +2,18 @@ import React, { useState } from 'react'
 import styled from 'styled-components'
 import { monetarySymbols } from '../../../../constants/monetarySymbols'
 import { useDispatch, useSelector } from 'react-redux'
-import { SelectDelivery, SelectTotalTaxes, addPaymentMethod, SelectTotalPurchase, SelectChange, setChange, totalPurchase, addPaymentMethodAutoValue, addPaymentValue, SelectPaymentValue, SelectCartData } from '../../../../features/cart/cartSlice'
-import { useEffect } from 'react'
+import { SelectDelivery, SelectTotalTaxes,  SelectChange, setPaymentAmount, SelectPaymentValue, } from '../../../../features/cart/cartSlice'
 import { useFormatPrice } from '../../../../hooks/useFormatPrice'
-import { getTaxReceiptData, selectTaxReceipt, } from '../../../../features/taxReceipt/taxReceiptSlice'
 import CustomInput from '../../../templates/system/Inputs/CustomInput'
-import { fbGetTaxReceipt } from '../../../../firebase/taxReceipt/fbGetTaxReceipt'
 import { InputV4 } from '../../../templates/system/Inputs/GeneralInput/InputV4'
 
-const calculateCartValues = (cartData) => {
-    const { products, delivery, discount, totalTaxes } = cartData
-    const subtotal = products.reduce((acc, product) => acc + product.price.unit * product.amountToBuy.total, 0)
-    const totalDiscount = (subtotal * (discount.value / 100))
-
-
-    const totalPurchase = subtotal + totalTaxes.value + delivery.value - totalDiscount
-    return {
-        subtotal,
-        totalDiscount,
-        totalTaxes,
-        totalPurchase
-    }
-
-}
 export const PaymentArea = () => {
+    const dispatch = useDispatch();
     const ChangeRef = useSelector(SelectChange)
     const TaxesRef = useSelector(SelectTotalTaxes)
     const paymentValue = useSelector(SelectPaymentValue)
     const DeliveryRef = useSelector(SelectDelivery)
-    const dispatch = useDispatch()
-    const TotalPurchaseRef = useSelector(SelectTotalPurchase)
-    const CartData = useSelector(SelectCartData)
-    //  const { subtotal, totalDiscount, totalTaxes, totalPurchase } = calculateCartValues(CartData)
-    const { settings: { taxReceiptEnabled } } = useSelector(selectTaxReceipt)
-    const taxReceiptData = fbGetTaxReceipt()
+   
     const [paymentMethod, setPaymentMethod] = useState([
         {
             status: true,
@@ -69,13 +47,7 @@ export const PaymentArea = () => {
         )
     }
 
-    // useEffect(() => {
-    //     dispatch(addPaymentValue(paymentValue))
-    // }, [paymentValue])
-
-    const handleChange = (e) => {
-        dispatch(addPaymentValue(e.target.value))
-    }
+    const handleChange = (e) =>   dispatch(setPaymentAmount(e.target.value));
 
     return (
         <Container>

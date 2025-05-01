@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { fbGetPendingBalance } from '../../../../../../firebase/accountsReceivable/fbGetPendingBalance';
+import React, { useState } from 'react'
+import { usePendingBalance } from '../../../../../../firebase/accountsReceivable/fbGetPendingBalance';
 import styled from 'styled-components';
 import { useFormatPrice } from '../../../../../../hooks/useFormatPrice';
 import { useSelector } from 'react-redux';
@@ -11,13 +11,9 @@ export const GeneralBalance = ({data}) => {
     const businessID = user?.businessID
     const clientId = data?.client?.id
     const [pendingBalance, setPendingBalance] = useState(0)
-    useEffect(() => {
-        const fetchPendingBalance = async () => {
-            if (!businessID || !clientId) return
-            await fbGetPendingBalance(businessID, clientId, setPendingBalance)
-        }
-        fetchPendingBalance()
-    }, [businessID, clientId])
+
+    usePendingBalance(businessID, clientId, setPendingBalance);
+
   return (
     <Container>
        <Subtitle>Balance General</Subtitle>

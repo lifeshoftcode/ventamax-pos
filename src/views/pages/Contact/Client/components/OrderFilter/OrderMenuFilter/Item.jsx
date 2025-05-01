@@ -1,6 +1,5 @@
-import React, { Fragment, useEffect, useState } from 'react'
-import { IoIosArrowBack, IoIosArrowForward } from 'react-icons/io'
-import { MdArrowForward } from 'react-icons/md'
+import { Fragment, useState } from 'react'
+import { IoIosArrowForward } from 'react-icons/io'
 import styled from 'styled-components'
 import { useSearchFilter, useSearchFilterOrderMenuOption } from '../../../../../../../hooks/useSearchFilter'
 import { Input } from './Input'

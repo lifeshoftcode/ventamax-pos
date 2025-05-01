@@ -63,6 +63,15 @@ export const ProductList = ({ data }) => {
                                         </Row>
                                     )
                                 }
+                                {
+                                    product?.comment && (
+                                        <Row>
+                                            <ProductComment>
+                                                {product.comment}
+                                            </ProductComment>
+                                        </Row>
+                                    )
+                                }
                             </Product>
                         ))
                     ) : null
@@ -110,6 +119,15 @@ const ProductName = styled.div`
 const InsuranceCoverage = styled.div`
     font-size: 1em;
     font-style: italic;
-    color: #555;
+`
+
+const ProductComment = styled.div`
+    font-size: 0.9em;
+    font-style: italic;
+    color: #444;
+    word-wrap: break-word;
+    white-space: pre-wrap;
     padding-left: 8px;
-`;
+    border-left: 1px dotted #888;
+    margin: 2px 0;
+`

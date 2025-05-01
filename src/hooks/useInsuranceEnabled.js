@@ -6,6 +6,11 @@ import { selectInsuranceEnabled } from '../features/cart/cartSlice';
  * Custom hook to determine if insurance functionality is enabled
  * Checks both business type and insurance status from cart
  */
+export const useIsPharmacy = () => {
+    const business = useSelector(selectBusinessData);
+    return business?.businessType === 'pharmacy';
+};
+
 const useInsuranceEnabled = () => {
     const business = useSelector(selectBusinessData);
     const insuranceEnabled =  useSelector(selectInsuranceEnabled);

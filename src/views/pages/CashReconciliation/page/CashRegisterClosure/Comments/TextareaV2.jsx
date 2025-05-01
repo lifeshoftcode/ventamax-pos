@@ -1,6 +1,6 @@
-import React, { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useRef } from 'react';
 import styled from 'styled-components';
-import { MdClose, MdSearch } from 'react-icons/md';
+import { MdClose } from 'react-icons/md';
 
 /**
  * @typedef {Object} InputV4
@@ -15,8 +15,8 @@ import { MdClose, MdSearch } from 'react-icons/md';
  */
 export const TextareaV2 = ({ icon, label, search, onClear, validate, errorMessage, bgColor, clearButton = false, ...props }) => {
   const showClearButton = clearButton && props.value;
-  const inputRef = useRef(null);
   const inputValue = props.value
+  const inputRef = useRef(null);
 
   return (
     <div>

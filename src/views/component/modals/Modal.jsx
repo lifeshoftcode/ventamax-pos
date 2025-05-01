@@ -1,13 +1,8 @@
 import React, { useEffect, useState } from 'react'
-
-//component and pages
 import { Button } from '../../index'
-import { MdClose } from 'react-icons/md'
 import styled from 'styled-components'
 import { ButtonGroup } from '../../templates/system/Button/Button'
 import { motion } from 'framer-motion'
-import { nanoid } from 'nanoid'
-import { set } from 'lodash'
 import { MotionWrapper } from '../base/animation/MotionWrapper'
 import { icons } from '../../../constants/icons/icons'
 

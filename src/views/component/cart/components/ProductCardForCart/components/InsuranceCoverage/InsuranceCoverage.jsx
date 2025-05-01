@@ -36,8 +36,7 @@ export const InsuranceCoverage = ({ item }) => {
     });
   }, [item]);
 
-  const handleInsuranceModeChange = e => {
-    const newMode = e.target.value;
+  const handleInsuranceModeChange = (newMode) => {
     const newInsurance = { ...insurance, mode: newMode };
     setInsurance(newInsurance);
     dispatch(updateProductInsurance({ 
@@ -87,24 +86,22 @@ export const InsuranceCoverage = ({ item }) => {
     >
       <CoverageLabel>Cobertura</CoverageLabel>
       <CoverageControls>
-        <ToggleGroup>
-          <ToggleOption
-            active={insurance.mode === 'porcentaje'}
-            onClick={() => handleInsuranceModeChange({ target: { value: 'porcentaje' } })}
-            as={motion.button}
-            whileTap={{ scale: 0.95 }}
-          >
-            %
-          </ToggleOption>
-          <ToggleOption
+        <ToggleSwitch>
+          <ToggleTrack 
+            onClick={() => handleInsuranceModeChange(insurance.mode === 'porcentaje' ? 'monto' : 'porcentaje')}
             active={insurance.mode === 'monto'}
-            onClick={() => handleInsuranceModeChange({ target: { value: 'monto' } })}
-            as={motion.button}
-            whileTap={{ scale: 0.95 }}
           >
-            $
-          </ToggleOption>
-        </ToggleGroup>
+            <SwitchOption position="left" active={insurance.mode === 'porcentaje'}>%</SwitchOption>
+            <SwitchOption position="right" active={insurance.mode === 'monto'}>$</SwitchOption>
+            <ToggleThumb 
+              as={motion.div}
+              animate={{ 
+                x: insurance.mode === 'monto' ? 24 : -2
+              }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            />
+          </ToggleTrack>
+        </ToggleSwitch>
         <ValueInput
           value={insurance.value}
           onChange={(e) => handleInsuranceValueChange(e.target.value)}
@@ -148,36 +145,51 @@ const CoverageControls = styled.div`
   gap: 6px;
 `;
 
-const ToggleGroup = styled.div`
+const ToggleSwitch = styled.div`
+  position: relative;
   display: flex;
   align-items: center;
-  height: 2em;
-  padding: 1px;
-  border-radius: 100px;
-  background: white;
-  border: 1px solid #e0e0e0;
+  justify-content: center;
 `;
 
-const ToggleOption = styled.button`
+const ToggleTrack = styled.div`
+  width: 52px;
+  height: 28px;
+  background-color: #f3f3f3;
+  border-radius: 100px;
+  border: 1px solid #e0e0e0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  position: relative;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.151) inset;
+  padding: 0 2px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &:hover {
+    border-color: #d0d0d0;
+  }
+`;
+
+const ToggleThumb = styled.div`
+  position: absolute;
+  left: 2px;
   width: 24px;
   height: 24px;
-  padding: 0;
-  background: ${props => props.active ? '#062057' : 'transparent'};
-  color: ${props => props.active ? 'white' : '#666'};
-  border: none;
-  font-size: 16px;
-  font-weight: ${props => props.active ? '600' : '400'};
-  cursor: pointer;
-  transition: all 0.15s ease;
+  background-color: #ffffff;
   border-radius: 12px;
-  
-  &:active {
-    transform: scale(0.97);
-  }
-  
-  &:focus {
-    outline: none;
-  }
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  z-index: 2;
+`;
+
+const SwitchOption = styled.div`
+  position: absolute;
+  left: ${props => props.position === 'left' ? '6px' : '34px'};
+  color: ${props => props.active ? 'black' : '#3b3b3b'};
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 3;
+  transition: color 0.3s ease;
 `;
 
 const ValueInput = styled.input`

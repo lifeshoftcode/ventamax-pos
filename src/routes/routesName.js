@@ -20,6 +20,10 @@ const DEV_VIEW_TERM = {
     ALL_USERS: '/all-users',
     CHANGELOG_CREATE: CHANGELOG_TERM.CHANGELOG_CREATE,
     CHANGELOG_MANAGE: CHANGELOG_TERM.CHANGELOG_MANAGE,
+    APP_CONFIG: {
+        ROOT: '/dev/app-config',
+        LOGIN_IMAGE: '/dev/app-config/login-image',
+    },
 }
 
 const UTILITY_TERM = {
@@ -81,6 +85,12 @@ const SETTING_TERM = {
     APP_INFO: '/app-info',
     BUSINESS_INFO: '/business-info',
     TAX_RECEIPT: '/tax-receipt',
+    // Subrutas para GeneralConfig
+    GENERAL_CONFIG_BILLING: '/general-config/billing',
+    GENERAL_CONFIG_BUSINESS: '/general-config/business',
+    GENERAL_CONFIG_TAX_RECEIPT: '/general-config/tax-receipt',
+    GENERAL_CONFIG_USERS: '/general-config/users',
+    GENERAL_CONFIG_APP_INFO: '/general-config/app-info',
 }
 const PURCHASE_TERM = {
     PURCHASES: '/purchases',

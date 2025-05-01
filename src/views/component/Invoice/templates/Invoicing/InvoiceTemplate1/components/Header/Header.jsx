@@ -8,21 +8,49 @@ import DateUtils from '../../../../../../../../utils/date/dateUtils';
 import { selectBusinessData } from '../../../../../../../../features/auth/businessSlice';
 
 export const Header = ({ data, Space }) => {
-    let business = useSelector(selectBusinessData) || ""
-    const fechaActual = data?.date 
-      ? DateUtils.convertMillisToISODate(DateUtils.convertTimestampToMillis(data.date), "dd/MM/yyyy HH:mm") 
-      : DateTime.now().toFormat('dd/MM/yyyy HH:mm');
+    let business = useSelector(selectBusinessData) || "";
+    const logoUrl = business?.logoUrl || business?.logo || null;
+    const fechaActual = data?.date
+        ? DateUtils.convertMillisToISODate(DateUtils.convertTimestampToMillis(data.date), "dd/MM/yyyy HH:mm")
+        : DateTime.now().toFormat('dd/MM/yyyy HH:mm');
     return (
         <Container>
-                <Title>{business?.name}</Title>
-                <InfoItem align='center' label={business?.address} justifyContent='center' />
-                <InfoItem align='center' label={useFormatPhoneNumber(business?.tel)} justifyContent='center' />
 
-                <Spacing size={'large'} />
+        {logoUrl && (
+            <div style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                marginBottom: '20px', 
+                width: '100%',
+                maxHeight: '100px', 
+                overflow: 'hidden'
+            }}>
+                <div style={{ 
+                    width: '150px',
+                    height: 'auto',
+                }}>
+                    <img 
+                        src={logoUrl} 
+                        alt="Logo" 
+                        style={{ 
+                            width: '100%', 
+                            height: '100%', 
+                            objectFit: 'contain'
+                        }} 
+                    />
+                </div>
+            </div>
+        )}
 
-                <InfoItem label={"Fecha"} value={fechaActual} />
-                {data?.NCF && <InfoItem label={"NCF"} value={data?.NCF} />}
-                <Spacing />
+            <Title>{business?.name}</Title>
+            <InfoItem align='center' label={business?.address} justifyContent='center' />
+            <InfoItem align='center' label={useFormatPhoneNumber(business?.tel)} justifyContent='center' />
+
+            <Spacing size={'large'} />
+
+            <InfoItem label={"Fecha"} value={fechaActual} />
+            {data?.NCF && <InfoItem label={"NCF"} value={data?.NCF} />}
+            <Spacing />
             {
                 data?.client && (
                     <div>

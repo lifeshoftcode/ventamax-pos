@@ -5,42 +5,37 @@ import styled from 'styled-components'
 import { useDispatch, useSelector } from 'react-redux'
 import ROUTES_NAME from '../../../../../routes/routesName'
 import { icons } from '../../../../../constants/icons/icons'
-import { useMatch, useNavigate } from 'react-router-dom'
+import { useLocation, useMatch, useNavigate } from 'react-router-dom'
+import { useAppNavigation } from '../../../../../hooks/useAppNavigation'
 import { InventoryFilterAndSort } from '../../../../pages/Inventario/pages/ItemsManager/components/InvetoryFilterAndSort/InventoryFilterAndSort'
 import { toggleTheme } from '../../../../../features/theme/themeSlice'
 import { ButtonIconMenu } from '../../../system/Button/ButtonIconMenu'
 
 export const VentaMenuToolbar = ({ side = 'left' }) => {
-    const navigate = useNavigate();
+    const navigation = useAppNavigation();
     const dispatch = useDispatch()
+    const location = useLocation()
     const ImageHidden = useSelector(selectImageHidden)
     const viewRowModeRef = useSelector(selectIsRow)
     const categoryGrouped = useSelector(selectCategoryGrouped)
     const FullScreen = useSelector(selectFullScreen)
-    const { SALES, } = ROUTES_NAME.SALES_TERM
-    const { SETTING } = ROUTES_NAME.SETTING_TERM
+    const { SALES } = ROUTES_NAME.SALES_TERM
     const matchWithVenta = useMatch(SALES)
 
+    const handleImageHiddenFN = () => dispatch(handleImageHidden())
 
-    const handleImageHiddenFN = () => {
-        dispatch(handleImageHidden())
-    }
-    const handleFullScreenFN = () => {
-        dispatch(toggleFullScreen())
-    }
-    const handleRowModeFN = () => {
-        dispatch(handleRowMode())
-    }
-    const handleCategoryGroupedFN = () => {
-        dispatch(toggleCategoryGrouped())
-    }
+    const handleFullScreenFN = () => dispatch(toggleFullScreen())
+
+    const handleRowModeFN = () => dispatch(handleRowMode())
+
+    const handleCategoryGroupedFN = () => dispatch(toggleCategoryGrouped())
+
     const handleSettings = () => {
-        navigate(SETTING)
-    }
+        navigation.setting()
+    };
+
     const savedTheme = localStorage.getItem('theme');
-    const handleThemeModeFN = () => {
-        dispatch(toggleTheme());
-    }
+    const handleThemeModeFN = () => dispatch(toggleTheme());
 
     const options = [
         {
@@ -71,22 +66,23 @@ export const VentaMenuToolbar = ({ side = 'left' }) => {
         //     } : null
     ];
 
+
     return (
         matchWithVenta && (
             <Container>
                 {
                     side === 'right' && (
                         <Group >
-                            <ButtonIconMenu 
+                            <ButtonIconMenu
                                 tooltipDescription={FullScreen ? 'Salir de Pantalla Completa' : 'Pantalla Completa'}
                                 tooltipPlacement={'bottom-end'}
-                                icon={FullScreen ?  <FontAwesomeIcon icon={faCompress} /> : <FontAwesomeIcon icon={faExpand} /> }
+                                icon={FullScreen ? <FontAwesomeIcon icon={faCompress} /> : <FontAwesomeIcon icon={faExpand} />}
                                 onClick={() => handleFullScreenFN()}
                             />
                             <InventoryFilterAndSort />
-                            <ButtonIconMenu 
+                            <ButtonIconMenu
                                 icon={icons.operationModes.setting}
-                                onClick={() => handleSettings()}
+                                onClick={handleSettings}
                             />
                             {/* <DropdownMenu
                                 title={icons.operationModes.setting}

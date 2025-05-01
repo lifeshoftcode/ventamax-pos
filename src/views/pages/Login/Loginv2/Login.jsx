@@ -85,7 +85,7 @@ export const Login = ({setLoading = null}) => {
 
                                 />
                             </Form.Item>
-                            <br />
+                            
                             <Form.Item
                                 name="password"
                                 label="Contraseña"
@@ -117,39 +117,45 @@ export const Login = ({setLoading = null}) => {
 }
 
 const Container = styled.div`
-   padding: 1em;
+   padding: 0 1em;
    width: 100%;
    justify-content: center;
+   align-items: center;
    height: 100vh;
-   max-height: 800px;
    display: flex;
-
 `
+
 const Wrapper = styled.div`
-     max-width: 600px;
-    width: 100%;
-    background-color: white;
-    background-color: #4d4d4d;
-  
-
-    border-radius: 1em;
-    padding: 0 2em 2em;
-
-    display: grid;
-    grid-template-rows: 1fr;
-    
+   max-width: 450px;
+   width: 100%;
+   background-color: #4d4d4d;
+   border-radius: 1em;
+   padding: 0 1em;
 `
+
 const Body = styled.div`
-    
+   margin: 0rem 0;
 `
-const Form = styled(ant.Form)`
-    display: grid;
-   
-    grid-template-rows: min-content 1fr min-content !important;
-    color: white;
-    label{
 
-        color: white !important;
-    }
-    
+const Form = styled(ant.Form)`
+   display: flex;
+   flex-direction: column;
+   justify-content: space-between;
+   color: white;
+   height: 100%;
+   
+   label {
+      color: white !important;
+      font-weight: 500;
+   }
+   
+   .ant-input-affix-wrapper {
+      border-radius: 8px;
+   }
+   
+   .ant-btn {
+      border-radius: 8px;
+      height: 48px;
+      margin-top: 1rem;
+   }
 `
