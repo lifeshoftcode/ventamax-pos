@@ -177,6 +177,7 @@ export const icons = {
         taxReceipt: <FontAwesomeIcon icon={faReceipt} />,
         appInfo: <FontAwesomeIcon icon={faInfo} />,
         users: <FontAwesomeIcon icon={faUserCog} />,
+        
     },
     inventory: {
         items: <FontAwesomeIcon icon={faBoxesStacked} />,

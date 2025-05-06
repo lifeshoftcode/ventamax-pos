@@ -3,17 +3,20 @@ const SALES_TERM = {
     BILLS: '/bills',
     PREORDERS: '/preorders'
 }
+
 const CASH_RECONCILIATION_TERM = {
     CASH_RECONCILIATION_LIST: '/cash-reconciliation',
     CASH_RECONCILIATION_OPENING: '/cash-register-opening',
     CASH_RECONCILIATION_CLOSURE: '/cash-register-closure/:id',
     CASH_RECONCILIATION_INVOICE_OVERVIEW: '/cash-register-invoices-overview',
 }
+
 const CHANGELOG_TERM = {
     CHANGELOG_CREATE: '/changelog/create',
     CHANGELOG_MANAGE: '/changelog/manage',
     CHANGELOG_LIST: '/changelogs/list'
 }
+
 const DEV_VIEW_TERM = {
     CREATE_BUSINESS: '/dev/business/create',
     BUSINESSES: '/dev/businesses',
@@ -24,6 +27,7 @@ const DEV_VIEW_TERM = {
         ROOT: '/dev/app-config',
         LOGIN_IMAGE: '/dev/app-config/login-image',
     },
+    SWITCH_BUSINESS: '/dev/business/switch',
 }
 
 const UTILITY_TERM = {
@@ -49,7 +53,6 @@ const WAREHOUSE_BASE_PATH = `${WAREHOUSES_PATH}/warehouse/:warehouseId`;
 const SHELVE_BASE_PATH = `${WAREHOUSE_BASE_PATH}/shelf/:shelfId`;
 const ROW_BASE_PATH = `${SHELVE_BASE_PATH}/row/:rowId`;
 const SEGMENT_BASE_PATH = `${ROW_BASE_PATH}/segment/:segmentId`;
-
 
 const INVENTORY_TERM = {
     CREATE_PRODUCT: `${INVENTORY_BASE_PATH}/create-product`,
@@ -85,7 +88,6 @@ const SETTING_TERM = {
     APP_INFO: '/app-info',
     BUSINESS_INFO: '/business-info',
     TAX_RECEIPT: '/tax-receipt',
-    // Subrutas para GeneralConfig
     GENERAL_CONFIG_BILLING: '/general-config/billing',
     GENERAL_CONFIG_BUSINESS: '/general-config/business',
     GENERAL_CONFIG_TAX_RECEIPT: '/general-config/tax-receipt',

@@ -109,7 +109,7 @@ export const Sales = () => {
           borderRadius={'bottom-right'}
           searchData={searchData}
           setSearchData={setSearchData}
-          showNotificationButton={true}
+          // showNotificationButton={true}
         />
         < ProductControlEfficient
           productsLoading={productsLoading}

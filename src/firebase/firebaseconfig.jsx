@@ -15,6 +15,7 @@ import { login, logout } from "../features/auth/userSlice";
 import { useNavigate } from "react-router-dom";
 import { fbGetDocFromReference } from "./provider/fbGetProviderFromReference";
 import { onEnv } from "../utils/env";
+import { connectEmulatorsIfAvailable } from "./emulator/emulator";
 // import { getVertexAI, getGenerativeModel } from "firebase/";
 
 const firebaseConfig = {
@@ -34,7 +35,26 @@ export const auth = getAuth(app)
 export const functions = getFunctions(app);
 export const vertexAI = getVertexAI(app);
 
-onEnv("dev", () => connectFunctionsEmulator(functions, '127.0.0.1', 5001));
+// onEnv("dev", () => connectFunctionsEmulator(functions, '127.0.0.1', 5001));
+
+function servicesEmulator() {
+  const host = '127.0.0.1';
+  const services = [
+    {
+      name: 'functions',
+      port: 5001,
+      connect: () => connectFunctionsEmulator(functions, host, 5001)
+    }
+  ];
+  onEnv('dev', async () => {
+    const status =  await connectEmulatorsIfAvailable(services);
+    console.log('Emuladores: ', status);
+    const up = status.some(s => s.connected).map(s => s.name).join(', ');
+    console.log(`Emuladores conectados: ${up}`);
+  });
+}
+
+servicesEmulator()
 
 export const generativeModel = getGenerativeModel(vertexAI, {
   model: "gemini-2.5-flash-preview-04-17",

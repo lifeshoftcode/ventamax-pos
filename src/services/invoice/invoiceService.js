@@ -76,11 +76,8 @@ export async function processInvoice({
         return { invoice }
 
     } catch (error) {
-        setLoading({ status: false, message: "" })
         throw error
-    } finally {
-        setLoading({ status: false, message: "" })
-    }
+    } 
 }
 
 function checkIfHasDueDate({ cart, dueDate }) {

@@ -85,21 +85,27 @@ export const cartSlice = createSlice({
         addPaymentMethod: (state, actions) => {
             const data = actions.payload
             state.data.paymentMethod = data
-        },
-        setPaymentMethod: (state, actions) => {
-            const paymentMethod = actions.payload
-            const index = state.data.paymentMethod.findIndex((method) => method.method === paymentMethod.method);
-            if (index !== -1) {
-                state.data.paymentMethod[index] = paymentMethod;
+        },        setPaymentMethod: (state, actions) => {
+            try {
+                const paymentMethod = actions.payload;
+                // Asegurarse de que paymentMethod tenga un value numérico
+                if (paymentMethod.value !== undefined) {
+                    paymentMethod.value = Number(paymentMethod.value) || 0;
+                }
+                
+                const index = state.data.paymentMethod.findIndex(
+                    (method) => method.method === paymentMethod.method
+                );
+                
+                if (index !== -1) {
+                    state.data.paymentMethod[index] = paymentMethod;
+                }
+                
+                // Los totales se calcularán a través del middleware cartTotalsListener
+                // que llama a recalcTotals() después de cada cambio en setPaymentMethod
+            } catch (error) {
+                console.error("Error in setPaymentMethod:", error);
             }
-            const paymentMethods = state.data.paymentMethod;
-            const getActivePaymentMethods = () => paymentMethods
-                .filter((method) => method.status === true)
-                .reduce((acc, method) => acc + method.value, 0);
-
-            state.data.payment.value = getActivePaymentMethods();
-            const setChange = calculateChange(state.data.payment.value, state.data.totalPurchase.value);
-            state.data.change.value = setChange;
         },
         toggleReceivableStatus: (state, actions) => {
             const value = actions.payload
@@ -205,6 +211,18 @@ export const cartSlice = createSlice({
                 }
             }
         },
+         setCashPaymentToTotal: (state) => {
+            const total = state.data.totalPurchase.value;
+            // Ajustar array de métodos de pago
+            state.data.paymentMethod = state.data.paymentMethod.map(m => ({
+                ...m,
+                value: m.method === 'cash' ? total : 0,
+                status: m.method === 'cash'
+            }));
+            // También actualizar payment.value y change
+            state.data.payment.value = total;
+            state.data.change.value  = 0;
+        },
         resetCart: (state) => ({
 
             ...initialState,
@@ -267,9 +285,8 @@ export const cartSlice = createSlice({
                     }
                 });
             }
-        },
-        recalcTotals: (state, action) => {
-            const paymentValue = action.payload ?? null;
+        },        recalcTotals: (state, action) => {
+            const paymentValue = action.payload !== undefined ? Number(action.payload) : null;
             updateAllTotals(state, paymentValue);
         },
         addInvoiceComment: (state, action) => {
@@ -297,6 +314,7 @@ export const {
     resetCart,
     changeProductPrice,
     changeProductWeight,
+    setCashPaymentToTotal,
     deleteProduct,
     setPaymentMethod,
     toggleReceivableStatus,

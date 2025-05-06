@@ -3,7 +3,7 @@ import styled from 'styled-components'
 import { Body } from './components/Body/Body'
 import { Button, notification, Spin, Form, Modal as AntdModal, message } from 'antd'
 import { useDispatch, useSelector } from 'react-redux'
-import { resetCart, SelectCartData, SelectSettingCart, toggleCart, toggleInvoicePanel, toggleInvoicePanelOpen } from '../../../../../features/cart/cartSlice'
+import { resetCart, SelectCartData, SelectSettingCart, toggleCart, toggleInvoicePanel, toggleInvoicePanelOpen, setPaymentMethod, recalcTotals } from '../../../../../features/cart/cartSlice'
 import { processInvoice } from '../../../../../services/invoice/invoiceService'
 import { selectUser } from '../../../../../features/auth/userSlice'
 import { deleteClient, selectClient } from '../../../../../features/clientCart/clientCartSlice'
@@ -98,17 +98,23 @@ export const InvoicePanel = () => {
     const insuranceAuth = useSelector(selectInsuranceAuthData) || null;
     const invoiceType = cartSettings.billing.invoiceType;
 
+    //function para despues de imprimir la factura
+    const handleAfterPrint = () => {
+        setInvoice({});
+        handleCancelShipping({ dispatch, viewport });
+        notification.success({
+            message: 'Venta Procesada',
+            description: 'La venta ha sido procesada con éxito',
+            duration: 4
+        })
+        setLoading({ status: false, message: '' });
+        setSubmitted(true)
+    }
+
+
     const handlePrint = useReactToPrint({
         content: () => componentToPrintRef.current,
-        onAfterPrint: () => {
-            setInvoice({});
-            handleCancelShipping({ dispatch, viewport });
-            notification.success({
-                message: 'Venta Procesada',
-                description: 'La venta ha sido procesada con éxito',
-                duration: 4
-            })
-        }
+        onAfterPrint: () => handleAfterPrint(),
     })
 
     // Reinstate the showCancelSaleConfirm function
@@ -133,14 +139,7 @@ export const InvoicePanel = () => {
     const handleInvoicePriting = async (invoice) => {
         if (invoiceType === 'template2') {
             try {
-                await downloadInvoiceLetterPdf(business, invoice);
-                setInvoice({});
-                handleCancelShipping({ dispatch, viewport });
-                notification.success({
-                    message: 'Venta Procesada',
-                    description: 'La venta ha sido procesada con éxito',
-                    duration: 4
-                })
+                await downloadInvoiceLetterPdf(business, invoice, handleAfterPrint);
             } catch (e) {
                 notification.error({
                     message: 'Error al imprimir',
@@ -156,7 +155,7 @@ export const InvoicePanel = () => {
 
     async function handleSubmit() {
         try {
-            setLoading({ status: true, message: 'Procesando Factura' })
+            setLoading({ status: true, message: '' })
             if (cart?.isAddedToReceivables) {
                 await form.validateFields()
             }
@@ -203,15 +202,9 @@ export const InvoicePanel = () => {
                 await handleInvoicePriting(invoice);
             }
             if (!shouldPrintInvoice) {
-                handleCancelShipping({ dispatch, viewport });
-                notification.success({
-                    message: 'Venta Procesada',
-                    description: 'La venta ha sido procesada con éxito',
-                    duration: 4
-                });
+                setInvoice({});
+                handleAfterPrint();
             }
-            setLoading({ status: false, message: '' });
-            setSubmitted(true)
 
         } catch (error) {
             notification.error({
@@ -222,7 +215,7 @@ export const InvoicePanel = () => {
             setLoading({ status: false, message: '' })
             setSubmitted(false)
             console.error('Error processing invoice:', error)
-        }
+        } 
     }
 
     // const installments = generateInstallments({ ar: accountsReceivable, user })
@@ -244,7 +237,33 @@ export const InvoicePanel = () => {
         if (!invoicePanel) {
             setSubmitted(false);
         }
-    }, [invoicePanel]);
+    }, [invoicePanel]);    // Efecto para inicializar el método de pago cuando se abre el panel
+    useEffect(() => {
+        // Solo se ejecuta cuando se abre el panel de factura, no en cada actualización
+        if (invoicePanel) {
+            // Verificar si algún método de pago tiene un valor establecido
+            const totalPaymentValue = cart?.paymentMethod?.reduce((total, method) => {
+                return method.status ? total + (Number(method.value) || 0) : total;
+            }, 0);
+
+            // Obtenemos el valor de totalPurchase en lugar de payment para inicializar
+            const purchaseTotal = cart?.totalPurchase?.value || 0;
+
+            // Si ningún método de pago tiene valor, establece el método de pago predeterminado (efectivo)
+            if (totalPaymentValue === 0 && purchaseTotal > 0) {
+                const cashMethod = cart?.paymentMethod?.find(method => method.method === 'cash');
+                if (cashMethod) {
+                    // Solo establece el estado una vez, cuando se abre el panel
+                    dispatch(setPaymentMethod({
+                        ...cashMethod,
+                        status: true,
+                        value: purchaseTotal
+                    }));
+                    // No llamamos a recalcTotals ya que el middleware lo hará por nosotros
+                }
+            }
+        }
+    }, [invoicePanel]); // Solo depende de si el panel está abierto o cerrado
 
     return (
         <Modal

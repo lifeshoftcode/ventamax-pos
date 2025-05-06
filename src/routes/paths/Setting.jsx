@@ -1,4 +1,5 @@
 import { Setting, TaxReceiptSetting, UserAdmin } from "../../views";
+import SwitchBusiness from "../../views/pages/dev/SwitchBusiness";
 import GeneralConfig from "../../views/component/GeneralConfig/GeneralConfig";
 import BillingConfig from "../../views/component/GeneralConfig/configs/BillingConfig";
 import AppInfo from "../../views/pages/setting/subPage/AppInfo/AppInfo";
@@ -70,7 +71,8 @@ const Routes = [
     { path: `${basePath}${TAX_RECEIPT}`, element: <TaxReceiptSetting /> },
     { path: `${basePath}${BUSINESS_INFO}`, element: <BusinessInfo /> },
     { path: `${CREATE_BUSINESS}`, element: <BusinessCreator /> },
-    { path: `${basePath}${APP_INFO}`, element: <AppInfo /> }
+    { path: `${basePath}${APP_INFO}`, element: <AppInfo /> },
+    { path: ROUTES_NAME.DEV_VIEW_TERM.SWITCH_BUSINESS, element: <SwitchBusiness /> }
 ]
 
 export default Routes;
