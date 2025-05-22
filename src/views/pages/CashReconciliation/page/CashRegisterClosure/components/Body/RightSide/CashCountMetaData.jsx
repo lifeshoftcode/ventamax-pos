@@ -1,54 +1,53 @@
+import { toNumber } from "../../../../../../../../utils/validators"
+import { ensureArray } from "../../../../../../../../utils/array/ensureArray"
 
-function getBankNotesTotal(bankNotes = []) {
-  const totals = bankNotes.reduce((total, bankNote) => {
-    return total + (bankNote.value * bankNote.quantity)
-  }, 0)
-  return totals
-}
+const getBanknoteTotal = (notes = []) =>
+  notes.reduce((t, { value = 0, quantity = 0 }) => t + (value * quantity), 0);
+
+const sumExpenses = (expenses = []) =>
+  ensureArray(expenses)
+    .filter(e => e?.payment?.method === 'open_cash')
+    .reduce((t, expense) => t + toNumber(expense?.amount), 0);
+
+const sumInvoiceMetrics = invoices => 
+  invoices.reduce((acc, { data }) => {
+    const { paymentMethod = [], totalPurchase = {} } = data;
+    acc.charged += toNumber(totalPurchase?.value);
+    paymentMethod.forEach(p => {
+      if (!p.status) return;
+      if (p.method === 'card') acc.card += toNumber(p.value);
+      if (p.method === 'transfer') acc.transfer += toNumber(p.value);
+    });
+    return acc;
+  }, { card: 0, transfer: 0, charged: 0 });
+
 /**
  * Calculates and returns metadata for cash count.
  * @param {Array} invoices - The array of invoices.
  * @param {Object} cashCount - The cash count object.
  * @returns {Object} - The metadata object containing various totals.
  */
-export const CashCountMetaData = (cashCount, invoices = []) => {
+export const CashCountMetaData = (cashCount, invoices = [], expenses = []) => {
+  if (!cashCount) return null;
 
-  if (!cashCount) { return null }
+  const { opening = {}, closing = {} } = cashCount;
+  
+  const openBank = getBanknoteTotal(opening.banknotes);
+  const closeBank = getBanknoteTotal(closing.banknotes);
+  const totalExpenses = sumExpenses(expenses);
+  const { card, transfer, charged } = sumInvoiceMetrics(invoices);
 
-  const { sales, opening, closing } = cashCount;
-
-  const totalOpeningBanknotes = getBankNotesTotal(opening.banknotes);
-  // const totalClosingBanknotes = closing.banknotesTotal;
-  const totalClosingBanknotes = getBankNotesTotal(closing.banknotes)
-  const totalCard = invoices.reduce((total, factura) => {
-    const { paymentMethod, payment } = factura.data;
-    const tarjeta = paymentMethod.find(method => method.method === 'card' && method.status === true);
-    if (tarjeta) {
-      return total + payment.value;
-    }
-    return total;
-  }, 0);
-
-  let totalTransfer = invoices.reduce((total, sale) => {
-    return total + (sale.data.paymentMethod.filter(payment => payment.method === "transfer" && payment.status).length > 0 ? sale.data.totalPurchase.value : 0);
-  }, 0);
-
-  const totalRegister = totalClosingBanknotes + totalCard + totalTransfer;
-
-  const totalCharged = invoices.reduce((total, sale) => {
-    return total + sale?.data?.totalPurchase?.value;
-  }, 0);
-
-  const totalSystem = totalCharged + totalOpeningBanknotes;
-
-  const totalDiscrepancy = totalRegister - totalSystem;
+  const register = closeBank + card + transfer;
+  const system = charged + openBank - totalExpenses;
+  const discrepancy = register - system;
 
   return {
-    totalCard: totalCard || 0,
-    totalTransfer: totalTransfer || 0,
-    totalRegister: totalRegister || 0,
-    totalSystem: totalSystem || 0,
-    totalDiscrepancy: totalDiscrepancy || 0,
-    totalCharged: totalCharged || 0
+    totalCard: card,
+    totalTransfer: transfer,
+    totalRegister: register,
+    totalSystem: system,
+    totalDiscrepancy: discrepancy,
+    totalCharged: charged,
+    totalExpenses: totalExpenses
   }
 }

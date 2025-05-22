@@ -1,46 +1,16 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Modal, Card, Button, Tooltip, message, Badge, Typography, Empty } from 'antd';
-import { CheckCircleOutlined, FileOutlined } from '@ant-design/icons';
+import { Modal, Button, message } from 'antd';
+import { CheckCircleOutlined } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
 import { selectUser } from '../../../../../../../features/auth/userSlice';
 import { updateTaxReceipt } from '../../../../../../../firebase/taxReceipt/updateTaxReceipt';
-
-const { Title, Text } = Typography;
 
 /**
  * Modal para mostrar y restaurar comprobantes deshabilitados
  */
 const DisabledReceiptsModal = ({ visible, onCancel, disabledReceipts, onRestore }) => {
   const user = useSelector(selectUser);
-
-  // Función para calcular el límite de secuencia
-  const calculateLimit = (data) => {
-    try {
-      if (!data) return "N/A";
-
-      const { type, serie, sequence, quantity, sequenceLength } = data;
-
-      if (!type || !serie || sequence === undefined || !quantity) {
-        return "N/A";
-      }
-
-      const sequenceNum = parseInt(sequence || '0');
-      const quantityNum = parseInt(quantity || '0');
-      const limitSequence = sequenceNum + quantityNum;
-      const formattedSequence = String(limitSequence).padStart(sequenceLength || 8, '0');
-      return `${type}${serie}${formattedSequence}`;
-    } catch (error) {
-      console.error("Error al calcular el límite:", error);
-      return "Error";
-    }
-  };
-
-  // Formatear secuencia con ceros
-  const formatSequence = (seq, length) => {
-    if (seq === undefined || length === undefined) return seq;
-    return String(seq).padStart(length, '0');
-  };
 
   // Manejar la restauración de un comprobante
   const handleRestore = async (receiptData) => {
@@ -62,20 +32,19 @@ const DisabledReceiptsModal = ({ visible, onCancel, disabledReceipts, onRestore 
       message.error('Error al restaurar el comprobante');
     }
   };
-
   return (
     <Modal
       title={
         <TitleContainer>
-          <Title level={4}>Comprobantes Deshabilitados</Title>
-          <Text type="secondary">
+          <ModalTitle>Comprobantes Deshabilitados</ModalTitle>
+          <ModalSubtitle>
             Estos comprobantes están inactivos pero pueden ser restaurados
-          </Text>
+          </ModalSubtitle>
         </TitleContainer>
       }
+      width={800}
       open={visible}
       onCancel={onCancel}
-     
       footer={[
         <Button key="close" onClick={onCancel}>
           Cerrar
@@ -85,151 +54,200 @@ const DisabledReceiptsModal = ({ visible, onCancel, disabledReceipts, onRestore 
       <Content>
         {disabledReceipts.length > 0 ? (
           <ReceiptsGrid>
-            {disabledReceipts.map((receipt) => (
-              <ReceiptCard key={receipt.id || receipt.data.id}>
-                <CardHeader>
-                  <h4>{receipt.data.name}</h4>
-                  <small>Tipo: {receipt.data.type} | Serie: {receipt.data.serie}</small>
-                </CardHeader>
-                <CardBody>
-                  <DetailItem>
-                    <Label>Secuencia:</Label>
-                    <Value>{formatSequence(receipt.data.sequence, receipt.data.sequenceLength)}</Value>
-                  </DetailItem>
-                  <DetailItem>
-                    <Label>Incremento:</Label>
-                    <Value>{receipt.data.increase}</Value>
-                  </DetailItem>
-                  <DetailItem>
-                    <Label>Cantidad:</Label>
-                    <Value>{receipt.data.quantity}</Value>
-                  </DetailItem>
-                  <DetailItem>
-                    <Label>Límite (NCF):</Label>
-                    <LimitValue>
-                      <FileOutlined style={{ marginRight: 5 }} />
-                      {calculateLimit(receipt.data)}
-                    </LimitValue>
-                  </DetailItem>
-                </CardBody>
-                <Tooltip title="Restaurar comprobante">
-                  <Button
-                    type="primary"
-                    icon={<CheckCircleOutlined />}
+            {disabledReceipts.map((receipt) => (              <CustomReceiptCard key={receipt.id || receipt.data.id}>
+                <CardHeaderSection>
+                  <ReceiptName>{receipt.data.name}</ReceiptName>
+                  <ReceiptCode>{receipt.data.type}{receipt.data.serie}</ReceiptCode>
+                </CardHeaderSection>
+                <CardContent>
+                  {/* <DetailRow>
+                    <DetailLabel>Tipo</DetailLabel>
+                    <DetailValue>{receipt.data.type}</DetailValue>
+                  </DetailRow> */}
+                  <DetailRow>
+                    <DetailLabel>Secuencia:</DetailLabel>
+                    <DetailValue>{receipt.data.sequence}</DetailValue>
+                  </DetailRow>
+                </CardContent>                <RestoreButtonContainer>
+                  <RestoreButton
                     onClick={() => handleRestore(receipt.data)}
-                    block
                   >
-                    Restaurar
-                  </Button>
-                </Tooltip>
-              </ReceiptCard>
+                    <CheckCircleOutlined style={{ fontSize: '12px' }} />
+                    <span>Restaurar</span>
+                  </RestoreButton>
+                </RestoreButtonContainer>
+              </CustomReceiptCard>
             ))}
           </ReceiptsGrid>
         ) : (
-          <EmptyContainer>
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description="No hay comprobantes deshabilitados"
-            />
-          </EmptyContainer>
+          <EmptyStateContainer>
+            <EmptyIconWrapper>
+              <EmptyDocumentIcon />
+            </EmptyIconWrapper>
+            <EmptyStateText>No hay comprobantes deshabilitados</EmptyStateText>
+          </EmptyStateContainer>
         )}
       </Content>
     </Modal>
   );
 };
 
+// Icono de documento vacío personalizado
+const EmptyDocumentIcon = () => (
+  <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M48 8H16C13.7909 8 12 9.79086 12 12V52C12 54.2091 13.7909 56 16 56H48C50.2091 56 52 54.2091 52 52V12C52 9.79086 50.2091 8 48 8Z" stroke="#d9d9d9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M36 8V18H44" stroke="#d9d9d9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M24 30H40" stroke="#d9d9d9" strokeWidth="2" strokeLinecap="round"/>
+    <path d="M24 38H40" stroke="#d9d9d9" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+);
+
 const Content = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
   max-height: 70vh;
   overflow-y: auto;
-  padding-right: 8px;
+  padding-right: 4px;
 `;
 
 const TitleContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+  margin-bottom: 18px;
+`;
 
-  h4 {
-    margin-bottom: 0;
-  }
+const ModalTitle = styled.h4`
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+`;
+
+const ModalSubtitle = styled.p`
+  margin: 0;
+  font-size: 14px;
+  color: #8c8c8c;
 `;
 
 const ReceiptsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
 `;
 
-const ReceiptCard = styled(Card)`
-  border: 1px solid #f0f0f0;
-  border-radius: 8px;
-  transition: all 0.3s;
-  
-  &:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-
-  .ant-card-body {
-    padding: 16px;
-  }
-`;
-
-const CardHeader = styled.div`
-  border-bottom: 1px solid #f0f0f0;
-  padding-bottom: 12px;
-  margin-bottom: 12px;
-  
-  h4 {
-    margin: 0 0 6px 0;
-    font-size: 16px;
-    font-weight: 600;
-  }
-
-  small {
-    font-size: 12px;
-    color: #999;
-  }
-`;
-
-const CardBody = styled.div`
-  margin-bottom: 16px;
+const CustomReceiptCard = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  border: 1px solid #eaeaea;
 `;
 
-const DetailItem = styled.div`
+const CardHeaderSection = styled.div`
+  padding: 10px 12px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #eaeaea;
   display: flex;
   justify-content: space-between;
   align-items: center;
 `;
 
-const Label = styled.span`
+const ReceiptName = styled.h4`
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+`;
+
+const ReceiptCode = styled.span`
+  font-size: 13px;
+  font-weight: 500;
+  color: #1677ff;
+  background-color: rgba(22, 119, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+`;
+
+const CardContent = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 10px 12px;
+  flex: 1;
+  gap: 12px;
+  background-color: #fafafa;
+`;
+
+const DetailRow = styled.div`
+  display: flex;
+  flex: 1;
+  gap: 6px;
+`;
+
+const DetailLabel = styled.span`
+  font-size: 13px;
   color: #8c8c8c;
-  font-size: 14px;
+  margin-bottom: 2px;
 `;
 
-const Value = styled.span`
-  font-size: 14px;
+const DetailValue = styled.span`
+  font-size: 13px;
   font-weight: 500;
+  color: #262626;
 `;
 
-const LimitValue = styled.span`
+const RestoreButtonContainer = styled.div`
+  padding: 8px 12px;
+  border-top: 1px solid #eaeaea;
+`;
+
+const RestoreButton = styled.button`
   display: flex;
   align-items: center;
-  font-size: 14px;
-  font-weight: 500;
-  color: #1890ff;
-`;
-
-const EmptyContainer = styled.div`
-  display: flex;
   justify-content: center;
+  gap: 6px;
+  background-color: #1677ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  
+  &:hover {
+    background-color: #0958d9;
+  }
+`;
+
+const EmptyStateContainer = styled.div`
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 40px;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+`;
+
+const EmptyIconWrapper = styled.div`
+  margin-bottom: 16px;
+  opacity: 0.5;
+`;
+
+const EmptyStateText = styled.p`
+  font-size: 16px;
+  color: #8c8c8c;
+  margin: 0;
 `;
 
 export default DisabledReceiptsModal;

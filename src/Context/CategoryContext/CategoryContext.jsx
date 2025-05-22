@@ -46,9 +46,9 @@ export const useCategoryState = () => {
         setCategory(initCategory);
     };
 
-    const onSubmit = () => {
+    const onSubmit = (cat) => {
         if (typeof categoryState.onSubmit === 'function') {
-            categoryState.onSubmit(user, category);
+            categoryState.onSubmit(user, cat);
             onClose();
         } else {
             throw new Error("No onSubmit function provided in categoryState.");

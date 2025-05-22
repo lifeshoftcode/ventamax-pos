@@ -66,11 +66,11 @@ const columns = [
 
 export const UserList = () => {
   const [users, setUsers] = useState([])
-  const userActual = useSelector(selectUser)
+  const currentUser = useSelector(selectUser)
   const dispatch = useDispatch();
   useEffect(() => {
-    fbGetUsers(setUsers, userActual)
-  }, [userActual])
+    fbGetUsers(currentUser, setUsers)
+  }, [currentUser])
   const data = users.map(({ user }, index) => {
     return {
       number: user.number,

@@ -7,7 +7,7 @@ export const fbCashCountClosed = async (user, cashCount, employeeID, approvalEmp
   const userRefPath = doc(db, 'users', employeeID);
   const approvalEmployeeRefPath = doc(db, `users`, approvalEmployeeID);
 
-  const cashCountRef = doc(db, 'businesses', user?.businessID, 'cashCounts', cashCount.id)
+  const cashCountRef = doc(db, 'businesses', user?.businessID, 'cashCounts', cashCount.id);
 
   try {
     await updateDoc(cashCountRef, {

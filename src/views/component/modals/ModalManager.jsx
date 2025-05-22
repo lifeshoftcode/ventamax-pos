@@ -66,10 +66,7 @@ export const ModalManager = () => {
   const currentNotification = useSelector(selectCurrentNotification)
   const FileListSelected = useSelector(SelectFileListModal)
   {/* <BusinessEditModal /> */ }
-  {/* <UpdateProductModal
-      key='modal-update-product'
-      isOpen={UpdateProdModalSelected}
-    /> */}
+
   {/* <ARInfoModal
                 key={'modal-ar-info-modal'}
              /> */}

@@ -9,7 +9,7 @@ async function isEmulatorUp(host = '127.0.0.1', port, timeout = 1500) {
     const timer = setTimeout(() => controller.abort(), timeout);
 
     try {
-        await fetch(url, { method: 'HEAD', signal: controller.signal });
+        await fetch(url, { method: 'HEAD', mode: 'no-cors', signal: controller.signal });
         return true;
     } catch {
         return false;
@@ -30,16 +30,25 @@ async function isEmulatorUp(host = '127.0.0.1', port, timeout = 1500) {
  * }>
  */
 export async function connectEmulatorsIfAvailable(services) {
-    const result = await Promise.all(
+    return await Promise.all(
         services.map(async ({ name, host = '127.0.0.1', port, connect }) => {
+            let connected = false;
+
             const up = await isEmulatorUp(host, port);
+            
             if (up) {
-                await connect();
-                console.info(`[Emulator] conectado a ${name} en ${host}:${port}`);
+                try {
+                    await connect();
+                    console.info(`[Emulator] conectado a ${name} en ${host}:${port}`);
+                    connected = true;
+                } catch (error) {
+                    console.error(`[Emulator] Error al conectar a ${name} en ${host}:${port}`, error);
+                    return { name, connected: false };
+                }
             } else {
                 console.info(`[Emulator] ${name} NO detectado en ${host}:${port}`);
             }
+            return { name, connected };
         })
     );
-    return result;
 }

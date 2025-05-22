@@ -1,77 +1,93 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../../../features/auth/userSlice";
 import { Login } from "./Login";
-import imgDefault from "./imgs/Imagen de WhatsApp 2024-03-20 a las 16.08.41_2d4b60ad.jpg";
 import { Button, Spin, Skeleton } from "antd";
 import { icons } from "../../../../constants/icons/icons";
 import { ref, getDownloadURL, listAll } from "firebase/storage";
 import { storage } from "../../../../firebase/firebaseconfig";
+import { motion } from "framer-motion";
 
 export const LoginV2 = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  // Estado para controlar el loading mientras carga la imagen
+
+  /* ---------- imagen de fondo ---------- */
+  const [loginImage, setLoginImage] = useState(null);   //   ⬅️ sin <string | null>
   const [imageLoading, setImageLoading] = useState(true);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const imgRef = useRef(null);                          //   ⬅️ sin <HTMLImageElement | null>
+
+  /* ---------- usuario ---------- */
   const user = useSelector(selectUser);
   const homePath = "/home";
-  // Estado para almacenar la URL de la imagen de login
-  const [loginImage, setLoginImage] = useState(null);
-  // Controla el fade‑in de la imagen
-  const [imageLoaded, setImageLoaded] = useState(false);
-  // Función para cargar la imagen desde Firebase Storage
+
+  /* ---------- descarga de la imagen ---------- */
   const fetchLoginImage = async () => {
     setImageLoading(true);
+    setImageLoaded(false);
+    setLoginImage(null);
+
     try {
       const loginImageRef = ref(storage, "app-config/login-image");
       const files = await listAll(loginImageRef);
+
       if (files.items.length > 0) {
         const url = await getDownloadURL(files.items[0]);
         setLoginImage(url);
       } else {
-        // Si no hay imágenes, desactivamos el loading
         setImageLoading(false);
       }
-    } catch (error) {
-      console.error("Error al cargar la imagen de login:", error);
-      // Si hay error, simplemente usaremos la imagen por defecto
+    } catch (err) {
+      console.error("Error al cargar la imagen de login:", err);
       setImageLoading(false);
     }
   };
 
-  useEffect(() => {
-    // Cargar la imagen al montar el componente
-    fetchLoginImage();
-  }, []);
+  useEffect(() => { fetchLoginImage(); }, []);
 
+  /* reinicio de flags si cambia la URL */
   useEffect(() => {
-    // Reiniciar la animación cuando cambia la imagen que se muestra
-    setImageLoaded(false);
+    if (loginImage) {
+      setImageLoading(true);
+      setImageLoaded(false);
+    }
   }, [loginImage]);
 
+  /* imagen ya en caché */
   useEffect(() => {
-    if (user === null) return; // Estado inicial
-    if (user === false) return; // Usuario no autenticado, quedarse en login
+    if (
+      imgRef.current &&
+      imgRef.current.complete &&
+      imgRef.current.naturalWidth > 0
+    ) {
+      setImageLoaded(true);
+      setImageLoading(false);
+    }
+  }, [loginImage]);
 
-    // Si hay usuario o token válido, redirigir a home
-    const sessionToken = localStorage.getItem("sessionToken");
-    const sessionExpires = localStorage.getItem("sessionExpires");
+  /* redirección si hay sesión */
+  useEffect(() => {
+    if (!user) return;
+    const token   = localStorage.getItem("sessionToken");
+    const expires = localStorage.getItem("sessionExpires");
 
-    if (user || (sessionToken && sessionExpires && Date.now() < parseInt(sessionExpires))) {
+    if (user || (token && expires && Date.now() < Number(expires))) {
       navigate(homePath, { replace: true });
     }
   }, [user, navigate]);
 
   const goToHome = () => navigate("/");
 
-  const displayedImage = loginImage;
+  const variants = {
+    hidden : { opacity: 0, scale: 0.95 },
+    visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } },
+  };
 
   return (
-    <div style={{ position: 'relative', height: '100vh', width: '100vw' }}>
-      {/* Spin a pantalla completa mientras la imagen está cargando */}
-      
+    <div style={{ position: "relative", height: "100vh", width: "100vw" }}>
       <Spin spinning={loading} tip="Cargando..." size="large">
         <Background>
           <Container>
@@ -79,17 +95,67 @@ export const LoginV2 = () => {
               <ButtonBack icon={icons.arrows.arrowLeft} onClick={goToHome}>
                 Volver
               </ButtonBack>
-              <Imagen loaded={imageLoaded}>
-                {/* eslint-disable-next-line jsx-a11y/alt-text */}
-                <img
-                  src={displayedImage}
-                  onLoad={() => {
-                    setImageLoaded(true);
-                    setImageLoading(false);
+
+              {loginImage && (
+                <motion.div
+                  key={loginImage}
+                  initial="hidden"
+                  animate={imageLoaded ? "visible" : "hidden"}
+                  variants={variants}
+                  style={{ height: "100%", position: "relative" }}
+                >
+                  {imageLoading && (
+                    <Skeleton.Image
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        width: "100%",
+                        height: "100%",
+                        borderRadius: "1em",
+                        objectFit: "cover",
+                        zIndex: 1,
+                      }}
+                      active
+                    />
+                  )}
+
+                  <Imagen>
+                    <img
+                      ref={imgRef}
+                      src={loginImage}
+                      alt="Login visual"
+                      onLoad={() => {
+                        setImageLoaded(true);
+                        setImageLoading(false);
+                      }}
+                      onError={() => {
+                        console.error("No se pudo cargar la imagen:", loginImage);
+                        setLoginImage(null);
+                        setImageLoading(false);
+                      }}
+                      style={{ visibility: imageLoaded ? "visible" : "hidden" }}
+                    />
+                  </Imagen>
+                </motion.div>
+              )}
+
+              {!loginImage && imageLoading && (
+                <Skeleton.Image
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    borderRadius: "1em",
+                    objectFit: "cover",
                   }}
+                  active
                 />
-              </Imagen>
+              )}
+
+              {!loginImage && !imageLoading && (
+                <NoImageMsg>No hay imagen de fondo disponible.</NoImageMsg>
+              )}
             </ImagenContainer>
+
             <Login setLoading={setLoading} />
           </Container>
         </Background>
@@ -98,7 +164,7 @@ export const LoginV2 = () => {
   );
 };
 
-/* ------------------------------- Estilos ------------------------------- */
+/* ---------- estilos ---------- */
 
 const Background = styled.div`
   background-color: #4d4d4d;
@@ -113,6 +179,7 @@ const ButtonBack = styled(Button)`
   top: 2em;
   left: 2em;
   align-items: center;
+  z-index: 10;
   gap: 0.5em;
 `;
 
@@ -125,7 +192,6 @@ const Imagen = styled.div`
     width: 100%;
     height: 100%;
     object-fit: cover;
-   
   }
 `;
 
@@ -139,6 +205,18 @@ const ImagenContainer = styled.div`
   @media (max-width: 800px) {
     display: none;
   }
+`;
+
+const NoImageMsg = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #777;
+  border-radius: 1em;
+  color: #ccc;
+  background: rgba(0, 0, 0, 0.2);
 `;
 
 const Container = styled.div`

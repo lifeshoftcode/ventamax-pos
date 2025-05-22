@@ -1,7 +1,7 @@
 import { Inventory, CategoryAdmin, MultimediaManager } from "../../views";
 import ROUTES_NAME from "../routesName";
 import { ProductOutflow } from "../../views/pages/Inventario/pages/ProductOutflow/ProductOutflow";
-import { ProductForm } from "../../views/pages/Inventario/pages/ProductForm/ProductForm";
+// import { ProductForm } from "../../views/pages/Inventario/pages/ProductForm/ProductForm";
 import { Warehouse } from "../../views/pages/Inventory/components/Warehouse/Warehouse";
 import ProductView from "../../views/component/modals/Product/ProductView";
 import DetailView from "../../views/pages/Inventory/components/Warehouse/components/DetailView/DetailView";
@@ -65,7 +65,7 @@ const Routes = [
     },
     {
         path: CREATE_PRODUCT,
-        element: <ProductForm />,
+        // element: <ProductForm />,
     }
 ]
 

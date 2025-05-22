@@ -63,7 +63,7 @@ const Title = styled.div`
     margin: 0 !important;
     font-size: 1.2em !important;
     padding: 0.4em 1.2em;
-    padding-right: 5em;
+    padding-right: 3em;
     background-color: var(--color);
     color: white !important;
     border-radius: 40px 0px 0px 40px;

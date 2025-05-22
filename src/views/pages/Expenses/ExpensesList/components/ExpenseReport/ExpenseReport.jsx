@@ -6,7 +6,7 @@ import { Button } from '../../../../..';
 import { useClickOutSide } from '../../../../../../hooks/useClickOutSide';
 import { DailyExpenseBarChart } from './reports/DailyExpensesBarChart';
 import { CategoryExpenseBarChart } from './reports/CategoryExpenseBarChart';
-import { MonthlyExpenseBarChart } from './reports/MonthlyExpenseBarChart';
+import { MonthlyExpenseBarChart,  } from './reports/MonthlyExpenseBarChart';
 import { MonthlyAndAccumulatedExpenseCharts } from './reports/MonthlyAndAccumulatedExpenseCharts/MonthlyAndAccumulatedExpenseCharts';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectExpenseList } from '../../../../../../features/expense/expensesListSlice';
@@ -38,6 +38,7 @@ export const ExpenseChart = () => {
             y: '100vh',
         }
     }
+    console.log('expensesList', expensesList)
 
     //useClickOutSide(componentRef, isOpen, onOpen)
 

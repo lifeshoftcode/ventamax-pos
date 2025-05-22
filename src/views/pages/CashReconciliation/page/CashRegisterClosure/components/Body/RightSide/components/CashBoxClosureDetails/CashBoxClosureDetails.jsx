@@ -1,43 +1,48 @@
-import React from 'react'
-
 import styled from 'styled-components'
 import { InputWithHorizontalLabel } from '../../../../../../../../../templates/system/Inputs/InputWithHorizontalLabel'
 import { useSelector } from 'react-redux'
 import { selectCashCount } from '../../../../../../../../../../features/cashCount/cashCountManagementSlice'
-import { CashReconciliation } from '../../../../../../../CashReconciliation'
 import { CashCountMetaData } from '../../CashCountMetaData'
-import { useFormatPrice } from '../../../../../../../../../../hooks/useFormatPrice'
-import Loader from '../../../../../../../../../templates/system/loader/Loader'
-import { Skeleton } from '../../../../../../../../../templates/system/Skeleton/Skeleton'
+import { Spin } from 'antd'
+import { useFormatNumber } from '../../../../../../../../../../hooks/useFormatNumber'
 
-export const CashBoxClosureDetails = ({invoices, loading}) => {
+export const CashBoxClosureDetails = ({ invoices, loading, expenses = [], expensesLoading = false }) => {
   const cashCount = useSelector(selectCashCount)
-  const {totalSystem, totalCharged, totalDiscrepancy} = CashCountMetaData(cashCount, invoices)
+  const { totalSystem, totalCharged, totalDiscrepancy, totalExpenses } = CashCountMetaData(cashCount, invoices, expenses)
+  
   return (
-   <Skeleton loading={loading} >
-    <Container>
-      <InputWithHorizontalLabel
-        label={'Total Facturado'}
-        disabled
-        value={useFormatPrice(totalCharged)}
+    <Spin spinning={loading}>
+      <Container>
+        <InputWithHorizontalLabel
+          label={'Total Facturado'}
+          readOnly
+          value={useFormatNumber(totalCharged)}
         />
-      <InputWithHorizontalLabel
-        label={'Total sistema'}
-        disabled
-        value={useFormatPrice(totalSystem)}
-      />
-      {
-        totalDiscrepancy !== 0 && (
+        {totalExpenses > 0 && (
           <InputWithHorizontalLabel
-            themeColor={totalDiscrepancy > 0 ? 'success' : 'danger'}
-            label={totalDiscrepancy > 0 ? 'Sobrante' : 'Faltante'}
-            value={useFormatPrice(totalDiscrepancy)}
+            label={'Total Gastos'}
+            readOnly
+            themeColor="warning"
+            value={useFormatNumber(totalExpenses)}
           />
-        )
-      }
-
-    </Container>
-   </Skeleton>
+        )}
+        <InputWithHorizontalLabel
+          label={'Total sistema'}
+          readOnly
+          value={useFormatNumber(totalSystem)}
+        />
+        {
+          totalDiscrepancy !== 0 && (
+            <InputWithHorizontalLabel
+              themeColor={totalDiscrepancy > 0 ? 'success' : 'danger'}
+              readOnly
+              label={totalDiscrepancy > 0 ? 'Sobrante' : 'Faltante'}
+              value={useFormatNumber(totalDiscrepancy)}
+            />
+          )
+        }
+      </Container>
+    </Spin>
   )
 }
 const Container = styled.div`

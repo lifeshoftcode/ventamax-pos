@@ -1,12 +1,12 @@
-import { 
-  collection, 
-  writeBatch, 
-  doc, 
-  getDoc, 
-  getDocs, 
-  serverTimestamp, 
-  query, 
-  where 
+import {
+  collection,
+  writeBatch,
+  doc,
+  getDoc,
+  getDocs,
+  serverTimestamp,
+  query,
+  where
 } from "firebase/firestore";
 import { db } from "../firebaseconfig";
 import { nanoid } from "nanoid";
@@ -43,10 +43,10 @@ class ImportProgress {
   }
 
   getSummary() {
-    const { 
-      totalProducts, processedProducts, updatedProducts, 
-      newProducts, newCategories, newIngredients, 
-      updatedIngredients, batchOperations 
+    const {
+      totalProducts, processedProducts, updatedProducts,
+      newProducts, newCategories, newIngredients,
+      updatedIngredients, batchOperations
     } = this.stats;
 
     return `
@@ -130,13 +130,14 @@ async function fixDuplicatedNameBarcode(user, localProducts) {
     const localByName = new Map();
     for (const lp of localProducts) {
       const nameKey = typeof lp.name === 'string' ? lp.name.trim().toLowerCase() : '_sin_nombre_';
-      // Ensure barcode is a string before calling trim()
-      const barcodeKey = typeof lp.barcode === 'string' ? lp.barcode.trim().toLowerCase() : 
-                         (lp.barcode ? String(lp.barcode).toLowerCase() : '_sin_barcode_');
+      const barcodeKey =
+        typeof lp.barcode === 'string'
+          ? lp.barcode.trim().toLowerCase()
+          : lp.barcode
+            ? String(lp.barcode).toLowerCase()
+            : '_sin_barcode_';
 
-      if (!localByName.has(nameKey)) {
-        localByName.set(nameKey, new Set());
-      }
+      if (!localByName.has(nameKey)) localByName.set(nameKey, new Set());
       localByName.get(nameKey).add(barcodeKey);
     }
 
@@ -149,34 +150,45 @@ async function fixDuplicatedNameBarcode(user, localProducts) {
     }
 
     // 2.1 Agrupar en memoria por (nameKey, barcodeKey)
-    const byNameBarcode = new Map(); // Map<string, Map<string, Array<{docId, data}>>>
-    
+    const byNameBarcode = new Map();
     snapshot.forEach(docSnap => {
       const data = docSnap.data();
       const docId = docSnap.id;
 
       const nameKey = typeof data.name === 'string' ? data.name.trim().toLowerCase() : '_sin_nombre_';
-      // Also ensure barcode is a string here before calling trim()
-      const barcodeKey = typeof data.barcode === 'string' ? data.barcode.trim().toLowerCase() : 
-                         (data.barcode ? String(data.barcode).toLowerCase() : '_sin_barcode_');
+      const barcodeKey =
+        typeof data.barcode === 'string'
+          ? data.barcode.trim().toLowerCase()
+          : data.barcode
+            ? String(data.barcode).toLowerCase()
+            : '_sin_barcode_';
 
-      if (!byNameBarcode.has(nameKey)) {
-        byNameBarcode.set(nameKey, new Map());
-      }
-      const innerMap = byNameBarcode.get(nameKey);
+      if (!byNameBarcode.has(nameKey)) byNameBarcode.set(nameKey, new Map());
+      const inner = byNameBarcode.get(nameKey);
+      if (!inner.has(barcodeKey)) inner.set(barcodeKey, []);
 
-      if (!innerMap.has(barcodeKey)) {
-        innerMap.set(barcodeKey, []);
-      }
-      innerMap.get(barcodeKey).push({ docId, data });
+      inner.get(barcodeKey).push({ docId, data });
     });
 
     console.log(`Procesando ${byNameBarcode.size} nombres únicos para buscar duplicados...`);
 
-    const batch = writeBatch(db);
+    let batch = writeBatch(db);
     let ops = 0;
+    const maxOps = 450;
     let conflicts = 0;
-    const maxOps = 450; // un poco menos de 500 por seguridad
+
+    const commitAndReset = async () => {
+      if (ops === 0) return; // nada que guardar
+      try {
+        await batch.commit();
+        console.log(`Lote de ${ops} correcciones guardado`);
+      } catch (err) {
+        console.error("Error al guardar lote de correcciones:", err);
+        throw err;           // propaga para manejo superior
+      }
+      batch = writeBatch(db); // nuevo batch
+      ops = 0;                // reinicia contador
+    };
 
     // 3. Recorrer cada (nameKey, barcodeKey) para ver duplicados
     for (const [nameKey, barcodeMap] of byNameBarcode) {
@@ -189,57 +201,26 @@ async function fixDuplicatedNameBarcode(user, localProducts) {
         );
         conflicts++;
 
-        // Dejamos el primero tal cual, reasignamos los demás
-        const [firstDoc, ...duplicates] = docsArr;
+        const [, ...duplicates] = docsArr;
 
-        // 3.1 Buscar posibles barcodes alternativos en local
-        //     localByName[nameKey] => set con todos los barcodes que tenemos en local
-        //     Ej: ["12345", "67890"]
-        //     Excluimos el barcodeKey conflictivo
-        const localBarcodesSet = localByName.get(nameKey) || new Set();
-        const localBarcodesArr = Array.from(localBarcodesSet).filter(b => b !== barcodeKey);
+        const localBarcodesArr = [...(localByName.get(nameKey) || [])].filter(b => b !== barcodeKey);
         console.log(`  Barcodes alternativos disponibles: ${localBarcodesArr.length}`);
 
-        // Podrías necesitar lógica más sofisticada si hay varios duplicados
-        // y varios barcodes en local. Por simplicidad, aquí asignamos
-        // "uno distinto" a cada duplicado (si alcanza).
         let idx = 0;
-
         for (const dup of duplicates) {
-          let newBarcode = null;
-
-          if (idx < localBarcodesArr.length) {
-            newBarcode = localBarcodesArr[idx];
-            idx++;
-          }
+          let newBarcode = localBarcodesArr[idx++] ?? null;
 
           if (!newBarcode) {
-            // No hay barcodes disponibles => se queda conflictivo
             console.log(`    -> No hay barcode alternativo. Documento "${dup.docId}" sigue duplicado.`);
             continue;
           }
 
-          // 3.2 Hacer update en batch
           const docRef = doc(productsColl, dup.docId);
-          batch.update(docRef, {
-            barcode: newBarcode,
-            updatedAt: serverTimestamp()
-          });
+          batch.update(docRef, { barcode: newBarcode, updatedAt: serverTimestamp() });
           ops++;
           console.log(`    -> Reasignado doc "${dup.docId}" al barcode="${newBarcode}"`);
 
-          if (ops >= maxOps) {
-            console.log(`Guardando lote de ${ops} correcciones...`);
-            try {
-              await batch.commit();
-              console.log("Lote guardado exitosamente");
-            } catch (batchError) {
-              console.error("Error al guardar lote de correcciones:", batchError);
-              // Reiniciar batch en caso de error para seguir procesando
-              batch = writeBatch(db);
-            }
-            ops = 0;
-          }
+          if (ops >= maxOps) await commitAndReset();
         }
       }
     }
@@ -269,7 +250,7 @@ async function fixDuplicatedNameBarcode(user, localProducts) {
  */
 function processProduct(batch, product, batchNumber, context) {
   let opCount = 0;
-  
+
   validateProductPricing(product);
   const productNameLowerCase = product.name?.toLowerCase();
 

@@ -103,7 +103,7 @@ export const ClientControl = () => {
     }
   }
 
-  const handleCloseCart = () =>  dispatch(toggleCart())
+  const handleCloseCart = () => dispatch(toggleCart())
 
   const limitByWindowWidth = useWindowWidth();
 
@@ -121,7 +121,7 @@ export const ClientControl = () => {
             allowClear
             onClear={handleDeleteData}
           />
-          
+
           {mode === CLIENT_MODE_BAR.SEARCH.id && (
             <ClientButton
               type="primary"
@@ -131,7 +131,7 @@ export const ClientControl = () => {
               Cliente
             </ClientButton>
           )}
-          
+
           {mode === CLIENT_MODE_BAR.UPDATE.id && (
             <ClientButton
               type="primary"
@@ -141,7 +141,7 @@ export const ClientControl = () => {
               Cliente
             </ClientButton>
           )}
-          
+
           {!limitByWindowWidth && (
             <ClientButton
               onClick={handleCloseCart}
@@ -155,8 +155,6 @@ export const ClientControl = () => {
         mode={mode === CLIENT_MODE_BAR.CREATE.id}
       />
 
-      {/* <ClientSelector /> */}
-
       {
         taxReceiptSettingEnabled && (
           <SelectContainer>
@@ -164,9 +162,9 @@ export const ClientControl = () => {
               style={{ width: 200 }}
               value={nfcType}
               onChange={(e) => dispatch(selectTaxReceiptType(e))}
-            >
-              <Select.OptGroup label="Comprobantes Fiscal" >
+            >              <Select.OptGroup label="Comprobantes Fiscal" >
                 {taxReceiptData.taxReceipt
+                  .filter(receipt => !receipt.data?.disabled) // Solo mostrar comprobantes activos
                   .map(({ data }, index) => (
                     <Select.Option value={data.name} key={index}>{data.name}</Select.Option>
                   ))

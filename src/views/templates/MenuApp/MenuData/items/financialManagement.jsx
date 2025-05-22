@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 const { PURCHASES, PURCHASES_CREATE } = ROUTES_NAME.PURCHASE_TERM
 const { ORDERS, ORDERS_CREATE } = ROUTES_NAME.ORDER_TERM
 
-const { EXPENSES_CREATE, EXPENSES_LIST, EXPENSES_CATEGORY } = ROUTES_NAME.EXPENSES_TERM
+const { EXPENSES_LIST, EXPENSES_CATEGORY } = ROUTES_NAME.EXPENSES_TERM
 const { CASH_RECONCILIATION_LIST } = ROUTES_NAME.CASH_RECONCILIATION_TERM
 
 const ChevronRight = icons.arrows.chevronRight
@@ -45,11 +45,6 @@ const financialManagement = [
                 title: 'Lista de Gastos',
                 route: EXPENSES_LIST,
                 icon: icons.menu.unSelected.expenses.list
-            },
-            {
-                title: 'Registro de Gasto',
-                route: EXPENSES_CREATE,
-                icon: icons.menu.unSelected.expenses.register
             },
             {
                 title: 'Categoría de Gastos',

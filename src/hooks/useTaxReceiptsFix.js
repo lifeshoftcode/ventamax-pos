@@ -8,11 +8,11 @@ import { db } from '../firebase/firebaseconfig';
 const defaultLength = (serie) => (serie === 'B' ? 8 : 10);
 
 export function useTaxReceiptsFix() {
-  const [taxReceipts, setTaxReceipts] = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState(null);
-  const user       = useSelector(selectUser);
-  const businessID = user?.businessID;
+  const [taxReceipts, setTaxReceipts]   = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState(null);
+  const user        = useSelector(selectUser);
+  const businessID  = user?.businessID;
 
   useEffect(() => {
     if (!businessID) {
@@ -24,63 +24,74 @@ export function useTaxReceiptsFix() {
     setLoading(true);
     const ref = collection(db, 'businesses', businessID, 'taxReceipts');
 
-    const unsubscribe = onSnapshot(ref, async (snapshot) => {
-      // 1) Primer pase: aseguramos defaults y convertimos sequence a número
-      await Promise.all(snapshot.docs.map(async (docSnap) => {
-        const full = docSnap.data();
-        const raw  = full.data || {};
-        const updates = {};
-
-        // id por defecto
-        if (raw.id !== docSnap.id) {
-          updates['data.id'] = docSnap.id;
-        }
-        // disabled por defecto
-        if (typeof raw.disabled !== 'boolean') {
-          updates['data.disabled'] = false;
-        }
-        // sequenceLength por defecto
-        if (typeof raw.sequenceLength !== 'number') {
-          updates['data.sequenceLength'] = defaultLength(raw.type);
-        }
-        // convertir sequence string → número
-        if (typeof raw.sequence === 'string') {
-          const seqNum = parseInt(raw.sequence, 10) || 0;
-          updates['data.sequence'] = seqNum;
-        }
-
-        if (Object.keys(updates).length > 0) {
-          await updateDoc(
-            doc(db, 'businesses', businessID, 'taxReceipts', docSnap.id),
-            updates
+    const unsubscribe = onSnapshot(
+      ref,
+      async (snapshot) => {
+        /* ── Early-return global ─────────────────────────────── */
+        const someNonString = snapshot.docs.some(
+          (d) => typeof d.data().data?.sequence !== 'string'
+        );
+        if (someNonString) {
+          console.warn(
+            'useTaxReceiptsFix: hay recibos con sequence no-string; se omite proceso.'
           );
+          setLoading(false);
+          return;       // ⬅️   No hace nada más
         }
-      }));
+        /* ────────────────────────────────────────────────────── */
 
-      // 2) Segundo pase: leemos ya con todos los campos en data.*
-      const receipts = snapshot.docs.map((docSnap) => {
-        const raw = docSnap.data().data;
-        return {
-          id:              raw.id,
-          name:            raw.name,
-          type:            raw.type,
-          serie:           raw.serie,
-          sequence:        raw.sequence,         // ahora número
-          sequenceLength:  raw.sequenceLength,
-          increase:        raw.increase,
-          quantity:        raw.quantity,
-          disabled:        raw.disabled
-        };
-      });
+        /* 1) Primer pase: defaults + conversión */
+        await Promise.all(
+          snapshot.docs.map(async (docSnap) => {
+            const raw     = docSnap.data().data ?? {};
+            const updates = {};
 
-      setTaxReceipts(receipts);
-      setLoading(false);
-    },
-    (err) => {
-      console.error('Snapshot error:', err);
-      setError(err);
-      setLoading(false);
-    });
+            // id por defecto
+            if (raw.id !== docSnap.id) updates['data.id'] = docSnap.id;
+            // disabled por defecto
+            if (typeof raw.disabled !== 'boolean')
+              updates['data.disabled'] = false;
+            // sequenceLength por defecto
+            if (typeof raw.sequenceLength !== 'number')
+              updates['data.sequenceLength'] = defaultLength(raw.serie);
+            // convertir sequence string → número
+            const seqNum = Number(raw.sequence);
+            if (!Number.isNaN(seqNum)) updates['data.sequence'] = seqNum;
+
+            if (Object.keys(updates).length) {
+              await updateDoc(
+                doc(db, 'businesses', businessID, 'taxReceipts', docSnap.id),
+                updates
+              );
+            }
+          })
+        );
+
+        /* 2) Segundo pase: lectura ya migrada */
+        const receipts = snapshot.docs.map((docSnap) => {
+          const r = docSnap.data().data;
+          return {
+            id: r.id,
+            name: r.name,
+            type: r.type,
+            serie: r.serie,
+            sequence: r.sequence,          // ya número
+            sequenceLength: r.sequenceLength,
+            increase: r.increase,
+            quantity: r.quantity,
+            disabled: r.disabled,
+          };
+        });
+
+        setTaxReceipts(receipts);
+        setLoading(false);
+      },
+      (err) => {
+        console.error('Snapshot error:', err);
+        setError(err);
+        setLoading(false);
+      }
+    );
 
     return () => unsubscribe();
   }, [businessID]);
@@ -96,16 +107,14 @@ export function useTaxReceiptsFix() {
       const snap   = await getDoc(docRef);
       if (!snap.exists()) throw new Error('Receipt not found');
 
-      const raw       = snap.data().data || {};
-      const current   = typeof raw.sequence === 'number'
-                        ? raw.sequence
-                        : parseInt(raw.sequence, 10) || 0;
-      const nextSeq   = current + delta;
+      const current = snap.data().data?.sequence;
+      if (typeof current !== 'number') {
+        console.warn('updateSequence: sequence no es numérico; se omite.');
+        return;                       // ⛔️   aborta si no es número
+      }
 
-      // Guardamos solo el número
-      await updateDoc(docRef, {
-        'data.sequence': nextSeq
-      });
+      const nextSeq = current + delta;
+      await updateDoc(docRef, { 'data.sequence': nextSeq });
       // onSnapshot refrescará automáticamente
     } catch (err) {
       console.error('Error updating sequence:', err);

@@ -1,237 +1,211 @@
+// Instala las dependencias:
+// npm i browser-image-compression
+// npm i firebase antd styled-components
+
 import React, { useState, useEffect } from 'react';
-import { Card, Upload, Button, message, Image, Spin } from 'antd';
+import { Card, Upload, Button, message, Image, Spin, Progress, Empty } from 'antd';
 import { UploadOutlined, DeleteOutlined } from '@ant-design/icons';
+import styled from 'styled-components';
+import imageCompression from 'browser-image-compression';
 import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
 import { storage } from '../../../firebase/firebaseconfig';
 import { MenuApp } from '../../templates/MenuApp/MenuApp';
-import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
+// Parámetros de compresión
+const TARGET_SIZE_MB = 0.4;    // Tamaño máximo deseado en MB (ajustado para mejor calidad)
+const MAX_DIMENSION = 1024;    // Máx. ancho/alto en px
+const QUALITY_STEP = 0.1;
+const MIN_QUALITY = 0.1;
+
 const LoginImageConfig = () => {
-    const navigate = useNavigate();
-    const [fileList, setFileList] = useState([]);
-    const [currentImage, setCurrentImage] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const loginImageRef = ref(storage, 'app-config/login-image');
+  const navigate = useNavigate();
+  const [fileList, setFileList] = useState([]);
+  const [currentImage, setCurrentImage] = useState(null);
+  const [loadingFetch, setLoadingFetch] = useState(true);
+  const [loadingAction, setLoadingAction] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [originalSize, setOriginalSize] = useState(null);
+  const [compressedSize, setCompressedSize] = useState(null);
 
-    useEffect(() => {
-        fetchCurrentImage();
-    }, []);
+  const loginImageRef = ref(storage, 'app-config/login-image');
 
-    const fetchCurrentImage = async () => {
-        try {
-            const files = await listAll(loginImageRef);
-            if (files.items.length > 0) {
-                const url = await getDownloadURL(files.items[0]);
-                setCurrentImage(url);
-            }
-        } catch (error) {
-            console.error('Error fetching current image:', error);
-            message.error('Error al cargar la imagen actual');
-        } finally {
-            setLoading(false);
-        }
+  useEffect(() => {
+    fetchCurrentImage();
+  }, []);
+
+  const fetchCurrentImage = async () => {
+    try {
+      const files = await listAll(loginImageRef);
+      if (files.items.length > 0) {
+        const url = await getDownloadURL(files.items[0]);
+        setCurrentImage(url);
+      }
+    } catch (error) {
+      console.error('Error fetching current image:', error);
+      message.error('Error al cargar la imagen actual');
+    } finally {
+      setLoadingFetch(false);
+    }
+  };
+
+  const compressImageIterative = async (file) => {
+    const baseOptions = {
+      maxWidthOrHeight: MAX_DIMENSION,
+      useWebWorker: true,
+      onProgress: (p) => setProgress(p),
     };
+    let quality = 0.8;
+    let compFile = file;
 
-    const handleChange = ({ fileList: newFileList }) => {
-        setFileList(newFileList);
-    };    const beforeUpload = (file) => {
-        const isImage = file.type.startsWith('image/');
-        const isLt2M = file.size / 1024 / 1024 < 2;
-        
-        if (!isImage) {
-            message.error('Solo puedes subir archivos de imagen!');
-            return false;
-        }
-        if (!isLt2M) {
-            message.error('La imagen debe ser menor a 2MB!');
-            return false;
-        }
-        return true;
-    };
+    while (compFile.size / 1024 / 1024 > TARGET_SIZE_MB && quality >= MIN_QUALITY) {
+      const options = { ...baseOptions, maxSizeMB: TARGET_SIZE_MB, initialQuality: quality };
+      compFile = await imageCompression(file, options);
+      quality -= QUALITY_STEP;
+    }
 
-    const clearCurrentImage = async () => {
-        try {
-            setLoading(true);
-            const files = await listAll(loginImageRef);
-            await Promise.all(files.items.map(fileRef => deleteObject(fileRef)));
-            setCurrentImage(null);
-            message.success('Imagen eliminada correctamente');
-        } catch (error) {
-            console.error('Error clearing current image:', error);
-            message.error('Error al eliminar la imagen');
-        } finally {
-            setLoading(false);
-        }
-    };
+    return compFile;
+  };
 
-    const handleUpload = async () => {
-        if (fileList.length === 0) return;
-        
-        try {
-            setLoading(true);
-            
-            // Primero eliminar la imagen existente si hay una
-            await clearCurrentImage();
-            
-            // Subir la nueva imagen
-            const file = fileList[0].originFileObj;
-            const imageRef = ref(loginImageRef, file.name);
-            await uploadBytes(imageRef, file);
-            
-            // Obtener y establecer la nueva URL
-            const url = await getDownloadURL(imageRef);
-            setCurrentImage(url);
-            setFileList([]);
-            
-            message.success('Imagen actualizada correctamente');
-        } catch (error) {
-            console.error('Error uploading image:', error);
-            message.error('Error al subir la imagen');
-        } finally {
-            setLoading(false);
-        }
-    };    const renderCurrentImage = () => {
-        if (loading) return <StyledSpin size="large" />;
-        if (!currentImage) return (
-            <EmptyState>
-                <p>No hay imagen configurada</p>
-                <p className="subtitle">Selecciona una imagen para la pantalla de login</p>
-            </EmptyState>
-        );
-        
-        return (
-            <ImageContainer>
-                <Image
-                    src={currentImage}
-                    alt="Login"
-                    preview={false}
-                />
-                <DeleteButton
-                    icon={<DeleteOutlined />}
-                    onClick={clearCurrentImage}
-                >
-                    Eliminar
-                </DeleteButton>
-            </ImageContainer>
-        );
-    };return (
-        <PageWrapper>
-            <MenuApp
-                sectionName="Imagen de Login"
-                showBackButton={true}
-                onBackClick={() => navigate(-1)}
-            />
-            <ContentWrapper>
-                <ImageSection>
-                    {renderCurrentImage()}
-                </ImageSection>
-                
-                <ActionSection>
-                    <Upload
-                        beforeUpload={beforeUpload}
-                        onChange={handleChange}
-                        fileList={fileList}
-                        maxCount={1}
-                        showUploadList={false}
-                    >
-                        <Button 
-                            icon={<UploadOutlined />}
-                            size="large"
-                        >
-                            Seleccionar Imagen
-                        </Button>
-                    </Upload>
-                    
-                    {fileList.length > 0 && (
-                        <Button
-                            type="primary"
-                            onClick={handleUpload}
-                            disabled={loading}
-                            size="large"
-                        >
-                            Guardar Cambios
-                        </Button>
-                    )}
-                </ActionSection>
-            </ContentWrapper>
-        </PageWrapper>
+  const beforeUpload = (file) => {
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
+      message.error('Solo puedes subir imágenes');
+      return Upload.LIST_IGNORE;
+    }
+    setFileList([file]);
+    return false;
+  };
+
+  const clearCurrentImage = async () => {
+    setLoadingAction(true);
+    try {
+      const files = await listAll(loginImageRef);
+      await Promise.all(files.items.map(f => deleteObject(f)));
+      setCurrentImage(null);
+      message.success('Imagen eliminada correctamente');
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      message.error('Error al eliminar la imagen');
+    } finally {
+      setLoadingAction(false);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (fileList.length === 0) return;
+    setLoadingAction(true);
+    setProgress(0);
+    try {
+      // Registrar tamaño original
+      const file = fileList[0];
+      const origKB = (file.size / 1024).toFixed(1);
+      setOriginalSize(origKB);
+
+      // Comprimir
+      const compressedFile = await compressImageIterative(file);
+      const compKB = (compressedFile.size / 1024).toFixed(1);
+      setCompressedSize(compKB);
+
+      // Eliminar previa en Firebase
+      const files = await listAll(loginImageRef);
+      await Promise.all(files.items.map(f => deleteObject(f)));
+
+      // Subir nueva imagen
+      const imageRef = ref(loginImageRef, file.name);
+      await uploadBytes(imageRef, compressedFile.size < file.size ? compressedFile : file);
+
+      // Obtener URL
+      const url = await getDownloadURL(imageRef);
+      setCurrentImage(url);
+      setFileList([]);
+
+      message.success('Imagen actualizada correctamente');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      message.error('Error al subir la imagen');
+    } finally {
+      setLoadingAction(false);
+      setProgress(0);
+    }
+  };
+
+  const renderCurrentImage = () => {
+    if (loadingFetch) return <Spin size="large" />;
+    if (!currentImage) return <Empty description="No hay imagen configurada" />;
+
+    return (
+      <ImageContainer>
+        <Image src={currentImage} alt="Login" preview={false} />
+        <DeleteBtn
+          icon={<DeleteOutlined />}
+          onClick={clearCurrentImage}
+          disabled={loadingAction}
+        >
+          {loadingAction ? <Spin size="small" /> : 'Eliminar'}
+        </DeleteBtn>
+      </ImageContainer>
     );
+  };
+
+  return (
+    <Page>
+      <MenuApp
+        sectionName="Imagen de Login"
+        showBackButton
+        onBackClick={() => navigate(-1)}
+      />
+      <Content>
+        <Section>{renderCurrentImage()}</Section>
+
+        <Actions>
+          <Upload
+            beforeUpload={beforeUpload}
+            fileList={fileList}
+            showUploadList={false}
+            maxCount={1}
+            disabled={loadingAction}
+          >
+            <Button icon={<UploadOutlined />} size="large">Seleccionar Imagen</Button>
+          </Upload>
+
+          {fileList.length > 0 && (
+            <Button
+              type="primary"
+              onClick={handleUpload}
+              disabled={loadingAction}
+              size="large"
+            >
+              {loadingAction ? 'Guardando...' : 'Guardar Cambios'}
+            </Button>
+          )}
+        </Actions>
+
+        {loadingAction && progress > 0 && (
+          <ProgressBar>
+            <Progress percent={Math.round(progress)} />
+            {originalSize && compressedSize && (
+              <Stats>
+                <p>Original: {originalSize} KB</p>
+                <p>Optimizado: {compressedSize} KB</p>
+                <p>Reducción: {(((originalSize - compressedSize) / originalSize) * 100).toFixed(1)}%</p>
+              </Stats>
+            )}
+          </ProgressBar>
+        )}
+      </Content>
+    </Page>
+  );
 };
 
-const PageWrapper = styled.div`
-    min-height: 100vh;
-    background: transparent;
-`;
-
-const ContentWrapper = styled.div`
-    max-width: 900px;
-    margin: 2rem auto;
-    padding: 0 1rem;
-`;
-
-const ImageSection = styled.div`
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 300px;
-    background: #f5f5f5;
-    border-radius: 8px;
-    margin-bottom: 2rem;
-    padding: 1rem;
-`;
-
-const ActionSection = styled.div`
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-`;
-
-const ImageContainer = styled.div`
-    position: relative;
-    
-    .ant-image {
-        max-width: 100%;
-        img {
-            max-height: 300px;
-            object-fit: contain;
-        }
-    }
-`;
-
-const DeleteButton = styled(Button)`
-    position: absolute;
-    bottom: 1rem;
-    right: 1rem;
-    background: rgba(0, 0, 0, 0.6);
-    color: white;
-    border: none;
-    transition: all 0.3s ease;
-    
-    &:hover {
-        background: rgba(0, 0, 0, 0.8);
-        color: white;
-    }
-`;
-
-const EmptyState = styled.div`
-    text-align: center;
-    color: #8c8c8c;
-    
-    p {
-        margin: 0;
-        &.subtitle {
-            font-size: 0.9em;
-            margin-top: 0.5rem;
-            color: #bfbfbf;
-        }
-    }
-`;
-
-const StyledSpin = styled(Spin)`
-    .ant-spin-dot-item {
-        background-color: #1890ff;
-    }
-`;
+// Styled Components
+const Page = styled.div`min-height:100vh; background:#f0f2f5;`;
+const Content = styled.div`max-width:900px; margin:2rem auto; padding:0 1rem;`;
+const Section = styled.div`display:flex; justify-content:center; align-items:center; min-height:300px; background:#fff; border-radius:8px; margin-bottom:2rem; padding:1rem;`;
+const Actions = styled.div`display:flex; gap:1rem; justify-content:center; margin-bottom:1rem;`;
+const ImageContainer = styled.div`position:relative; .ant-image img{max-height:300px; object-fit:contain;}`;
+const DeleteBtn = styled(Button)`position:absolute; bottom:1rem; right:1rem; background:rgba(0,0,0,0.6); color:#fff; border:none; &:hover{background:rgba(0,0,0,0.8);}`;
+const ProgressBar = styled.div`max-width:600px; margin:0 auto 1rem;`;
+const Stats = styled.div`text-align:center; p{margin:4px 0;}`;
 
 export default LoginImageConfig;

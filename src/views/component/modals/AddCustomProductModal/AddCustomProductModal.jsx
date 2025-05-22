@@ -70,8 +70,6 @@ export const AddCustomProductModal = ({ isOpen, handleOpen }) => {
                     <TitleSection>
                         <h4>Características del Producto</h4>
                     </TitleSection>
-
-
                     <Flex
                         alignItems='center'
                         justifyContent='space-between'
@@ -96,7 +94,6 @@ export const AddCustomProductModal = ({ isOpen, handleOpen }) => {
                         <Col justifySelf='right'>
                             <PlusIconButton fn={handleOnChange}></PlusIconButton>
                         </Col>
-
                     </Flex>
                     <Box>
                         <List>

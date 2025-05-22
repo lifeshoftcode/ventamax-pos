@@ -1,29 +1,26 @@
-import React from 'react'
 import styled from 'styled-components'
-import { Button } from '../../../../templates/system/Button/Button'
-import { useNavigate } from 'react-router-dom'
+import { Button } from 'antd'
+
 export const ConfirmCancelButtons = ({ onSubmit, onCancel }) => {
-  const navigate = useNavigate()
   const handleCancel = () => { onCancel && onCancel() }
   return (
     <Container>
       <Button
-        title={onSubmit ? 'Cancelar' : 'Cerrar'}
         onClick={handleCancel}
-        bgcolor={'gray'}
-        borderRadius={'normal'}
-      />
+      >
+        {onSubmit ? 'Cancelar' : 'Cerrar'}
+      </Button>
       {
         onSubmit && (
           <Button
-            title={'Confirmar'}
             onClick={onSubmit}
-            bgcolor={'primary'}
-            borderRadius={'normal'}
-          />)
+            type={'primary'}
+          >
+            Confirmar
+          </Button>
+        )
       }
     </Container>
-
   )
 }
 

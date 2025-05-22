@@ -31,7 +31,6 @@ export const ActionsButtonsGroup = ({ orderData }) => {
         navigate('/purchases/create');
     }
     const handleDeleteMode = (id) => {
-        // deleteOrderFromDB(orderData.id)
         console.log(id);
         setDialogConfirm({
             ...dialog,

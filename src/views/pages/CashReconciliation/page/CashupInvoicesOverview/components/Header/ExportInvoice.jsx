@@ -1,20 +1,13 @@
 import React from 'react'
 import styled from 'styled-components'
-import { Button } from '../../../../../../templates/system/Button/Button'
 import { useNavigate } from 'react-router-dom'
 import { formatBill } from '../../../../../../../hooks/exportToExcel/formatBill'
-import { useDispatch } from 'react-redux'
 import exportToExcel from '../../../../../../../hooks/exportToExcel/useExportToExcel'
-import { addNotification } from '../../../../../../../features/notification/NotificationSlice'
-import {icons} from '../../../../../../../constants/icons/icons'
-export const Header = ({ invoices = [] }) => {
-    console.log(invoices)
-    const navigate = useNavigate()
-    const dispatch = useDispatch()
-    const close = () => {
-        navigate(-1)
-    }
+import { notification } from 'antd'
+import { icons } from '../../../../../../../constants/icons/icons'
+import { Button, Dropdown, Menu } from 'antd'
 
+export const ExportInvoice = ({ invoices = [] }) => {
     const transformedResumenBillsData = () => invoices.map((invoice) => {
         return formatBill({ data: invoice.data, type: 'Resumen' });
     });
@@ -25,7 +18,10 @@ export const Header = ({ invoices = [] }) => {
 
     const handleExportButton = (type) => {
         if (invoices.length === 0) {
-            dispatch(addNotification({ title: 'Error al exportar', message: 'No hay Facturas para exportar', type: 'error' }))
+            notification.error({
+                message: 'Error al exportar',
+                description: 'No hay Facturas para exportar'
+            });
             return
         }
         switch (type) {
@@ -39,13 +35,27 @@ export const Header = ({ invoices = [] }) => {
                 break;
         }
     };
-    
+
+    const items = [
+        {
+            key: 'detailed',
+            label: 'Exportar Detalle',
+            onClick: () => handleExportButton('Detailed'),
+        },
+        {
+            key: 'resumen',
+            label: 'Exportar Resumen',
+            onClick: () => handleExportButton('Resumen'),
+        },
+    ];
+
+
     return (
         <Container>
-            <Button startIcon={icons.arrows.chevronLeft} title={'volver'} bgcolor={'primary'} onClick={close}></Button>
             <Group>
-            <Button title={'Exportar Detalle'} onClick={() => handleExportButton('Detailed') } />
-            <Button title={'Exportar Resumen'} onClick={() => handleExportButton('Resumen')}/>
+                <Dropdown menu={{items}} placement="bottomRight">
+                    <Button icon={icons.arrows.chevronDown}>Exportar</Button>
+                </Dropdown>
             </Group>
         </Container>
     )

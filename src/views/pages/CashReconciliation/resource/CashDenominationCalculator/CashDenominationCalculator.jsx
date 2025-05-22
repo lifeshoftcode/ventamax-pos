@@ -1,29 +1,27 @@
-import React, { useRef, useState } from 'react'
+import { useRef } from 'react'
 import styled from 'styled-components'
-import { InputV4 } from '../../../../templates/system/Inputs/GeneralInput/InputV4'
 import { useFormatPrice } from '../../../../../hooks/useFormatPrice'
 import { FormattedValue } from '../../../../templates/system/FormattedValue/FormattedValue'
 import { OpenControllerSmall } from './OpenControllerSmall'
 import { OpenControllerWithMessage } from './OpenControllerWithMessage'
 import { motion } from 'framer-motion'
-import { useClickOutSide } from '../../../../../hooks/useClickOutSide'
 import { useFormatNumber } from '../../../../../hooks/useFormatNumber'
+import { BillRow } from './components/BillRow'
 
-export const CashDenominationCalculator = ({ isExpanded = null, inputDisabled = null, banknotes, setBanknotes, setIsExpanded, datetime, title, width, columns }) => {
+export const CashDenominationCalculator = ({ isExpanded = null, readOnly = false, inputDisabled = null, banknotes, setBanknotes, setIsExpanded, datetime, title, width, columns }) => {
 
     const bills = banknotes;
-    const billsContainerRef = useRef(null)
+    const billsContainerRef = useRef(null);
 
-    const handleExpanded = () => { setIsExpanded(!isExpanded) }
+    const handleExpanded = () => setIsExpanded(!isExpanded);
 
-    const Total = bills.reduce((acc, bill) => acc + (bill.value * bill.quantity), 0)
+    const totalAmount = bills.reduce((acc, bill) => acc + bill.value * bill.quantity, 0);
 
     const banknoteVariants = {
         open: { opacity: 1, height: 'auto' },
         closed: { overflow: 'hidden', height: '4em' },
     }
 
-    const newBills = [...bills]
     return (
         <Container width={width}
             ref={billsContainerRef}
@@ -33,7 +31,6 @@ export const CashDenominationCalculator = ({ isExpanded = null, inputDisabled = 
                     <FormattedValue size={'small'} type={'title'} value={title} />
                 </Group>
                 <Group>
-                    {/* {inputDisabled ? <FormattedValue size={'xsmall'}  type={'title'} value={'No editable'} /> : null} */}
                     {datetime && <FormattedValue size={'xsmall'} value={datetime} />}
                     <OpenControllerSmall
                         onClick={handleExpanded}
@@ -45,73 +42,45 @@ export const CashDenominationCalculator = ({ isExpanded = null, inputDisabled = 
                 animate={isExpanded ? "open" : "closed"}
                 variants={banknoteVariants}
                 transition={{ duration: 0.5 }}
-                columns={columns}  >
-                {newBills
-                    .map((bill, index) => (
-                        <BillRow key={index}>
-                            {/* <FormattedValue
-                                type={'subtitle'}
-                                value={`$ ${bill.ref}`}
-                                size={'small'}
-                                align={'right'}
-                            /> */}
-                            {/* {JSON.stringify(bill)} */}
-                            <BillRef>{bill.ref}</BillRef>
-                            <InputV4
-                                type="number"
-                                value={bill.quantity}
-                                disabled={inputDisabled ? true : null}
-                                onChange={(e) => {
-                                    const newBills = [...bills]
-                                    const newBill = { ...bills[index] }
-                                    newBill.quantity = Number(e.target.value) || ""
-                                    newBills[index] = newBill
-                                    setBanknotes(newBills)
-                                }}
-                                placeholder={'cantidad'}
-                            />
-                            <FormattedValue
-                                type={'subtitle'}
-                                value={`${useFormatPrice(bill.value * bill.quantity)}`}
-                                size={'small'}
-                                align={'right'}
-                            />
-                            {/* <BillTotal>
-                                
-                                {` ${useFormatPrice(bill.value * bill.quantity)}`}
-                            </BillTotal> */}
-                        </BillRow>
-                    ))
+                columns={columns}
+            >
+                {bills
+                    .slice()
                     .reverse()
-
+                    .map((bill, index) => (
+                        <BillRow
+                            key={index}
+                            bill={bill}
+                            inputDisabled={inputDisabled}
+                            readOnly={readOnly}
+                            index={index}
+                            updateBillQuantity={(index, value) => {
+                                const updated = [...bills]
+                                updated[bills.length - 1 - index] = { ...bills[bills.length - 1 - index], quantity: value || '' }
+                                setBanknotes(updated)
+                            }}
+                        />
+                    ))
                 }
                 <OpenControllerWithMessage
                     isExpanded={isExpanded}
                     handleExpanded={handleExpanded}
                 />
             </Bills>
-
             <TotalBills>
-                <span>
-                    <FormattedValue size={'medium'} type={'title'} value={'Total'} />
-                </span>
-                <span>
-                    <FormattedValue
-                        size={'small'}
-                        align={'right'}
-                        type={'title'}
-
-                        value={useFormatNumber(bills.reduce((acc, bill) => acc + Number(bill.quantity), 0))}
-                    />
-                </span>
-                <span>
-                    <FormattedValue
-                        size={'small'}
-                        type={'title'}
-                        align={'right'}
-                        value={useFormatPrice(Total)}
-                    />
-                </span>
+                <FormattedValue size={'small'} type={'title'} value={'Total:'} />
+                <FormattedValue
+                    size={'small'}
+                    align={'right'}
+                    type={'title'}
+                    value={useFormatNumber(bills.reduce((acc, bill) => acc + Number(bill.quantity), 0))}
+                />
+                <FormattedValue
+                    size={'small'}
+                    type={'title'}
+                    align={'right'}
+                    value={useFormatPrice(totalAmount)}
+                />
             </TotalBills>
         </Container>
     )
@@ -126,11 +95,11 @@ const Container = styled.div`
     `}
     background-color: white;
     border-radius: var(--border-radius);
-    border: 1px solid var(--color3);
+    border: 1px solid #e2e2e2;
    
 `
 const Bills = styled(motion.div)`
- padding: 0.6em;
+    padding: 0.6em;
     display: grid;
     gap: 0.4em ;
     overflow: hidden;
@@ -152,34 +121,22 @@ const Bills = styled(motion.div)`
             `
             default:
                 return `
-                grid-template-columns: repeat(auto-fill, minmax(20em, 1fr));
+                grid-template-columns: 1fr;
             `
         }
     }}
-   
-    `
-const BillRow = styled.div`
-    display: grid;
-    grid-template-columns: 3em 10em 1fr;
-    gap: 0.8em;
-    border-radius: var(--border-radius);
-    align-items: center;
 `
+
 const BillRef = styled.div`
     width: 3.4em;
     text-align: right;
-
-    `
+`
 const Header = styled.div`
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0.6em;
     border-bottom: 1px solid var(--Gray2);
-`
-const BillTotal = styled.div`
-    min-width: 8em;
-    text-align: right;
 `
 const TotalBills = styled.div`
     border-top: 1px solid var(--Gray2);

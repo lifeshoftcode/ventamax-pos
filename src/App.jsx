@@ -7,7 +7,6 @@ import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from
 //redux config
 import { useDispatch, useSelector } from 'react-redux'
 import { selectUser, logout } from './features/auth/userSlice'
-import { GenericLoader } from './views/templates/system/loader/GenericLoader';
 import { ReloadImageHiddenSetting } from './features/setting/settingSlice';
 import { useCheckForInternetConnection } from './hooks/useCheckForInternetConnection';
 import { useFullScreen } from './hooks/useFullScreen';
@@ -28,7 +27,6 @@ import { useAutoStockSync } from './firebase/warehouse/stockSyncService';
 import { useNavigationTracker } from './hooks/routes/useNavigationTracker';
 import { useTaxReceiptsFix } from './hooks/useTaxReceiptsFix';
 import NotificationCenter from './views/templates/NotificationCenter/NotificationCenter';
-
 
 // Componente para rastrear la navegación dentro del Router
 const NavigationTracker = () => {
@@ -78,20 +76,21 @@ function App() {
         <SessionManager />
         <SEO />
         <AnimatePresence mode="wait">
-            <Routes>
-              {routes.map((route, index) => (
-                <Route key={index} path={route.path} element={route.element}>
-                  {route.children && route.children.map((childRoute, childIndex) => (
-                    <Route
-                      key={childIndex}
-                      path={childRoute?.path}
-                      element={childRoute?.element}
-                    />
-                  ))}
-                </Route>
-              ))}
-            </Routes>
-        </AnimatePresence>        <AnimatePresence>
+          <Routes>
+            {routes.map((route, index) => (
+              <Route key={index} path={route.path} element={route.element}>
+                {route.children && route.children.map((childRoute, childIndex) => (
+                  <Route
+                    key={childIndex}
+                    path={childRoute?.path}
+                    element={childRoute?.element}
+                  />
+                ))}
+              </Route>
+            ))}
+          </Routes>
+        </AnimatePresence>
+        <AnimatePresence>
           <ModalManager />
         </AnimatePresence>
         <NotificationCenter />

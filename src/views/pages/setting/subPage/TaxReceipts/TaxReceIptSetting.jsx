@@ -20,11 +20,10 @@ import { useLoadingStatus } from '../../../../../hooks/useLoadingStatus'
 
 const { Title, Paragraph } = Typography;
 
-export const TaxReceiptSetting = () => {
-  const dispatch = useDispatch();
+export const TaxReceiptSetting = () => {  const dispatch = useDispatch();
   const user = useSelector(selectUser);
   const taxReceiptEnabled = useSelector(selectTaxReceiptEnabled);
-  const { taxReceipt, isLoading : loadingReceipts } = fbGetTaxReceipt();
+  const { taxReceipt, isLoading: loadingReceipts } = fbGetTaxReceipt();
   const { setDialogConfirm, onClose } = useDialog();
 
   const [taxReceiptLocal, setTaxReceiptLocal] = useState([]);
@@ -104,16 +103,16 @@ export const TaxReceiptSetting = () => {
       message.error('No se agregaron comprobantes. Todos ya existen en el sistema.');
     }
   }
-
+  // Definimos entradas para el control de carga con valores explícitos
   const loadEntries = [
-    { loading: loadingReceipts, tip: 'Cargando comprobantes fiscales...' },
-    { loading: isSaving, tip: 'Guardando comprobantes fiscales...' },
-  ]
+    { loading: loadingReceipts === true, tip: 'Cargando comprobantes fiscales...' },
+    { loading: isSaving === true, tip: 'Guardando comprobantes fiscales...' },
+  ];
 
-  const { isLoading } = useLoadingStatus(loadEntries);
-
+  // Utilizamos useLoadingStatus para centralizar la lógica de carga
+  const { isLoading, tip } = useLoadingStatus(loadEntries);
   return (
-    <Spin spinning={isLoading}>
+    <Spin spinning={isLoading} tip={tip}>
       <Page>
         <Head>
           <Title level={3} style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 600 }}>
@@ -133,8 +132,6 @@ export const TaxReceiptSetting = () => {
           enabled={taxReceiptEnabled}
           itemsLocal={taxReceiptLocal}
           setItemsLocal={setTaxReceiptLocal}
-          onSave={handleSave}
-          onCancel={handleCancel}
           isUnchanged={isUnchanged}
           onAddBlank={handleAddNewTaxReceipt}
           onAddPredefined={handleOpenAddPredefinedReceipt}

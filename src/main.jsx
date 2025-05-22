@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './firebase/firebaseconfig';
 import App from './App';
 import './index.css';
+import './App.css';
 import './styles/normalize/normalize.css';
 import './variable.css';
 import './styles/typography/typographyStyle.scss';

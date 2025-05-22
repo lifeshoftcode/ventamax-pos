@@ -1,33 +1,25 @@
-import React from 'react'
-import styled from 'styled-components'
-import { Button } from '../../../../../../../../../templates/system/Button/Button'
-import { useNavigate } from 'react-router-dom'
-import { Skeleton } from '../../../../../../../../../templates/system/Skeleton/Skeleton'
+import { useState } from 'react'
+import { PillButton } from '../../../../../../../../../component/PillButton/PillButton'
+import { CashupInvoicesOverview } from '../../../../../../CashupInvoicesOverview/CashupInvoicesOverview'
 
-export const ViewInvoice = ({invoices, loading}) => {
-    const navigate = useNavigate()
-    const handleRedirect = () => {
-        navigate('/cash-register-invoices-overview')
-    }
+export const ViewInvoice = ({ invoices, invoicesCount, loading }) => {
+    const [isOpen, setIsOpen] = useState(false)
+    const handleOpenInvoiceView = () => setIsOpen(true)
+    
     return (
-        <Skeleton loading={loading}>
-
-        <Container>
-            #{invoices}
-           <Button
-                title={'Ver facturas'}
-                borderRadius={'light'}
-                bgcolor={'primary'}
-                onClick={handleRedirect}
-           />
-        </Container>
-        </Skeleton>
+        <>
+            <PillButton
+                onClick={handleOpenInvoiceView}
+                loading={loading}
+                badgeCount={invoicesCount}
+            >
+                Facturas
+            </PillButton>
+            <CashupInvoicesOverview
+                isOpen={isOpen}
+                invoices={invoices}
+                onClose={() => setIsOpen(false)}
+            />
+        </>
     )
 }
-
-const Container = styled.div`
-    display: flex;
-    gap: 1em;
-    justify-content: right;
-    align-items: center;
-`

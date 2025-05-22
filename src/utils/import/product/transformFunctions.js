@@ -1,7 +1,4 @@
-import { transform } from "framer-motion";
 import { warrantyOptions } from "../../../views/component/modals/ProductForm/components/sections/WarrantyInfo";
-import { initTaxes } from "../../../views/component/modals/UpdateProduct/InitializeData";
-
 
 export const transformConfig = [
     {

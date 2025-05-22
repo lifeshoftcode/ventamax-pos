@@ -5,39 +5,37 @@ import { useSelector } from 'react-redux'
 import { selectCashCount } from '../../../../../../../../../../features/cashCount/cashCountManagementSlice'
 import { CashCountMetaData } from '../../CashCountMetaData'
 import { useFormatPrice } from '../../../../../../../../../../hooks/useFormatPrice'
-import { Skeleton } from '../../../../../../../../../templates/system/Skeleton/Skeleton'
+import { Spin } from 'antd'
+import { useFormatNumber } from '../../../../../../../../../../hooks/useFormatNumber'
 
 
 export const TransactionSummary = ({invoices, loading}) => {
   const cashCount = useSelector(selectCashCount)
   const { totalCard, totalRegister, totalTransfer } = CashCountMetaData(cashCount, invoices)
-  
  
   return (
-  <Skeleton
-    loading={loading}
-  >
+  <Spin spinning={loading}>
     <Container>
       <InputWithHorizontalLabel
         label={'Total Tarjeta'}
-        disabled
+        readOnly
         type='subtitle'
-        value={useFormatPrice(totalCard)}
+        value={useFormatNumber(totalCard)}
       />
       <InputWithHorizontalLabel
-        label={'Total Transf..'}
-        disabled
+        label={'Total Transferencia'}
+       readOnly
         type='subtitle'
-        value={useFormatPrice(totalTransfer)}
+        value={useFormatNumber(totalTransfer)}
       />
       <InputWithHorizontalLabel
         label={'Total en caja'}
-        disabled
         type='subtitle'
-        value={useFormatPrice(totalRegister)}
+        readOnly
+        value={useFormatNumber(totalRegister)}
       />
     </Container>
-  </Skeleton>
+  </Spin>
   )
 }
 const Container = styled.div`

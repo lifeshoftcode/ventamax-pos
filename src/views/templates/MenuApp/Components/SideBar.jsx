@@ -217,7 +217,7 @@ export const MenuLinkList = styled.div`
 const Head = styled.div`
    height: 2.75em;
     width: 100%;
-    padding: 1em 0.4em 1em 1em;
+    padding: 1em 1em 1em;
     display: flex;
     align-items: center;
     justify-content: space-between;

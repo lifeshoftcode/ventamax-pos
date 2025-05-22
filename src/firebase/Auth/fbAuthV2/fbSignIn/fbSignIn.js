@@ -18,6 +18,7 @@ function generateSessionToken(user) {
 
 async function getUserFromFirestore(user) {
     const userRef = collection(db, "users");
+    console.log(user);
     const q = query(userRef, where("user.name", "==", user.name));
     const userSnapshot = await getDocs(q);
 
@@ -93,15 +94,14 @@ async function storeSessionToken(user, userDoc) {
     localStorage.setItem('sessionExpires', expiresAt.toMillis().toString());
 }
 
-async function updateAppState(dispatch, userData, userDoc) {
+export function updateAppState(dispatch, userData) {
     dispatch(login({
-        uid: userDoc.id,
+        uid: userData.id,
         displayName: userData.name,
-
     }));
 }
 
-export const fbSignIn = async (user, dispatch, navigate, homePath) => {
+export const fbSignIn = async (user, dispatch ) => {
     try {
         const userDoc = await getUserFromFirestore(user);
         const userData = userDoc.data().user;
@@ -115,9 +115,7 @@ export const fbSignIn = async (user, dispatch, navigate, homePath) => {
 
         await storeSessionToken(user, userDoc);
 
-        await updateAppState(dispatch, userData, userDoc);
-
-        navigate(homePath);
+        return userData;
 
     } catch (error) {
         throw new Error(error.message);

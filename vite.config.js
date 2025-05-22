@@ -1,11 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import {createStyleImportPlugin} from 'vite-plugin-style-import';
+import { createStyleImportPlugin } from 'vite-plugin-style-import';
 import path from 'path';
+// import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [
     react(),
+    // tailwindcss(),
     createStyleImportPlugin({
       libs: [
         {
@@ -19,7 +21,7 @@ export default defineConfig({
     }),
   ],
   resolve: {
-    alias:{
+    alias: {
       'react-is': path.resolve(__dirname, 'node_modules/react-is/index.js'),
       '@': path.resolve(__dirname, "./src"),
       '@component': path.resolve(__dirname, './src/views/component'),
@@ -46,7 +48,7 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0'
-  },  build: {
+  }, build: {
     sourcemap: false,
     chunkSizeWarningLimit: 1600,
     rollupOptions: {

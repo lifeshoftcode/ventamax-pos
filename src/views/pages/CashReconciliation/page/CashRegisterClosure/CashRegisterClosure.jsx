@@ -89,7 +89,7 @@ export const CashRegisterClosure = () => {
 const Backdrop = styled.div`
 width: 100%;
 height: 100vh;
-background-color: var(--color2);
+background-color: #f0f0f0;
 overflow-y: scroll;
 `
 const Container = styled.div`

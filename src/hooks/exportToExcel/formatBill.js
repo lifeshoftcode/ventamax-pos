@@ -1,83 +1,79 @@
 import { useFormatPrice } from "../useFormatPrice";
 import useFormatTimestamp from "../useFormatTimeStamp";
 
+const unwrapInvoice = (raw) => raw?.data ?? raw?.ver?.data ?? raw ?? {};
+
+const getPrimaryPaymentMethod = (paymentMethod = []) => (paymentMethod.find((pm) => pm.status) || {}).method ?? "N/A";
+
+const getPrimaryPaymentValue = (paymentMethod = [], fallbackPayment) => {
+  if (fallbackPayment?.value != null) return fallbackPayment.value;
+  const pm = paymentMethod.find((pm) => pm.status);
+  return pm ? pm.value : 0;
+}
 const formatBillResumen = (data) => {
-  const { date, id, NCF, client, totalShoppingItems, totalTaxes, paymentMethod, payment, change, delivery, totalPurchase } = data;
-  const { name = '', tel = '', address = '', personalID = '' } = client || {};
-  const shoppingItems = totalShoppingItems.value;
-  const taxes = totalTaxes.value;
-  const total = totalPurchase.value;
-  const method = () => {
-    if (paymentMethod) {
-      return paymentMethod.find((item) => item.status === true).method;
-    }
-    data.cardPaymentMethod && 'Tarjeta'
-    data.cashPaymentMethod && 'Efectivo'
-    data.transferPaymentMethod && 'Transferencia'
-  }
-  const paymentValue = () => {
-    payment && payment.value
-    data.cardPaymentMethod && data.cardPaymentMethod.value
-    data.cashPaymentMethod && data.cashPaymentMethod.value
-    data.transferPaymentMethod && data.transferPaymentMethod.value
-  };
-  const deliveryValue = delivery.value;
-  const changeValue = change.value;
+  const {
+    date,
+    id,
+    NCF,
+    client = {},
+    totalShoppingItems = {},
+    totalTaxes = {},
+    paymentMethod,
+    payment,
+    change = {},
+    delivery = {},
+    totalPurchase = {}
+  } = data;
+
   return {
     ['Fecha']: useFormatTimestamp(date),
-    ['ID']: id,
-    ['Comprobante']: NCF,
-    ['Nombre Cliente']: name || null ? name || 'Cliente Genérico' : 'Cliente Genérico',
-    ['Teléfono Cliente']: tel ? tel : 'N/A',
-    ['Dirección Cliente']: address ? address : 'N/A',
-    ['RNC/Cédula']: personalID ? personalID : 'N/A',
-    ['Cantidad de Productos']: shoppingItems,
-    ['Total ITBIS']: useFormatPrice(taxes),
-    ['Método de Pago']: method(),
-    ['Pagado']: paymentValue(),
-    ['Delivery']: useFormatPrice(deliveryValue, 'rd'),
-    ['Cambio']: useFormatPrice(changeValue),
-    ['Total']: useFormatPrice(total)
+    ['ID']: id ?? 'N/A',
+    ['Comprobante']: NCF ?? 'N/A',
+    ['Nombre Cliente']: client.name || 'Cliente Genérico',
+    ['Teléfono Cliente']: client.tel || 'N/A',
+    ['Dirección Cliente']: client.address || 'N/A',
+    ['RNC/Cédula']: client.personalID || 'N/A',
+    ['Cantidad de Productos']: totalShoppingItems.value ?? 0,
+    ['Total ITBIS']: useFormatPrice(totalTaxes.value ?? 0),
+    ['Método de Pago']: getPrimaryPaymentMethod(paymentMethod),
+    ['Pagado']: useFormatPrice(getPrimaryPaymentValue(paymentMethod, payment)),
+    ['Delivery']: useFormatPrice(delivery.value ?? 0),
+    ['Cambio']: useFormatPrice(change.value ?? 0),
+    ['Total']: useFormatPrice(totalPurchase.value ?? 0),
   }
 }
 const formatBillDetailed = (facturas) => {
-  const resultados = [];
+   const resultados = [];
 
-  for (let i = 0; i < facturas.length; i++) {
-    const factura = facturas[i].data;
-    const products = factura.products;
-    const clientName = factura.client.name;
-    const NCF = factura.NCF;
-    const date = factura.date;
-    const id = factura.id;
-    const total = factura.totalPurchase.value;
+  facturas.forEach((raw) => {
+    const factura = unwrapInvoice(raw);
+    const {
+      products = [],
+      client = {},
+      NCF,
+      date,
+      id,
+      totalPurchase = {},
+    } = factura;
 
-    for (let j = 0; j < products.length; j++) {
-      const product = products[j];
-      const productId = product.id;
-      const productName = product.productName;
-      const amountToBuy = product.amountToBuy.total;
-      const category = product.category;
-      const price = product.price.unit;
-      const type = product.type;
-
-      const resultado = {
-        ["Fecha"]: useFormatTimestamp(date),
-        ["Id Factura"]: id,
-        ["Comprobante"]: NCF,
-        ["Cliente"]: clientName,
-        ["Nombre del Producto"]: productId,
-        ["Producto"]: productName,
-        ["Categoría"]: category,
-        ["Tipo"]: type,
-        ["Precio"]: useFormatPrice(price),
-        ["Cantidad Facturada"]: amountToBuy,
-        ["Total"]: useFormatPrice(total)
-      };
-
-      resultados.push(resultado);
-    }
-  }
+    products.forEach((product) => {
+      resultados.push({
+        Fecha: useFormatTimestamp(date),
+        "Id Factura": id,
+        Comprobante: NCF,
+        Cliente: client.name || "Cliente Genérico",
+        "ID Producto": product.id,
+        Producto: product.name,
+        Categoría: product.category,
+        Tipo: product.type,
+        Precio: useFormatPrice(
+          product.pricing?.price ?? product.price?.unit ?? 0
+        ),
+        "Cantidad Facturada": product.amountToBuy,
+        Total: useFormatPrice(totalPurchase.value ?? 0),
+      });
+    });
+  });
 
   return resultados;
 }
@@ -85,12 +81,10 @@ const formatBillDetailed = (facturas) => {
 export const formatBill = ({ type, data }) => {
   switch (type) {
     case "Resumen":
-      return formatBillResumen(data)
-
+      return formatBillResumen(data);
     case "Detailed":
-      return formatBillDetailed(data)
-
+      return formatBillDetailed(data);
     default:
-      break;
+      return [];
   }
 }
