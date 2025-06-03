@@ -51,11 +51,9 @@ export const CategoryItem = ({ cat, Row, Col }) => {
   const handleAccept = () => {
     switch (mode) {
       case 'DELETE':
-        console.log('delete');
         fbDeleteExpenseCategory(user, cat.id);
         break;
       case 'EDIT':
-        console.log('edit');
         fbUpdateExpenseCategory(user, category)
         break;
     }

@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react'
 import styled from 'styled-components'
 import { useScreenSize } from '../../../hooks/useScreenSize'
-import { MdKeyboardArrowLeft, MdKeyboardArrowRight } from 'react-icons/md'
+import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useDispatch, useSelector } from 'react-redux'
 import { useFbGetCategories } from '../../../firebase/categories/useFbGetCategories'
 import { motion } from 'framer-motion'
@@ -20,28 +21,41 @@ export const Carrusel = ({
     const { categories } = useFbGetCategories()
     const dispatch = useDispatch()
     const categorySelected = useSelector(SelectCategoryList)
-    const categoryCardRef = useRef(null)
-
+    const categoryCardRef = useRef(null);
     const MoveScroll = (direction) => {
+        const cacheScrollMeasurements = () => {
+            const element = categoriesRef.current;
+            if (!element) return null;
+            
+            return {
+                scrollLeft: element.scrollLeft,
+                scrollWidth: element.scrollWidth,
+                clientWidth: element.clientWidth
+            };
+        };
+
         const toStart = () => {
-            if (categoriesRef.current.scrollLeft > 0) {
+            const measurements = cacheScrollMeasurements();
+            if (measurements && measurements.scrollLeft > 0) {
                 categoriesRef.current.scrollTo({
                     top: 0,
                     left: 0,
                     behavior: 'smooth',
                 });
             }
-
         }
+        
         const toEnd = () => {
-            if (categoriesRef.current.scrollLeft < categoriesRef.current.scrollWidth - categoriesRef.current.clientWidth) {
+            const measurements = cacheScrollMeasurements();
+            if (measurements && measurements.scrollLeft < measurements.scrollWidth - measurements.clientWidth) {
                 categoriesRef.current.scrollTo({
                     top: 0,
-                    left: categoriesRef.current.scrollWidth,
+                    left: measurements.scrollWidth,
                     behavior: 'smooth',
                 });
             }
         }
+        
         const toRight = () => {
             const distance = width / 3;
             categoriesRef.current.scrollBy({
@@ -50,6 +64,7 @@ export const Carrusel = ({
                 behavior: 'smooth'
             })
         }
+        
         const toLeft = () => {
             const distance = width / 3;
             categoriesRef.current.scrollBy({
@@ -83,12 +98,11 @@ export const Carrusel = ({
     }
     return (
         <>
-            <Container themeColor={themeColor}>
-                <Button
+            <Container themeColor={themeColor}>                <Button
                     onClick={() => MoveScroll('left')}
                     onDoubleClick={() => MoveScroll('start')}
                 >
-                    <MdKeyboardArrowLeft />
+                    <FontAwesomeIcon icon={faChevronLeft} />
                 </Button>
 
                 <Categories
@@ -121,7 +135,7 @@ export const Carrusel = ({
                     }
 
                 </Categories>
-                <Button onClick={() => MoveScroll('right')} onDoubleClick={() => MoveScroll('end')} ><MdKeyboardArrowRight /></Button>
+                <Button onClick={() => MoveScroll('right')} onDoubleClick={() => MoveScroll('end')} ><FontAwesomeIcon icon={faChevronRight} /></Button>
             </Container>
         </>
     )

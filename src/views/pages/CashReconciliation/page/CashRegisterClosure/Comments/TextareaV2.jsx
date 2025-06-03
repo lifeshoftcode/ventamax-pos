@@ -1,6 +1,7 @@
 import { Fragment, useRef } from 'react';
 import styled from 'styled-components';
-import { MdClose } from 'react-icons/md';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTimes } from '@fortawesome/free-solid-svg-icons';
 
 /**
  * @typedef {Object} InputV4
@@ -27,8 +28,7 @@ export const TextareaV2 = ({ icon, label, search, onClear, validate, errorMessag
       <InputWrapper {...props} bgColor={bgColor} search={search} validate={validate}>
         {icon}
         <StyledInput {...props} ref={inputRef} />
-     
-       {onClear && <MdClose
+       {onClear && <FontAwesomeIcon icon={faTimes}
             onClick={() => onClear()}
             style={{ cursor: 'pointer', marginLeft: '8px', color: `${props.value ? "#999" : "transparent"}` }}
           />}

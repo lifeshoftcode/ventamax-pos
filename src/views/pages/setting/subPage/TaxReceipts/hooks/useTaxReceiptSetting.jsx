@@ -9,6 +9,7 @@ import { selectUser } from '../../../../../../features/auth/userSlice';
 import { useDialog } from '../../../../../../Context/Dialog/DialogContext';
 import { message } from 'antd';
 import { useCompareArrays } from '../../../../../../hooks/useCompareArrays';
+import { serializeFirestoreDocuments } from '../../../../../../utils/serialization/serializeFirestoreData';
 
 export function useTaxReceiptSetting() {
   const dispatch = useDispatch();
@@ -19,10 +20,10 @@ export function useTaxReceiptSetting() {
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const { setDialogConfirm, onClose } = useDialog();
   const arrayAreEqual = useCompareArrays(taxReceiptLocal, taxReceipt);
-
   useEffect(() => {
-    dispatch(getTaxReceiptData(taxReceipt));
-    setTaxReceiptLocal(taxReceipt);
+    const serializedTaxReceipt = serializeFirestoreDocuments(taxReceipt);
+    dispatch(getTaxReceiptData(serializedTaxReceipt));
+    setTaxReceiptLocal(serializedTaxReceipt);
   }, [taxReceipt, dispatch]);
 
   const handleSubmit = () => {

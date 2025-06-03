@@ -127,10 +127,8 @@ const BusinessProfileEditor = () => {
         address: values.address || '',
         name: values.name || '',
         businessType: values.businessType || 'general',
-        invoice: invoiceData
-      };
+        invoice: invoiceData      };
 
-      console.log("datos para actualizar", businessData)
       await fbUpdateBusinessInfo(user, businessData);
       message.success('Información actualizada');
     } catch (error) {

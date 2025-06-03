@@ -10,29 +10,33 @@ import { selectInsuranceStatus, selectInsuranceData, updateInsuranceData } from 
 import useInsuranceEnabled from '../../../../../hooks/useInsuranceEnabled'
 import { Modal, Alert } from 'antd';
 import { CommentModal } from './components/CommentModal/CommentModal';
+import { ProductDiscountModal } from '../../../../../components/modals/ProductDiscountModal/ProductDiscountModal';
 
 export const ProductsList = () => {
     const dispatch = useDispatch();
     const ProductSelected = useSelector(SelectProduct);
     const insuranceEnabled = useInsuranceEnabled();
     const insuranceData = useSelector(selectInsuranceData);
-    const EMPTY_CART_MESSAGE = "Los productos seleccionados aparecerán aquí...";
-
-    // Estado para modales globales
+    const EMPTY_CART_MESSAGE = "Los productos seleccionados aparecerán aquí...";    // Estado para modales globales
     const [commentModalOpen, setCommentModalOpen] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [discountModalOpen, setDiscountModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
-    const [comment, setComment] = useState("");
-
-    // Handlers para abrir modales
+    const [comment, setComment] = useState("");    // Handlers para abrir modales
     const handleOpenCommentModal = (product) => {
         setSelectedProduct(product);
         setComment(product.comment || "");
         setCommentModalOpen(true);
     };
+
     const handleOpenDeleteModal = (product) => {
         setSelectedProduct(product);
         setDeleteModalOpen(true);
+    };
+
+    const handleOpenDiscountModal = (product) => {
+        setSelectedProduct(product);
+        setDiscountModalOpen(true);
     };
     // Guardar comentario
     const handleSaveComment = () => {
@@ -68,13 +72,13 @@ export const ProductsList = () => {
         <Container>
             <Body>
                 {ProductSelected.length > 0 ? (
-                    <AnimatePresence>
-                        {ProductSelected.map((item, index) => (
+                    <AnimatePresence>                        {ProductSelected.map((item, index) => (
                             <ProductCardForCart
                                 item={item}
                                 key={index}
                                 onOpenCommentModal={handleOpenCommentModal}
                                 onOpenDeleteModal={handleOpenDeleteModal}
+                                onOpenDiscountModal={handleOpenDiscountModal}
                             />
                         ))}
                     </AnimatePresence>
@@ -114,6 +118,13 @@ export const ProductsList = () => {
                     setCommentModalOpen(false);
                 }}
             />
+
+            <ProductDiscountModal
+                visible={discountModalOpen}
+                onClose={() => setDiscountModalOpen(false)}
+                product={selectedProduct}
+            />
+
             <Modal
                 title="Eliminar producto"
                 open={deleteModalOpen}

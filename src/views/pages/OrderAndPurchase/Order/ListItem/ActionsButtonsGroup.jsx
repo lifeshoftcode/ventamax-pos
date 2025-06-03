@@ -28,10 +28,8 @@ export const ActionsButtonsGroup = ({ orderData }) => {
     const handlePurchasingMode = async (id) => {
         // PassDataToPurchaseList(orderData)
         dispatch(getOrderData(orderData));
-        navigate('/purchases/create');
-    }
+        navigate('/purchases/create');    }
     const handleDeleteMode = (id) => {
-        console.log(id);
         setDialogConfirm({
             ...dialog,
             isOpen: true,

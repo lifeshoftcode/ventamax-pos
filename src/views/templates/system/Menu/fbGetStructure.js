@@ -8,6 +8,7 @@ export async function fbGetStructureData(ref) {
         const querySnapshot = await getDocs(q)
         return querySnapshot.docs.map(doc => doc.data())
     } catch (error) {
-        console.log(error)
+        console.error('Error fetching structure:', error);
+        return [];
     }
 }

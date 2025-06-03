@@ -256,9 +256,7 @@ const formatMovementReason = (reason) => {
 const generateRoute = (isEntry, location) => {
   const loc = isEntry ? location.sourceLocation : location.destinationLocation;
   if (!loc) return null; // Return null if no location exists
-  
-  const segments = loc.split('/');
-  console.log('segments:..........................................................................................', segments);
+    const segments = loc.split('/');
   let route = '/inventory/warehouses/warehouse';
 
   if (segments[0]) {
@@ -280,12 +278,9 @@ const generateRoute = (isEntry, location) => {
 export const MovementsTable = ({ location }) => {
   const user = useSelector(selectUser);
   const navigate = useNavigate();
-
   const { data: movementsData, loading } = useListenMovementsByLocation(user, location, location);
 
-  console.log('movementsData:', movementsData);
-
-  // Transformar los datos para incluir la fecha como propiedad
+  // Transform the data to include date as property
   const transformedData = movementsData.map(mov => {
     const dateObj = mov.createdAt?.toDate?.();
     return {

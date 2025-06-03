@@ -147,8 +147,6 @@ export const processTsvFile = (content) => {
  */
 export const processProductLine = (values, headers) => {
   try {
-    console.log('Processing product line:', values);
-    console.log('Headers:', headers);
     // Index verification
     const nameIndex = headers.indexOf('Nombre del producto');
     const stockIndex = headers.indexOf('Stock');

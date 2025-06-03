@@ -2,7 +2,8 @@ import styled from "styled-components";
 import { useDispatch, useSelector } from 'react-redux';
 import { highlightSearch } from "../highlight/Highlight";
 import { addClient } from "../../../../features/clientCart/clientCartSlice";
-import { MdDelete, MdEdit } from 'react-icons/md';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTrash, faPencil } from '@fortawesome/free-solid-svg-icons';
 import { Button, Modal, Tooltip } from 'antd';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
 import { clearAuthData, fetchInsuranceAuthByClientId } from "../../../../features/insurance/insuranceAuthSlice";
@@ -218,10 +219,10 @@ export const Client = ({ client, Close, updateClientMode, onDelete, searchTerm, 
             </ClientInfo>
             <ActionButtons>
                 <Tooltip title="Editar Cliente">
-                    <Button size="small" icon={<MdEdit />} onClick={handleEdit}  />
+                    <Button size="small" icon={<FontAwesomeIcon icon={faPencil} />} onClick={handleEdit}  />
                 </Tooltip>
                 <Tooltip title="Eliminar Cliente">
-                    <Button size="small" danger icon={<MdDelete />} onClick={handleDelete} />
+                    <Button size="small" danger icon={<FontAwesomeIcon icon={faTrash} />} onClick={handleDelete} />
                 </Tooltip>
             </ActionButtons>
         </Container>

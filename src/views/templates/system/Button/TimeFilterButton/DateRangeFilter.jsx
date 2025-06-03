@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { DateTime } from 'luxon';
-import { BiCalendar } from 'react-icons/bi';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCalendar } from '@fortawesome/free-solid-svg-icons';
 import styled from 'styled-components';
 import { Button } from 'antd';
 import { useClickOutSide } from '../../../../../hooks/useClickOutSide';
@@ -66,7 +67,7 @@ export const DateRangeFilter = ({ setDates, dates }) => {
             <Button
                 ref={setReferenceElement}
              
-               icon={<BiCalendar />}
+               icon={<FontAwesomeIcon icon={faCalendar} />}
                 title={truncateOptions(activeOptionLabel, 4) || 'Filtrar Fechas'}
                 onClick={handleButtonClick}
             >

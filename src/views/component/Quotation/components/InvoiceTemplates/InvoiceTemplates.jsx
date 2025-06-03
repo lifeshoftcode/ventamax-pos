@@ -68,11 +68,8 @@ export default function InvoiceTemplates({ previewInModal = true, hidePreviewBut
 
   const handlePrint = useReactToPrint({
     content: () => componentRef.current,
-  });
-
-  const handlePreview = () => {
-    console.log('handlePreview called');
-    setIsModalVisible(true);
+  });    const handlePreview = () => {
+        setIsModalVisible(true);
   };
 
   const renderInvoice = (ref) => (
@@ -100,12 +97,11 @@ export default function InvoiceTemplates({ previewInModal = true, hidePreviewBut
       </div>
 
       <Modal
-        title="Previsualización de Factura"
-        open={isModalVisible}
+        title="Previsualización de Factura"        open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         width={'1000px'}
         style={{ top: 20 }}
-        destroyOnClose={true}
+        destroyOnHidden={true}
         footer={[
           <Button key="print" onClick={handlePrint} type="primary">
             Imprimir

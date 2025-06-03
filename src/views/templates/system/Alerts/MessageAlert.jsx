@@ -1,4 +1,5 @@
-import { MdMessage } from 'react-icons/md'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faMessage } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch } from 'react-redux'
 import styled from 'styled-components'
 import { toggleViewOrdersNotes } from '../../../../features/modals/modalSlice'
@@ -14,7 +15,7 @@ export const MessageAlert = ({isOpen , data}) => {
       <Container isOpen={isOpen === true ? true : false}>
         <Body>
           <IconContainer>
-            <MdMessage/>
+            <FontAwesomeIcon icon={faMessage} />
           </IconContainer>
           <MessageContainer>
             <Message>

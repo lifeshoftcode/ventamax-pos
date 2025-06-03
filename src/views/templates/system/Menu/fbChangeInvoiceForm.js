@@ -8,13 +8,12 @@ async function getInvoiceFromYesterday(invoiceRef) {
     const endOfDay = yesterday.endOf('day').toJSDate();
 
     const q = query(invoiceRef, where("data.date", ">=", startOfDay), where("data.date", "<=", endOfDay), orderBy("data.date"), limit(1));
-
     const querySnapshot = await getDocs(q);
     if (!querySnapshot.empty) {
         const doc = querySnapshot.docs[0]; // Accediendo directamente al primer documento
-        console.log(`${doc.id} =>`, doc.data());
+        // Invoice found - could add specific logic here
     } else {
-        console.log("No se encontró ninguna factura de ayer.");
+        // No invoice found for yesterday
     }
 }
 
@@ -24,14 +23,14 @@ async function getInvoiceFromTwoWeeksAgo(invoiceRef) {
     const endOfDay = twoWeeksAgo.endOf('day').toJSDate();
 
     const q = query(invoiceRef, where("data.date", ">=", startOfDay), where("data.date", "<=", endOfDay), orderBy("data.date"), limit(1));
-
     const querySnapshot = await getDocs(q);
     if (!querySnapshot.empty) {
         const doc = querySnapshot.docs[0]; // Accediendo directamente al primer documento
-        console.log(`${doc.id} antes =>`, doc.data());
-        console.log(`${doc.id} ahora =>`, transformOldDataToNewStructure(doc.data()));
+        // Transform old data structure
+        const transformedData = transformOldDataToNewStructure(doc.data());
+        // Could process transformedData here
     } else {
-        console.log("No se encontró ninguna factura de hace dos semanas.");
+        // No invoice found from two weeks ago
     }
 }
 

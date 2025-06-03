@@ -209,12 +209,11 @@ export const DeleteProductStockModal = () => {
         <Modal
             title={`Eliminar ${actionType === 'batch' ? 'Lote' : 'Stock'}`}
             open={isOpen}
-            onCancel={handleCancel}
-            onOk={handleOk}
+            onCancel={handleCancel}            onOk={handleOk}
             style={{top: 20}}
             okButtonProps={{ loading: isSubmitting }}
             cancelButtonProps={{ disabled: isSubmitting }}
-            destroyOnClose
+            destroyOnHidden
         >
             {renderContent()}
         </Modal>

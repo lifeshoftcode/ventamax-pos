@@ -139,12 +139,11 @@ const TaxReceiptAuthorizationModal = ({ visible, onCancel, taxReceipts, onAuthor
           onClick={handleSave} 
           loading={loading}
           icon={<CheckCircleOutlined />}
-          disabled={!selectedReceipt}
-        >
+          disabled={!selectedReceipt}        >
           Registrar Autorización
         </Button>
       ]}
-      destroyOnClose
+      destroyOnHidden
     >
       <Container>
         <Form

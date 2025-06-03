@@ -1,5 +1,4 @@
 import { Fragment, useEffect, useState } from "react"
-import { SiMicrosoftexcel } from "react-icons/si"
 import styled from "styled-components"
 import { getBills } from "../../../firebase/firebaseconfig"
 import {formatBill} from "../../../hooks/exportToExcel/formatBill"

@@ -1,7 +1,12 @@
-import { doc, setDoc, getDocs, query, collection, where, Timestamp } from "firebase/firestore";
-import { hash } from "bcryptjs";
+// import { doc, setDoc, getDocs, query, collection, where, Timestamp } from "firebase/firestore";
+// import { hash } from "bcryptjs";
+// import { db } from "../../firebaseconfig";
+// import { nanoid } from "nanoid";
+
 import { db } from "../../firebaseconfig";
 import { nanoid } from "nanoid";
+import { collection, doc, getDocs, query, setDoc, where, Timestamp } from "firebase/firestore";
+import { hash } from "bcryptjs";
 
 // Función para verificar si el nombre de usuario ya existe
 export async function checkIfUserExists(name) {
@@ -22,7 +27,7 @@ function validateUserInput({ id, name, password, businessID, role }) {
 
 export const fbSignUp = async (userData) => {
         validateUserInput(userData);
-   
+
         userData.id = nanoid(10);
 
         const userExists = await checkIfUserExists(userData.name);
@@ -32,7 +37,7 @@ export const fbSignUp = async (userData) => {
         }
 
         const hashedPassword = await hash(userData.password, 10);
-        
+
         const userRef = doc(db, "users", userData.id);
 
         await setDoc(userRef, {
@@ -47,3 +52,14 @@ export const fbSignUp = async (userData) => {
             }
         });
 };
+
+// const createUserCallable = httpsCallable(functions, "handleCreateUser");
+
+// export async function fbSignUp(user, data) {
+//   try {
+//     const res = await createUserCallable({userData: data, user});
+//     return res.data; // { ok: true, id: 'xyz123' }
+//   } catch (err) {
+//     throw new Error(err.message); // decide cómo mapear código ↔️ mensaje de UI
+//   }
+// }

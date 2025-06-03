@@ -1,7 +1,8 @@
+import { notification } from 'antd';
 import { resetCart, toggleCart } from "../../../features/cart/cartSlice";
 import { deleteClient, handleClient } from "../../../features/clientCart/clientCartSlice";
-import { addNotification } from "../../../features/notification/NotificationSlice";
 import { IncreaseEndConsumer, IncreaseTaxCredit, clearTaxReceiptData } from "../../../features/taxReceipt/taxReceiptSlice";
+import { selectAppMode } from "../../../features/appModes/appModeSlice";
 import { fbAddInvoice } from "../../../firebase/invoices/fbAddInvoice";
 import { fbUpdateProductsStock } from "../../../firebase/products/fbUpdateProductStock";
 import { fbUpdateTaxReceipt } from "../../../firebase/taxReceipt/fbUpdateTaxReceipt";
@@ -16,13 +17,17 @@ export const handleTaxReceipt = async (dispatch, taxReceiptEnabled, ncfStatus) =
         }
     } catch (error) {
         console.log(error);
-        dispatch(addNotification({ message: "Ocurrió un error al manejar el comprobante fiscal. Intente de nuevo.", type: 'error' }));
+        notification.error({
+            message: "Ocurrió un error al manejar el comprobante fiscal. Intente de nuevo."
+        });
     }
 };
 
 export const verifyAndAdvanceTaxReceiptProcess = async (dispatch, taxReceiptEnabled, ncfCode) => {
     if (taxReceiptEnabled && ncfCode === null) {
-        dispatch(addNotification({ message: "No hay comprobante fiscal seleccionado", type: 'error' }));
+        notification.error({
+            message: "No hay comprobante fiscal seleccionado"
+        });
         return;
     }
     if (taxReceiptEnabled) dispatch(addTaxReceiptInState(ncfCode));
@@ -34,9 +39,14 @@ export const savingDataToFirebase = async (dispatch, user, bill, taxReceipt) => 
             fbAddInvoice(bill, user)
             { taxReceiptEnabled && fbUpdateTaxReceipt(user, taxReceipt) }
             fbUpdateProductsStock(ProductSelected, user);
-            dispatch(addNotification({ message: "Venta Realizada", type: 'success', title: 'Completada' }))
+            notification.success({
+                message: 'Completada',
+                description: 'Venta Realizada'
+            });
         } else {
-            dispatch(addNotification({ message: "No se puede Facturar en Modo Demo", type: 'error' }))
+            notification.error({
+                message: "No se puede Facturar en Modo Demo"
+            });
         }
     } catch (err) { console.log(err) }
 }
@@ -57,6 +67,8 @@ export const createOrUpdateClient = async (dispatch, user) => {
       dispatch(handleClient({ user }))
     } catch (error) {
       console.log(error)
-      dispatch(addNotification({ message: "Ocurrió un Error con el cliente, Intente de Nuevo", type: 'error' }));
+      notification.error({
+          message: "Ocurrió un Error con el cliente, Intente de Nuevo"
+      });
     }
   }

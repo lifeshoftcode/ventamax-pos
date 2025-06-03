@@ -263,13 +263,9 @@ const FileUploader = ({
 
   const renderFileCountButton = () => {
     if (!compact || !showFileList) return null;
-    
-    const fileCount = allFiles.length;
-    // Cambio importante: usamos console.log para depurar
+      const fileCount = allFiles.length;
     const handleOpenDrawer = () => {
-      console.log('Opening drawer, current state:', fileListDrawerOpen);
       setFileListDrawerOpen(true);
-      console.log('State after setting:', true);
     };
 
     return (

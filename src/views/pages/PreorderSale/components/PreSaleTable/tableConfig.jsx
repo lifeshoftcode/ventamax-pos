@@ -12,6 +12,30 @@ import { ConfirmModal } from "../../../../component/modals/ConfirmModal/ConfirmM
 import { fbCancelPreorder } from "../../../../../firebase/invoices/fbCancelPreorder";
 import PreorderModal from "../../../../component/modals/PreorderModal/PreorderModal";
 
+// Cell renderer components to avoid hook violations
+const PriceCell = ({ value }) => {
+    return <span>{useFormatPrice(value)}</span>;
+};
+
+const DateCell = ({ value }) => {
+    const time = value * 1000;
+    return <span>{getTimeElapsed(time, 0)}</span>;
+};
+
+const StatusCell = ({ value }) => {
+    const getColorByStatus = (status) => {
+        const statusColors = {
+            pending: 'orange',
+            completed: 'green',
+            cancelled: 'red',
+        };
+        return statusColors[status] || 'gray';
+    };
+
+    const statusLabel = value === 'pending' ? 'Pendiente' : value === 'completed' ? 'Completada' : 'Cancelada';
+    return <Tag color={getColorByStatus(value)}>{statusLabel}</Tag>;
+};
+
 const EditButton = ({ value }) => {
     const dispatch = useDispatch()
     const data = value.data;
@@ -21,9 +45,8 @@ const EditButton = ({ value }) => {
     const handleCancelPreorder = async () => {
         try {
             await fbCancelPreorder(user, data)
-            setIsCancelConfirmOpen(false)
-        } catch (err) {
-            console.log(err)
+            setIsCancelConfirmOpen(false)        } catch (err) {
+            // Handle error appropriately
         }
     }
     const handleInvoicePanelOpen = () => {
@@ -75,7 +98,7 @@ const getColorByStatus = (status) => {
         completed: 'green',     // Color para "Completada"
         cancelled: 'red',       // Color para "Cancelada"
     };
-
+    
     return statusColors[status] || 'gray'; // Color por defecto en caso de que el estado no coincida
 };
 

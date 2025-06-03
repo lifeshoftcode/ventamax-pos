@@ -288,12 +288,20 @@ export const cartSlice = createSlice({
         },        recalcTotals: (state, action) => {
             const paymentValue = action.payload !== undefined ? Number(action.payload) : null;
             updateAllTotals(state, paymentValue);
-        },
-        addInvoiceComment: (state, action) => {
+        },        addInvoiceComment: (state, action) => {
             state.data.invoiceComment = action.payload;
         },
         deleteInvoiceComment: (state) => {
             state.data.invoiceComment = '';
+        },
+        updateProductDiscount: (state, action) => {
+            const { id, discount } = action.payload;
+            const product = state.data.products.find(p => p.id === id || p.cid === id);
+            if (product) {
+                product.discount = discount;
+                // Recalcular totales
+                updateAllTotals(state);
+            }
         },
 
     }
@@ -341,7 +349,8 @@ export const {
     recalcTotals,
     updateInsuranceStatus,
     addInvoiceComment,
-    deleteInvoiceComment
+    deleteInvoiceComment,
+    updateProductDiscount
 } = cartSlice.actions
 
 export const SelectProduct = (state) => state.cart.data.products;
@@ -364,5 +373,37 @@ export const SelectInvoiceComment = (state) => state.cart.data.invoiceComment
 export const SelectSettingCart = (state) => state.cart.settings
 export const selectCart = (state) => state.cart
 export const selectInsuranceEnabled = (state) => state.cart.data.insuranceEnabled;
+export const selectProductsWithIndividualDiscounts = (state) => 
+    state.cart.data.products.filter(product => product.discount && product.discount.value > 0);
+export const selectTotalIndividualDiscounts = (state) => {
+    const products = state.cart.data.products;
+    const taxReceiptEnabled = state.taxReceipt?.enabled ?? true;
+    
+    return products.reduce((total, product) => {
+        if (product.discount && product.discount.value > 0) {
+            const productPrice = product.pricing?.price || product.price || 0;
+            const taxPercentage = Number(product.pricing?.tax) || 0;
+            const quantity = product.amountToBuy || 1;
+            
+            // Precio unitario con impuestos
+            const unitPriceWithTax = taxReceiptEnabled ? 
+                productPrice * (1 + taxPercentage / 100) : 
+                productPrice;
+            const totalPriceWithTax = unitPriceWithTax * quantity;
+            
+            let discountAmount = 0;
+            
+            if (product.discount.type === 'percentage') {
+                discountAmount = totalPriceWithTax * (product.discount.value / 100);
+            } else {
+                // Para monto fijo, el descuento ya considera impuestos
+                discountAmount = product.discount.value;
+            }
+            
+            return total + discountAmount;
+        }
+        return total;
+    }, 0);
+};
 
 export default cartSlice.reducer

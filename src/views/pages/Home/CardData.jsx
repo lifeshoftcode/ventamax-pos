@@ -3,6 +3,7 @@ import { icons } from '../../../constants/icons/icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTicket, faWarehouse } from '@fortawesome/free-solid-svg-icons';
 import { filterMenuItemsByAccess, hasDeveloperAccess } from '../../../utils/menuAccess';
+import { BugOutlined } from '@ant-design/icons';
 
 const createMenuItems = (items) => items.map((item, index) => ({ ...item, id: index + 1 }));
 
@@ -21,6 +22,7 @@ const menuItems = createMenuItems([
 ]);
 
 const developerItems = createMenuItems([
+  { title: 'Panel Desarrollador', icon: <BugOutlined />, action: 'openDeveloperModal', category: 'Desarrollador' },
   { title: 'Cambiar Negocio', icon: icons.operationModes.add, route: ROUTES_NAME.DEV_VIEW_TERM.SWITCH_BUSINESS, category: 'Desarrollador' },
   { title: 'Gestionar Negocios', icon: icons.operationModes.add, route: ROUTES_NAME.DEV_VIEW_TERM.BUSINESSES, category: 'Desarrollador' },
   { title: 'Gestionar Actualización', icon: icons.operationModes.add, route: ROUTES_NAME.DEV_VIEW_TERM.CHANGELOG_MANAGE, category: 'Desarrollador' },

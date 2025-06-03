@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import styled from 'styled-components'
-import { TbPlus } from 'react-icons/tb'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import { useDispatch, useSelector } from 'react-redux'
 import { ProductFilter } from '../../../ProductFilter/ProductFilter'
 import { Button } from '../../../../templates/system/Button/Button'
@@ -32,10 +33,8 @@ export const OutputProductEntry = () => {
                 return dispatch(selectProduct({ ...productSelected, [e.target.name]: Number(e.target.value) }))
             default:
                 return dispatch(selectProduct({ ...productSelected, [e.target.name]: e.target.value }))
-        }
-
-    }
-    console.log(productSelected?.product?.name)
+        }    }
+    
     const tableColumns = tableHeaderColumns({ Group })
 
     return (
@@ -88,7 +87,7 @@ export const OutputProductEntry = () => {
                 </div>
                 <div>
                     <Button
-                        title={<TbPlus />}
+                        title={<FontAwesomeIcon icon={faPlus} />}
                         width='icon32'
                         border='light'
                         borderRadius='normal'

@@ -1,4 +1,5 @@
-import { FaSearch } from 'react-icons/fa'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faSearch } from '@fortawesome/free-solid-svg-icons'
 import { useDispatch } from 'react-redux'
 import styled from 'styled-components'
 import { OPERATION_MODES } from '../../../../constants/modes'
@@ -14,10 +15,9 @@ export const ToolBar = ({ searchTerm, setSearchTerm }) => {
 
     return (
         <Container>
-            <Wrapper>
-                <InputV4
+            <Wrapper>                <InputV4
                     placeholder={'Buscar Cliente ...'}
-                    deleteBtn icon={<FaSearch />}
+                    deleteBtn icon={<FontAwesomeIcon icon={faSearch} />}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />

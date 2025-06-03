@@ -114,11 +114,8 @@ const UpdateProducts = () => {
         setError(null);
         setShowProgressModal(true);
         setUploadProgress(0);
-        setProgressMessage('Preparing to upload products...');
-
-        try {
+        setProgressMessage('Preparing to upload products...');        try {
             const dataToUpload = updatedProducts.length > 0 ? updatedProducts : products;
-            console.log('dataToUpload', dataToUpload.slice(0, 5));
             
             // Track progress
             const updateProgressCallback = (progress, message) => {

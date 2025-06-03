@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Modal, Spin, Button, Input, Form } from 'antd'
 import { Header } from './components/Header/Header'
 import { fbValidateUser } from '../../../../firebase/Auth/fbAuthV2/fbSignIn/fbVerifyUser'
@@ -84,7 +84,7 @@ export const PeerReviewAuthorization = ({ isOpen, setIsOpen, onSubmit, descripti
             onCancel={handleCancel}
             centered
             width={450}
-            destroyOnClose
+            destroyOnHidden
             styles={{
                 body: {
                     padding: '0px',

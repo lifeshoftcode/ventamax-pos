@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
-import { MdClose } from "react-icons/md";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faXmark } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
@@ -46,9 +47,8 @@ const ImageViewer = () => {
               color="light"
             >
               Visualizador de imagen
-            </Typography>
-            <Button
-              title={<MdClose />}
+            </Typography>            <Button
+              title={<FontAwesomeIcon icon={faXmark} />}
               onClick={onClose}
             />
           </Header>

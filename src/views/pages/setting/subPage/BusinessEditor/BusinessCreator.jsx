@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import styled from 'styled-components';
+import imageCompression from 'browser-image-compression';
+import { useNavigate } from 'react-router-dom';
 import { Form, Input, Button, Select, message, Card, Typography } from 'antd';
 import { ShopOutlined, MailOutlined, HomeOutlined } from '@ant-design/icons';
-import styled from 'styled-components';
 import { countries } from './countries.json';
-import imageCompression from 'browser-image-compression';
-import { fbSignUp } from '../../../../../firebase/Auth/fbAuthV2/fbSignUp';
-import { useNavigate } from 'react-router-dom';
 import { MenuApp } from '../../../../templates/MenuApp/MenuApp';
 import { createBusiness } from '../../../../../firebase/businessInfo/fbAddBusinessInfo';
 import ROUTES_PATH from '../../../../../routes/routesName';

@@ -48,9 +48,7 @@ export const Feedback = () => {
   const handleFeedbackChange = (event) => {
     setFeedback(event.target.value);
   };
-
   const handleFeedbackSubmit = () => {
-    console.log(`Feedback: ${feedback}`);
     setFeedback('');
   };
 

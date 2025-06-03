@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { MdClose } from 'react-icons/md'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faTimes } from '@fortawesome/free-solid-svg-icons'
 import { Modal, Form, Input, Button, Select, message, Tooltip, Space, Alert } from 'antd'
 import { InfoCircleOutlined, GlobalOutlined } from '@ant-design/icons'
 import { getCountries, getCountryCallingCode } from 'libphonenumber-js'
@@ -196,7 +197,7 @@ export const ProviderForm = () => {
                         {mode === createMode ? 'Crear' : 'Actualizar'}
                     </Button>,
                 ]}
-                closeIcon={<MdClose />}
+                closeIcon={<FontAwesomeIcon icon={faTimes} />}
                 width={1000}
                 style={{ maxWidth: rncInfo ? '1000px' : '700px', top: 10 }}
             >

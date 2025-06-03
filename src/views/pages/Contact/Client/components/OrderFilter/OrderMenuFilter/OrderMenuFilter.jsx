@@ -7,7 +7,6 @@ export const OrderMenuFilter = ({MenuIsOpen}) => {
     
     
 ])
-console.log(orderMenuData)
   return (
     <Container isOpen={MenuIsOpen ? true : false}>
         <Head>

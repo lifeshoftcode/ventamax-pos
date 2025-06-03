@@ -30,27 +30,21 @@ export const ProductOutflowModal = ({ isOpen, mode = 'create' }) => {
     fbRemoveOutputRestoreQuantity(user, item)
     dispatch(deleteProductFromProductOutflow({ id: item.id }))
   }
-
   const handleUpdateProductOutflow = async () => {
     try {
-      console.log(outFlowProduct.data)
       await fbUpdateProductOutflow(user, outFlowProduct.data)
     } catch (err) {
-
+      // Handle error
     }
   }
-
   const handleAddOutflow = async () => {
     try {
-      console.log(" click handleAddOutflow")
       await fbAddProductOutFlow(user, outFlowProduct.data);
     } catch (err) {
-      console.log(err)
+      // Handle error
     }
   }
-
   const handleSubmit = async () => {
-    console.log("click  handleSubmit")
     if (mode === 'create') {
       await handleAddOutflow()
     }
@@ -58,9 +52,7 @@ export const ProductOutflowModal = ({ isOpen, mode = 'create' }) => {
       await handleUpdateProductOutflow()
     }
   }
-
   const handleUpdateProduct = (id, updatedFields) => {
-    console.log({ id, data: updatedFields })
     dispatch(updateProductFromProductOutflow({ id, data: updatedFields }));
   };
 

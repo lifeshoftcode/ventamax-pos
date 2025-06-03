@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import styled from 'styled-components'
-import { IoClose } from 'react-icons/io5'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faTimes } from '@fortawesome/free-solid-svg-icons'
 import { ProductCard } from './ProductCard'
 import { useGetProducts } from '../../../firebase/products/fbGetProducts'
 import { useClickOutSide } from '../../../hooks/useClickOutSide'
@@ -44,7 +45,7 @@ export const ProductFilter = ({ productName, isOpen, setIsOpen, handleSelectProd
             <span>Lista de Productos Inventariables</span>
             <span>
               <Button onClick={close}>
-                <IoClose />
+                <FontAwesomeIcon icon={faTimes} />
               </Button>
             </span>
           </ProductsListHead>

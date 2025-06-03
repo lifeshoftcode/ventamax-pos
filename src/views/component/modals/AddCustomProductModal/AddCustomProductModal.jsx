@@ -2,13 +2,14 @@ import React, { useState } from 'react'
 import styled from 'styled-components'
 import { Button } from '../../../templates/system/Button/Button'
 import { PlusIconButton } from '../../../templates/system/Button/PlusIconButton'
-import { v4 } from 'uuid'
+import { nanoid } from 'nanoid'
 import { addIngredientTypePizza } from '../../../../firebase/firebaseconfig.jsx'
 import { fbGetCustomProduct } from '../../../../firebase/products/customProduct/fbGetCustomProductTypePizza'
 import { useEffect } from 'react'
 import { isEmpty } from '@firebase/util'
 import { IngredientCard } from '../../../templates/system/Product/typePizza/IngredientCard'
-import { IoIosArrowBack } from 'react-icons/io'
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { selectUser } from '../../../../features/auth/userSlice'
 import { useSelector } from 'react-redux'
 import { InputV4 } from '../../../templates/system/Inputs/GeneralInput/InputV4.jsx'
@@ -29,10 +30,9 @@ export const AddCustomProductModal = ({ isOpen, handleOpen }) => {
 
     const settingIngredientId = () => {
         return new Promise((resolve, reject) => {
-            resolve(
-                setIngredient({
+            resolve(                setIngredient({
                     ...ingredient,
-                    id: v4()
+                    id: nanoid()
                 })
             )
 
@@ -56,11 +56,10 @@ export const AddCustomProductModal = ({ isOpen, handleOpen }) => {
     return (
         isOpen ? (
             <Modal>
-                <Head>
-                    <Container>
+                <Head>                    <Container>
                         <Button
                             bgcolor='error'
-                            startIcon={<IoIosArrowBack />}
+                            startIcon={<FontAwesomeIcon icon={faArrowLeft} />}
                             title='atrás'
                             onClick={handleOpen}
                         ></Button>

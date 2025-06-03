@@ -2,7 +2,7 @@ import React, { Fragment, useRef, useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
 import CustomInput from '../../../../templates/system/Inputs/CustomInput';
 import { useDispatch, useSelector } from 'react-redux';
-import { SelectCartData, SelectSettingCart, selectCart, setCartId, toggleInvoicePanelOpen, setPaymentMethod, recalcTotals, setCashPaymentToTotal } from '../../../../../features/cart/cartSlice';
+import { SelectCartData, SelectSettingCart, selectCart, setCartId, toggleInvoicePanelOpen, setPaymentMethod, recalcTotals, setCashPaymentToTotal, selectProductsWithIndividualDiscounts, selectTotalIndividualDiscounts } from '../../../../../features/cart/cartSlice';
 import { useFormatPrice } from '../../../../../hooks/useFormatPrice';
 import { Delivery } from './components/Delivery/Delivery';
 import { validateInvoiceCart } from '../../../../../utils/invoiceValidation';
@@ -30,8 +30,7 @@ const InvoiceSummary = () => {
   const cart = useSelector(selectCart);
   const user = useSelector(selectUser);
   const [isOpenPreorderConfirmation, setIsOpenPreorderConfirmation] = useState(false);
-  const cartData = useSelector(SelectCartData);
-  const insuranceExtra = cartData?.totalInsurance?.value || 0;
+  const cartData = useSelector(SelectCartData);  const insuranceExtra = cartData?.totalInsurance?.value || 0;
   const billingSettings = cart?.settings?.billing;
   const business = useSelector(selectBusinessData) || {};
   const total = cartData?.totalPurchase?.value;
@@ -43,6 +42,11 @@ const InvoiceSummary = () => {
   const [isLoadingQuotation, setIsLoadingQuotation] = useState(false);
   const discount = getTotalDiscount(subTotal, discountPercent);
   const { billing } = useSelector(SelectSettingCart);
+  
+  // Nuevos selectores para descuentos individuales
+  const productsWithIndividualDiscounts = useSelector(selectProductsWithIndividualDiscounts);
+  const totalIndividualDiscounts = useSelector(selectTotalIndividualDiscounts);
+  const hasIndividualDiscounts = productsWithIndividualDiscounts.length > 0;
 
   const dispatch = useDispatch();
   const insuranceEnabled = useInsuranceEnabled();
@@ -292,14 +296,20 @@ const InvoiceSummary = () => {
           <Label>ITBIS:</Label>
           <Label>{useFormatPrice(itbis)}</Label>
         </LineItem>
-        <Delivery />
-        <LineItem>
+        <Delivery />        <LineItem>
           <Label>Descuento:</Label>
-          <CustomInput
-            discount={discount}
-            value={discountPercent}
-            options={["10", "20", "30", "40", "50"]}
-          />
+          {hasIndividualDiscounts ? (
+            <Label style={{ color: '#52c41a', fontWeight: 600 }}>
+              -{useFormatPrice(totalIndividualDiscounts)}
+            </Label>
+          ) : (
+            <CustomInput
+              discount={discount}
+              value={discountPercent}
+              options={["10", "20", "30", "40", "50"]}
+              disabled={hasIndividualDiscounts}
+            />
+          )}
         </LineItem>
         {insuranceEnabled && (
           <LineItem>

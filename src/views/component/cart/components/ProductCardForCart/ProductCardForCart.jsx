@@ -6,7 +6,7 @@ import { deleteProduct, changeProductPrice } from '../../../../../features/cart/
 import { useFormatPrice } from '../../../../../hooks/useFormatPrice';
 import { icons } from '../../../../../constants/icons/icons';
 import { motion } from 'framer-motion';
-import { Tooltip, Badge, Button } from 'antd';
+import { Tooltip, Badge, Button, Dropdown } from 'antd';
 import { getTotalPrice } from '../../../../../utils/pricing';
 import { selectTaxReceiptEnabled } from '../../../../../features/taxReceipt/taxReceiptSlice';
 import PriceAndSaleUnitsModal from '../PriceAndSaleUnitsModal';
@@ -15,7 +15,7 @@ import { extraerPreciosConImpuesto } from './utils/priceUtils';
 import { PriceEditor } from './components/PriceEditor/PriceEditor';
 import { WeightInput } from './components/WeightInput/WeightInput';
 import { InsuranceCoverage } from './components/InsuranceCoverage/InsuranceCoverage';
-import { MessageOutlined } from '@ant-design/icons';
+import { MessageOutlined, PercentageOutlined, MoreOutlined } from '@ant-design/icons';
 
 const variants = {
     initial: { opacity: 0, y: -90 },
@@ -23,7 +23,8 @@ const variants = {
     exit: { opacity: 0, y: 150, transition: { duration: 0.5 } },
 };
 
-export const ProductCardForCart = ({ item, onOpenCommentModal, onOpenDeleteModal }) => {    const dispatch = useDispatch();
+export const ProductCardForCart = ({ item, onOpenCommentModal, onOpenDeleteModal, onOpenDiscountModal }) => {
+    const dispatch = useDispatch();
     const insuranceEnabled = useInsuranceEnabled();
     const taxReceiptEnabled = useSelector(selectTaxReceiptEnabled);
     const [selectedUnit, setSelectedUnit] = useState(null);
@@ -70,32 +71,79 @@ export const ProductCardForCart = ({ item, onOpenCommentModal, onOpenDeleteModal
                 id: item.id,
                 price: parseFloat(newPrice)
             }));
-        }
-
-        // Cerrar el modal después de seleccionar el precio
+        }        // Cerrar el modal después de seleccionar el precio
         setModalVisible(false);
-    };
+    }; 
+    const actionMenuItems = [
+        {
+            key: 'discount',
+            label: (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <PercentageOutlined style={{ color: item.discount ? '#52c41a' : '#8c8c8c' }} />
+                    {item.discount ? 'Editar descuento' : 'Aplicar descuento'}
+                </span>
+            ),
+            onClick: () => onOpenDiscountModal(item)
+        },
+        {
+            key: 'comment',
+            label: (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <MessageOutlined style={{ color: item.comment ? '#1890ff' : '#8c8c8c' }} />
+                    {item.comment ? 'Editar comentario' : 'Agregar comentario'}
+                </span>
+            ),
+            onClick: () => onOpenCommentModal(item)
+        }
+    ];
+
+    const hasActions = Boolean(item.comment || item.discount);    // Calcular el precio final usando las funciones de pricing
+    const finalPrice = getTotalPrice(item, taxReceiptEnabled);
+    const originalPrice = item.pricing?.price || item.price || 0;
+    const taxPercentage = Number(item.pricing?.tax) || 0;
+    const quantity = item.amountToBuy || 1;
+    
+    // Precio base con impuestos (sin descuento)
+    const unitPriceWithTax = taxReceiptEnabled ? 
+        originalPrice * (1 + taxPercentage / 100) : 
+        originalPrice;
+    const basePriceWithTax = unitPriceWithTax * quantity;
+    
+    const hasDiscount = item.discount && item.discount.value > 0;
 
     return (
         <Container variants={variants} initial="initial" animate="animate" transition={{ duration: 0.6 }}>
             <Row>
-                <HeaderContainer>
-                    <TitleContainer>
-                        <Title>{item.name}</Title>                        {item.comment && (
+                <HeaderContainer>                    <TitleContainer>
+                        <Title>{item.name}</Title>                        
+                        {item.comment && (
                             <CommentPreview title={item.comment}>
                                 {item.comment}
                             </CommentPreview>
                         )}
                     </TitleContainer>
-                    <Price>{useFormatPrice(getTotalPrice(item, taxReceiptEnabled))}</Price>
-                    <ButtonGroup>
-                        <Tooltip title={item.comment ? `Comentario: ${item.comment}` : 'Agregar comentario'}>
-                            <Badge dot={Boolean(item.comment)} color="#1890ff" offset={[-2, 2]}>
-                                <Button
-                                    type="text"
-                                    size="small"
-                                    icon={<MessageOutlined style={{ color: item.comment ? '#1890ff' : '#8c8c8c', fontSize: '16px' }} />}                            onClick={() => onOpenCommentModal(item)}
-                                />
+                    <PriceContainer>                        {hasDiscount && (
+                            <OriginalPrice>
+                                {useFormatPrice(basePriceWithTax)}
+                            </OriginalPrice>
+                        )}
+                        <Price hasDiscount={hasDiscount}>
+                            {useFormatPrice(finalPrice)}
+                        </Price>
+                    </PriceContainer><ButtonGroup>
+                        <Tooltip title="Opciones del producto">
+                            <Badge dot={hasActions} color={item.comment ? '#1890ff' : item.discount ? '#52c41a' : '#8c8c8c'} offset={[-2, 2]}>
+                                <Dropdown
+                                    menu={{ items: actionMenuItems }}
+                                    trigger={['click']}
+                                    placement="bottomRight"
+                                >
+                                    <Button
+                                        type="text"
+                                        size="small"
+                                        icon={<MoreOutlined style={{ fontSize: '16px', color: hasActions ? (item.comment ? '#1890ff' : '#52c41a') : '#8c8c8c' }} />}
+                                    />
+                                </Dropdown>
                             </Badge>
                         </Tooltip>
                         <Button
@@ -177,6 +225,22 @@ const TitleContainer = styled.div`
   flex: 1;
 `;
 
+const PriceContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: fit-content;
+`;
+
+const OriginalPrice = styled.span`
+  font-size: 11px;
+  color: #8c8c8c;
+  text-decoration: line-through;
+  line-height: 1;
+  font-weight: 400;
+`;
+
 const CommentPreview = styled.div`
   color: #8c8c8c;
   font-size: 11px;
@@ -227,5 +291,5 @@ const Price = styled.span`
     white-space: nowrap;
     padding: 0 10px;
     background-color: var(--White1);
-    color: var(--Gray6);
+    color: ${props => props.hasDiscount ? '#52c41a' : 'var(--Gray6)'};
 `;

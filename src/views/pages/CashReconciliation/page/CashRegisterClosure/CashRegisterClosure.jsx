@@ -59,9 +59,8 @@ export const CashRegisterClosure = () => {
 
   const handleSubmit = async (approvalEmployee) => {
     try {
-      await fbCashCountClosed(actualUser, cashCount, actualUser.uid, approvalEmployee.uid, closingDate.toMillis())
-    } catch (error) {
-      console.log(error)
+      await fbCashCountClosed(actualUser, cashCount, actualUser.uid, approvalEmployee.uid, closingDate.toMillis())    } catch (error) {
+      // Handle error appropriately
     }
   }
 

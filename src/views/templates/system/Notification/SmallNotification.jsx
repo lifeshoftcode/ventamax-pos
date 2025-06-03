@@ -1,26 +1,29 @@
-import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
+import { notification } from 'antd';
 import { selectAppMode, toggleMode } from '../../../../features/appModes/appModeSlice';
-import { addNotification } from '../../../../features/notification/NotificationSlice';
 import { Button } from '../Button/Button';
 
-// Este es el componente principal que renderizará el componente Alert
 export const SmallNotification = () => {
-  const selectMode = useSelector(selectAppMode)
+  
+  const selectMode = useSelector(selectAppMode);
   const message = 'Modo Prueba.';
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
   const handleModeApp = () => {
-    dispatch(toggleMode())
-    dispatch(addNotification({title: 'Info', message: `Modo ${selectAppMode === false ? 'pruebas' : 'producción'}`, type: 'info'}))
+    dispatch(toggleMode());
+    // El mensaje debe indicar A QUÉ modo se está cambiando (después del toggle)
+    notification.info({
+      message: 'Info',
+      description: `Modo ${selectMode === true ? 'producción' : 'pruebas'} activado`,
+    });
   }
+  
   return (
     <Container isOpen={selectMode ? true : false}>
       <Title>
         {message}
-      </Title>
-      <Button 
-      title={'Desactivar'}
+      </Title>      <Button 
+      title={selectMode ? 'Desactivar' : 'Activar'}
       bgcolor={'warning'}
       borderRadius='normal'
       onClick={handleModeApp}
@@ -43,18 +46,18 @@ const Container = styled.div`
   font-size: 14px;
   display: flex;
   gap: 1em;
-  align-items: center;
-  transition: transform 400ms ease-in-out;
+  align-items: center;  transition: transform 400ms ease-in-out;
   ${(props) => { 
     switch (props.isOpen) {
       case true:
         return`
-        transform: translateY(calc(-100% - 0.4em)) translateX(-50%); 
+        transform: translateY(0) translateX(-50%); 
         `
       default:
-        break;
+        return`
+        transform: translateY(calc(-100% - 0.4em)) translateX(-50%); 
+        `
     }
-    
     }}
 `;
 const Title = styled.div`

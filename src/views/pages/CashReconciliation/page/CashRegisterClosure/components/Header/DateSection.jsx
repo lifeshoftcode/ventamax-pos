@@ -12,8 +12,7 @@ export const DateSection = ({ date }) => {
         } catch (error) {
             console.error("Error parsing date string:", error);
         }
-    }
-    console.log(date)
+     }
 
     // Si date es un número, asumimos que es una fecha en milisegundos
     // y la convertimos a un objeto DateTime de Luxon

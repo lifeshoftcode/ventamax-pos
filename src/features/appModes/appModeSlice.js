@@ -6,7 +6,7 @@ import { CONFIG } from '../../constants/appConfig';
 const appModeSlice = createSlice({
     name: 'appMode',
     initialState: {
-        mode: true,
+        mode: false, // false = modo producción, true = modo prueba
         notificationMode: CONFIG.APP_MODE.TEST_MODE
     },
     reducers: {

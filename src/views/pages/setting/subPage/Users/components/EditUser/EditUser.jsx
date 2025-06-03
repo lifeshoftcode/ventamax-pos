@@ -1,18 +1,11 @@
-import React, { Fragment, useEffect, useState } from 'react'
+import { Fragment, useState } from 'react'
 import styled from 'styled-components'
 import { InputV4 } from '../../../../../../templates/system/Inputs/GeneralInput/InputV4'
-import { nanoid } from 'nanoid'
 import ElemLabel from '../../../../../../templates/system/ElemLabel/ElemLabel'
 import { icons } from '../../../../../../../constants/icons/icons'
 import { useDispatch, useSelector } from 'react-redux'
-import { selectUser } from '../../../../../../../features/auth/userSlice'
 import { useNavigate } from 'react-router-dom'
-import { SelectSignUpUserModal, toggleSignUpUser } from '../../../../../../../features/modals/modalSlice'
 import { Button, ButtonGroup } from '../../../../../../templates/system/Button/Button'
-import { DateTime } from 'luxon'
-import { fbSignUp } from '../../../../../../../firebase/Auth/fbAuthV2/fbSignUp'
-import { Timestamp } from 'firebase/firestore'
-import { ErrorMessage } from '../../../../../../templates/ErrorMassage/ErrorMassage'
 import { ErrorComponent } from '../../../../../../templates/system/ErrorComponent/ErrorComponent'
 import { clear, selectUserManager, setErrors, updateUser } from '../../../../../../../features/usersManagement/usersManagementSlice'
 import { ChangePassword } from './ChangePassword/ChangePassword'
@@ -44,7 +37,6 @@ const EditUser = () => {
     const navigate = useNavigate()
     const [isOpenChangePassword, setIsOpenChangePassword] = useState(false)
     const { user, errors } = useSelector(selectUserManager)
-    const userInfo = useSelector(selectUser);
 
     const handleIsOpenChangePassWord = () => {
         setIsOpenChangePassword(!isOpenChangePassword)
@@ -99,10 +91,10 @@ const EditUser = () => {
     }
 
     const handleClear = () => {
-        dispatch(clear())
+        dispatch(clear())        
         setErrors({})
     }
-    console.log('user', user)
+    
     const handleSubmit = async () => {
         const errors = validateUser(user);
         if (Object.keys(errors).length === 0) {
@@ -119,7 +111,9 @@ const EditUser = () => {
             setErrors(errors);
         }
     }
-    const role = getRol(user.role)
+
+    const role = getRol(user.role);
+
     return (
         <Fragment>
             <Container>
@@ -171,19 +165,6 @@ const EditUser = () => {
                         }
                         label={'Cambiar Contraseña'}
                     />
-                    {/* <InputV4
-                    icon={formIcon.password}
-                    label='Password'
-                    value={user.password}
-                    size='medium'
-                    type='password'
-                    placeholder='Password'
-                    name='password'
-                    errorMessage={errors.password}
-                    validate={errors.password}
-                    onChange={(e) => handleInputChange({["password"]: e.target.value})}
-                /> */}
-                    {/* <PasswordStrengthIndicator password={user.password} confirmPassword={user.confirmPassword} /> */}
 
                     <ErrorComponent errors={errors.firebase}></ErrorComponent>
 

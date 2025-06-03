@@ -53,7 +53,6 @@ const Loader = ({
   const [showLoader, setShowLoader] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
   const loadingStartTime = useRef(null);
-
   useEffect(() => {
     let timer;
     if (loading) {
@@ -63,13 +62,17 @@ const Loader = ({
     } else {
       const loadingEndTime = Date.now();
       const loadingDuration = loadingEndTime - loadingStartTime.current;
-      const fadeOutDuration = Math.max(200, Math.min(loadingDuration, 1000));
+      // Limit maximum fade duration to prevent long blocking
+      const fadeOutDuration = Math.max(200, Math.min(loadingDuration, 500)); // Reduced max from 1000 to 500
       
       setFadeOut(true);
-      if (loadingDuration > 500) {
-        timer = setTimeout(() => {
-          setShowLoader(false);
-        }, fadeOutDuration);
+      if (loadingDuration > 300) { // Reduced from 500 to 300
+        // Use requestAnimationFrame for better performance
+        requestAnimationFrame(() => {
+          timer = setTimeout(() => {
+            setShowLoader(false);
+          }, fadeOutDuration);
+        });
       } else {
         setShowLoader(false);
       }

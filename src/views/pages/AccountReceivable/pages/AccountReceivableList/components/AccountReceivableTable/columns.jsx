@@ -22,7 +22,6 @@ const DetailButton = ({ value }) => {
 const PayButton = ({ value }) => {
   const dispatch = useDispatch();
   const handleOpenPayment = () => {
-    console.log('Pagar ', value);
     const account = value.account;
     const client = value.account.client;
     const result = {
@@ -82,7 +81,6 @@ export const getColumns = (isPharmacy) => {
       sortable: true,
       align: 'left',
       cell: ({ value }) => {
-        console.log('value', value);
         const time = value.seconds * 1000;
         return getTimeElapsed(time, 0);
       },
@@ -102,7 +100,6 @@ export const getColumns = (isPharmacy) => {
       accessor: 'lastPaymentDate',
       align: 'left',
       cell: ({ value }) => {
-        console.log('value 2', value);
         return value ? getTimeElapsed(value.seconds * 1000, 0) : 'Sin pagos';
       },
       maxWidth: '1fr',

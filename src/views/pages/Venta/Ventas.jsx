@@ -1,4 +1,4 @@
-import {  useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import styled from 'styled-components'
 
@@ -26,9 +26,12 @@ import { deleteClient } from '../../../features/clientCart/clientCartSlice.js'
 import { Helmet } from 'react-helmet-async'
 import { ClientSelector } from '../../component/contact/ClientControl/ClientSelector.jsx'
 import { ProductBatchModal } from '../Inventory/components/Warehouse/components/ProductBatchModal/ProductBatchModal.jsx'
+import { backfillUserNumbers } from '../../../firebase/Auth/fbBackfillUserNumbers.js'
+import { selectUser } from '../../../features/auth/userSlice.js'
 
 export const Sales = () => {
-  const [searchData, setSearchData] = useState('')
+  const [searchData, setSearchData] = useState('');
+  const user = useSelector(selectUser);
   const categoryGrouped = useSelector(selectCategoryGrouped)
   const { products, loading: productsLoading, setLoading, error } = useGetProducts()
 
@@ -81,6 +84,7 @@ export const Sales = () => {
     }
   };
 
+
   useBarcodeScanner(products, checkBarcode);
 
   const productFiltered = useFilter(products, searchData)
@@ -98,29 +102,29 @@ export const Sales = () => {
 
   return (
     <>
-     <ClientSelector />
-    <Container
-      animate={{ x: 0 }}
-      transition={{ type: "spring", stiffness: 0 }}
-    >
-      <ProductContainer>
-        <MenuApp
-          displayName='Productos'
-          borderRadius={'bottom-right'}
-          searchData={searchData}
-          setSearchData={setSearchData}
+      <ClientSelector />
+      <Container
+        animate={{ x: 0 }}
+        transition={{ type: "spring", stiffness: 0 }}
+      >
+        <ProductContainer>
+          <MenuApp
+            displayName='Productos'
+            borderRadius={'bottom-right'}
+            searchData={searchData}
+            setSearchData={setSearchData}
           // showNotificationButton={true}
-        />
-        < ProductControlEfficient
-          productsLoading={productsLoading}
-          products={filterProductsByVisibility}
-        />
-        <MenuComponents />
-      </ProductContainer>
-      <Cart />
-      <InvoicePanel />
-      <ProductBatchModal />
-    </Container>
+          />
+          < ProductControlEfficient
+            productsLoading={productsLoading}
+            products={filterProductsByVisibility}
+          />
+          <MenuComponents />
+        </ProductContainer>
+        <Cart />
+        <InvoicePanel />
+        <ProductBatchModal />
+      </Container>
     </>
   )
 }

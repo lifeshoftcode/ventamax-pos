@@ -32,10 +32,28 @@ export async function processInvoice({
     dispatch,
     dueDate = null,
     insuranceEnabled = false,
+    isTestMode = false,
 }) {
     try {
         setLoading({ status: true, message: "Procesando factura..." });
         verifyCartItems(cart);
+
+        // En modo de prueba, mostrar notificación y procesar sin guardar en base de datos
+        if (isTestMode) {
+            setLoading({ status: true, message: "Procesando factura en modo prueba..." });
+            return await processTestModeInvoice({
+                user,
+                cart,
+                client,
+                accountsReceivable,
+                insuranceAR,
+                insuranceAuth,
+                ncfType,
+                taxReceiptEnabled,
+                dueDate,
+                insuranceEnabled,
+            });
+        }
 
         const { cashCount } = await validateCashReconciliation({ user, dispatch, });
 
@@ -234,5 +252,66 @@ async function generalInvoiceFromPreorder({ user, cart, cashCount, ncfCode }) {
     } catch (error) {
         console.error(error);
         throw error;
+    }
+}
+
+/**
+ * Procesa una factura en modo de prueba sin guardar en la base de datos
+ * Retorna un mock de factura para visualización
+ */
+async function processTestModeInvoice({
+    user,
+    cart,
+    client,
+    accountsReceivable,
+    insuranceAR,
+    insuranceAuth,
+    ncfType,
+    taxReceiptEnabled,
+    dueDate,
+    insuranceEnabled,
+}) {
+    try {
+        console.log('🧪 Procesando factura en MODO PRUEBA - No se guardará en base de datos');
+        
+        // Generar un mock de NCF para prueba
+        const mockNcfCode = taxReceiptEnabled ? `TEST-${ncfType}-${Date.now()}` : null;
+        
+        // Generar datos mock del cliente
+        const mockClientData = client || { 
+            id: 'test-client-id', 
+            name: 'Cliente de Prueba',
+            ...GenericClient 
+        };
+
+        // Crear factura mock con estructura similar a la real
+        const mockInvoice = {
+            id: `TEST-INVOICE-${Date.now()}`,
+            ...cart,
+            NCF: mockNcfCode,
+            client: mockClientData,
+            cashCountId: 'test-cash-count-id',
+            createdAt: new Date().toISOString(),
+            testMode: true, // Marcar como factura de prueba
+            status: 'test-preview',
+            timestamp: Date.now(),
+        };
+
+        // Si hay fecha de vencimiento, agregarla
+        if (dueDate) {
+            mockInvoice.dueDate = new Date(dueDate);
+            mockInvoice.hasDueDate = true;
+        }
+
+        // Simular tiempo de procesamiento
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        console.log('✅ Factura de prueba generada exitosamente:', mockInvoice);
+        
+        return { invoice: mockInvoice };
+
+    } catch (error) {
+        console.error('❌ Error en modo de prueba:', error);
+        throw new Error(`Error en modo de prueba: ${error.message}`);
     }
 }

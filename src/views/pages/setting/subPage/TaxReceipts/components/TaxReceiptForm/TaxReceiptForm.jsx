@@ -62,11 +62,10 @@ export default function TaxReceiptForm({
                 </Button>,
                 <Button key="submit" type="primary" onClick={handleSaveEdit}>
                     Guardar
-                </Button>
-            ]}
+                </Button>            ]}
             width={700}
             // Destruir el modal al cerrar para asegurar que el estado del formulario se reinicie
-            destroyOnClose 
+            destroyOnHidden 
         >
             {currentEditItem && (
                 <Form

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import styled from 'styled-components'
 import { Body } from './components/Body/Body'
 import { Button, notification, Spin, Form, Modal as AntdModal, message } from 'antd'
@@ -20,6 +20,7 @@ import { selectInsuranceAuthData, clearAuthData } from '../../../../../features/
 import useInvoice from '../../../../../services/invoice/useInvoice'
 import { selectBusinessData } from '../../../../../features/auth/businessSlice'
 import { downloadInvoiceLetterPdf } from '../../../../../firebase/quotation/downloadQuotationPDF'
+import { selectAppMode } from '../../../../../features/appModes/appModeSlice'
 
 export const modalStyles = {
     mask: {
@@ -92,11 +93,16 @@ export const InvoicePanel = () => {
     const isAddedToReceivables = cart?.isAddedToReceivables;
     const business = useSelector(selectBusinessData) || {};
     const insuranceEnabled = useInsuranceEnabled();
+    // Determine if any payment method is enabled
+    const paymentMethods = cart?.paymentMethod || [];
+    const isAnyPaymentEnabled = paymentMethods.some(method => method.status);
     const change = cart?.change?.value;
     const isChangeNegative = change < 0;
     const insuranceAR = useSelector(selectInsuranceAR);
     const insuranceAuth = useSelector(selectInsuranceAuthData) || null;
     const invoiceType = cartSettings.billing.invoiceType;
+    // Test mode selector
+    const isTestMode = useSelector(selectAppMode);
 
     //function para despues de imprimir la factura
     const handleAfterPrint = () => {
@@ -134,19 +140,22 @@ export const InvoicePanel = () => {
                 message.info('Continuando con la venta', 2.5)
             },
         });
-    };
-
-    const handleInvoicePriting = async (invoice) => {
+    };    const handleInvoicePriting = async (invoice) => {
         if (invoiceType === 'template2') {
             try {
+                console.log('🚀 Starting PDF generation for template2');
+                console.log('📊 Business data:', business);
+                console.log('📋 Invoice data:', invoice);
+                
                 await downloadInvoiceLetterPdf(business, invoice, handleAfterPrint);
             } catch (e) {
                 notification.error({
                     message: 'Error al imprimir',
-                    description: 'No se pudo generar el PDF de la factura',
+                    description: `No se pudo generar el PDF: ${e.message}`,
                     duration: 4
                 });
-                console.error('PDF generation failed', error);
+                console.error('❌ PDF generation failed:', e);
+                console.error('❌ Error stack:', e.stack);
             }
         } else {
             setTimeout(() => handlePrint(), 1000);
@@ -182,6 +191,7 @@ export const InvoicePanel = () => {
                 insuranceAR: insuranceAR,
                 insuranceAuth,
                 invoiceComment, // Add comments from products to the invoice
+                isTestMode, // Pass test mode to service
             })
 
             // const invoice = await runInvoice({
@@ -241,28 +251,35 @@ export const InvoicePanel = () => {
     useEffect(() => {
         // Solo se ejecuta cuando se abre el panel de factura, no en cada actualización
         if (invoicePanel) {
-            // Verificar si algún método de pago tiene un valor establecido
-            const totalPaymentValue = cart?.paymentMethod?.reduce((total, method) => {
-                return method.status ? total + (Number(method.value) || 0) : total;
-            }, 0);
-
-            // Obtenemos el valor de totalPurchase en lugar de payment para inicializar
+            // Asegurar al menos un método habilitado (incluso si el monto es 0 para CxC)
+            const methods = cart?.paymentMethod || [];
+            const anyEnabled = methods.some(m => m.status);
             const purchaseTotal = cart?.totalPurchase?.value || 0;
-
-            // Si ningún método de pago tiene valor, establece el método de pago predeterminado (efectivo)
-            if (totalPaymentValue === 0 && purchaseTotal > 0) {
-                const cashMethod = cart?.paymentMethod?.find(method => method.method === 'cash');
-                if (cashMethod) {
-                    // Solo establece el estado una vez, cuando se abre el panel
+            if (!anyEnabled) {
+                // Seleccionar método cash o el primero disponible
+                const defaultMethod = methods.find(m => m.method === 'cash') || methods[0];
+                if (defaultMethod) {
                     dispatch(setPaymentMethod({
-                        ...cashMethod,
+                        ...defaultMethod,
                         status: true,
-                        value: purchaseTotal
+                        value: isAddedToReceivables ? 0 : purchaseTotal
                     }));
-                    // No llamamos a recalcTotals ya que el middleware lo hará por nosotros
+                }
+            } else {
+                // Para ventas normales, si el pago total es 0 y hay un total de compra, inicializar valor
+                const totalPaymentValue = methods.reduce((sum, m) => m.status ? sum + (Number(m.value) || 0) : sum, 0);
+                if (!isAddedToReceivables && totalPaymentValue === 0 && purchaseTotal > 0) {
+                    const cashMethod = methods.find(m => m.method === 'cash');
+                    if (cashMethod) {
+                        dispatch(setPaymentMethod({
+                            ...cashMethod,
+                            status: true,
+                            value: purchaseTotal
+                        }));
+                    }
                 }
             }
-        }
+            } // end of invoicePanel check
     }, [invoicePanel]); // Solo depende de si el panel está abierto o cerrado
 
     return (
@@ -294,7 +311,8 @@ export const InvoicePanel = () => {
                     key="submit"
                     type='primary'
                     loading={loading.status}
-                    disabled={(isChangeNegative && !isAddedToReceivables) || submitted}
+                    // Disable if submitted, no payment method enabled, or negative change without receivables
+                    disabled={submitted || !isAnyPaymentEnabled || (isChangeNegative && !isAddedToReceivables)}
                     onClick={handleSubmit}
                 >
                     Facturar

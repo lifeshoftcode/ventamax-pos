@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import { IoMdTrash } from 'react-icons/io'
 import styled from 'styled-components'
 import { Button } from '../../templates/system/Button/Button'
 import { useFormatPrice } from '../../../hooks/useFormatPrice'

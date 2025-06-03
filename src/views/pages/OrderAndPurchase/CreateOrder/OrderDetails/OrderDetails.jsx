@@ -26,10 +26,9 @@ export const OrderDetails = ({ setFileList, fileList }) => {
     const conditionItems = orderAndDataCondition.map((item) => {
         return {
             label: item.name,
-            value: JSON.stringify(item)
-        }
+            value: JSON.stringify(item)        }
     })
-    console.log('order', order)
+    
     const deliveryDate = typeof order?.dates?.deliveryDate === 'number' ? fromMillisToDayjs(order?.dates?.deliveryDate) : fromMillisToDayjs(new Date());
 
     return (

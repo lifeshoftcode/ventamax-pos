@@ -56,10 +56,8 @@ export const ClientGeneralInfo = ({ form, customerData, creditLimitForm }) => {
                 message: 'Cliente Actualizado',
                 description: 'Eliminado Correctamente'
             });
-            dispatch(toggleClientModal({ mode: create }))
-
-        } catch (error) {
-            console.log(error)
+            dispatch(toggleClientModal({ mode: create }))        } catch (error) {
+            // Handle error appropriately
         }
     }
 

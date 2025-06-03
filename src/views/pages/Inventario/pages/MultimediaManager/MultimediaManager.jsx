@@ -1,7 +1,5 @@
 import React, { useState } from 'react'
 import { useEffect } from 'react'
-import { IoMdClose, IoMdTrash } from 'react-icons/io'
-import { MdClose, MdOutlineFileUpload } from 'react-icons/md'
 import styled from 'styled-components'
 
 import { MenuApp } from '../../../../templates/MenuApp/MenuApp'
@@ -22,8 +20,6 @@ export const MultimediaManager = () => {
   useEffect(() => {
     fbGetProductsImg(user, setAllImg)
   }, [user])
-
-  console.log(allImg)
 
   const handleSubmit = () => {
     fbAddProductImg(user, ImgToUpload).then((url) => {

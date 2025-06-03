@@ -27,8 +27,8 @@ export const General = ({ showImageManager }) => {
     const handleChangeValues = (changeValue, allValues) => {
         // Suponiendo que 'stock' es el nombre del campo que debe ser un número
         const key = Object.keys(changeValue)[0]; // Obtiene la clave del valor que cambió
-        const value = changeValue[key];
-        console.log(changeValue)
+        // const value = changeValue[key];
+        
         // Verifica si el campo que cambió es 'stock' y convierte su valor a número
         if (key === 'cost') {
             changeValue[key] = value ? { unit: value.unit, total: value.unit } : 0; // Convertir a número o cero si es vacío
@@ -63,8 +63,7 @@ export const General = ({ showImageManager }) => {
             }
             dispatch(closeModalUpdateProd())
             dispatch(clearUpdateProductData())
-        } catch (err) {
-            console.log(err)
+} catch (err) {
             err.errorFields && err.errorFields.forEach((error) => {
                 antd.notification.error({
                     message: 'Error',

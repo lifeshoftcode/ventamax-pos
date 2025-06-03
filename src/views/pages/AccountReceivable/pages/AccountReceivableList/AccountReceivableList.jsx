@@ -17,7 +17,6 @@ const Container = styled.div`
 `;
 
 const mapDataToAccounts = (data) => {
-    console.log("data ", data);
     return data?.map((account) => {
         const invoiceData = account?.invoice?.data;
         const client = account?.client || {};
@@ -67,7 +66,6 @@ export const AccountReceivableList = () => {
     const [clientType, setClientType] = useState('normal'); // 'normal' o 'insurance'
 
     const accounts = useListenAccountsReceivable(user, datesSelected);
-    console.log("accounts: ------", accounts)
 
     useEffect(() => {
         const data = mapDataToAccounts(accounts);

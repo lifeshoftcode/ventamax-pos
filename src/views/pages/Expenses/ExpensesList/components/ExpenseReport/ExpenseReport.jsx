@@ -38,7 +38,6 @@ export const ExpenseChart = () => {
             y: '100vh',
         }
     }
-    console.log('expensesList', expensesList)
 
     //useClickOutSide(componentRef, isOpen, onOpen)
 

@@ -1,7 +1,8 @@
 import { useDispatch } from "react-redux"
 import { openModalAddClient } from "../../../../features/modals/modalSlice"
 import { Button } from "./Button"
-import { HiUserAdd } from "react-icons/hi"
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUserPlus } from '@fortawesome/free-solid-svg-icons';
 
 export const AddClientButton = () => {
     const dispatch = useDispatch()
@@ -10,7 +11,7 @@ export const AddClientButton = () => {
 
     return (
         <Button
-            title={<HiUserAdd />}
+            title={<FontAwesomeIcon icon={faUserPlus} />}
             borderRadius='normal'
             color='gray-dark'
             width='icon32'

@@ -1,14 +1,14 @@
 import { useState } from "react";
 import styled from "styled-components";
-import { FaWindowClose } from "react-icons/fa";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faTimes } from '@fortawesome/free-solid-svg-icons'
 
 const RunMenu = ({ onClose }) => {
   const [searchValue, setSearchValue] = useState("");
 
   return (
-    <Container>
-      <CloseButton onClick={onClose}>
-        <FaWindowClose />
+    <Container>      <CloseButton onClick={onClose}>
+        <FontAwesomeIcon icon={faTimes} />
       </CloseButton>
       <Input
         type="text"

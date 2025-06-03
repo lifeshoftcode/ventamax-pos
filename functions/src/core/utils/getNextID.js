@@ -131,3 +131,35 @@ export function applyNextIDTransactional(tx, nextIdSnap, quantity = 1) {
 
   return prevValue + quantity;
 }
+
+/**
+ * Devuelve el siguiente número de secuencia para un negocio dado.
+ * Si `tx` se pasa, opera dentro de la transacción; de lo contrario crea una nueva.
+ *
+ * @param {Object}   opts
+ * @param {import('firebase-admin').firestore.Transaction=} opts.tx
+ * @param {{ businessID: string }}                           opts.user  – Debe incluir businessID
+ * @param {string}   opts.name      – Nombre del contador
+ * @param {number}   [opts.qty=1]   – Cuánto incrementar
+ * @returns {Promise<number>}       – Valor resultante
+ */
+export async function nextSeq({ tx = null, user, name, qty = 1 }) {
+  if (!user?.businessID || !name) {
+    throw new https.HttpsError('invalid-argument', 'businessID y name requeridos');
+  }
+  if (!Number.isInteger(qty) || qty < 1) {
+    throw new https.HttpsError('invalid-argument', 'qty debe ser entero ≥ 1');
+  }
+
+  const ref = db.doc(`businesses/${user.businessID}/counters/${name}`);
+
+  const run = async t => {
+    const snap = await t.get(ref);
+    const prev = snap.exists ? snap.data().value || 0 : 0;
+    const next = prev + qty;
+    t.set(ref, { value: next }, { merge: true });
+    return next;
+  };
+
+  return tx ? run(tx) : db.runTransaction(run);
+}

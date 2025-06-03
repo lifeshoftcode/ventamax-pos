@@ -3,7 +3,7 @@ import styled from 'styled-components'
 import { separator } from '../../../../../../../hooks/separator'
 import { Col } from './Table/Col'
 import { Row } from './Table/Row'
-import { getPriceTotal, getTax, getTotal, getTotalPrice, resetAmountToBuyForProduct } from '../../../../../../../utils/pricing'
+import { getPriceTotal, getTax, getTotal, getTotalPrice, resetAmountToBuyForProduct, getProductIndividualDiscount } from '../../../../../../../utils/pricing'
 import { useFormatPrice } from '../../../../../../../hooks/useFormatPrice'
 import { useDispatch, useSelector } from 'react-redux'
 import {  SelectSettingCart } from '../../../../../../../features/cart/cartSlice'
@@ -44,11 +44,20 @@ export const ProductList = ({ data }) => {
                                 </Row>
                                 <Row>
                                     <ProductName>{getFullProductName(product)} </ProductName>
-                                </Row>
-                                {
+                                </Row>                                {
                                     product?.warranty?.status && (
                                         <Row>
                                             {convertTimeToSpanish(product?.warranty?.quantity, product?.warranty?.unit)} de Garantía
+                                        </Row>
+                                    )
+                                }
+                                {
+                                    product?.discount && product?.discount?.value > 0 && (
+                                        <Row>
+                                            <ProductDiscount>
+                                                Descuento: -{useFormatPrice(getProductIndividualDiscount(product))} 
+                                                ({product.discount.type === 'percentage' ? `${product.discount.value}%` : 'Monto fijo'})
+                                            </ProductDiscount>
                                         </Row>
                                     )
                                 }
@@ -94,4 +103,13 @@ const ProductName = styled.div`
         //white-space: nowrap;
         text-overflow: ellipsis;
         overflow: hidden;
+`
+
+const ProductDiscount = styled.div`
+    font-size: 0.9em;
+    font-weight: 600;
+    color: #52c41a;
+    padding-left: 8px;
+    border-left: 2px solid #52c41a;
+    margin: 2px 0;
 `

@@ -43,7 +43,6 @@ export const BusinessControl = () => {
   const [availableBusinessTypes, setAvailableBusinessTypes] = useState([])
   const itemsPerPage = 20
 
-  console.log("Negocios:", businesses.slice(0, 5))
   useEffect(() => {
     const fetchBusinesses = async () => {
       setIsLoading(true);

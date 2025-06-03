@@ -1,12 +1,11 @@
-import React, { useEffect } from 'react';
-import { Modal, Input, Button, Typography, message, Form } from 'antd';
+import { useEffect } from 'react';
+import { Modal, Input, message, Form } from 'antd';
 import { useDispatch, useSelector } from 'react-redux';
-import { addNotification } from '../../../../features/notification/NotificationSlice';
 import { closeModal, selectActiveIngredientModal } from '../../../../features/activeIngredients/activeIngredientsSlice';
 import { selectUser } from '../../../../features/auth/userSlice';
 import {fbAddActiveIngredient, fbUpdateActiveIngredient} from '../../../../firebase/products/activeIngredient/activeIngredients';
-const ActiveIngredientModal = () => {
 
+const ActiveIngredientModal = () => {
   const dispatch = useDispatch();
   const { isOpen, initialValues } = useSelector(selectActiveIngredientModal);
   const user = useSelector(selectUser);
@@ -60,7 +59,6 @@ const handleClose = () => {
   const handleCancel = () => {
     dispatch(closeModal());
   };
-
   return (
     <Modal
       title={isUpdate ? 'Actualizar Principio Activo' : 'Crear Principio Activo'}
@@ -70,7 +68,6 @@ const handleClose = () => {
       onCancel={handleCancel}
       okText={isUpdate ? 'Actualizar' : 'Crear'}
       cancelText="Cancelar"
-      destroyOnClose
     >
       <Form
         form={form}

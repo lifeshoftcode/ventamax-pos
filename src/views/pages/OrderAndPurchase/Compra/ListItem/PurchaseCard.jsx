@@ -1,7 +1,4 @@
 import React from 'react'
-import { IoCartSharp, IoTrashSharp } from 'react-icons/io5'
-import { TbEdit } from 'react-icons/tb'
-import { CgNotes } from 'react-icons/cg'
 import styled from 'styled-components'
 import { separator } from '../../../../hooks/separator'
 import { useFormatPrice } from '../../../../hooks/useFormatPrice'

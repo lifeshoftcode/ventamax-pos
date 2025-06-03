@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Form, Input, Select, InputNumber, Modal, Button, Space, message, Card, Typography, Divider, Radio, Checkbox } from 'antd';
+import { Form, Input, Modal, Button, Space, message } from 'antd';
 import { PlusOutlined, DeleteOutlined, BankOutlined, SafetyCertificateOutlined, NumberOutlined, CalendarOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { saveInsuranceConfig } from '../../../../firebase/insurance/insuranceService';
@@ -241,9 +241,7 @@ const InsuranceConfigForm = () => {
             setInitialized(false);
         }
     }, [isOpen]);
-
     const resetForm = () => {
-        console.log('Resetting form and insurance types...');
         form.resetFields();
         setInsuranceTypes([]);
     };
@@ -258,20 +256,12 @@ const InsuranceConfigForm = () => {
             prescriptionValidityDisplay: ''
         }]);
     };
-
     const removeInsuranceType = (indexToRemove) => {
-        console.log('Removing index:', indexToRemove);
         setInsuranceTypes(prevTypes => {
             const updatedTypes = prevTypes.filter((_, index) => index !== indexToRemove);
-            console.log('After remove:', updatedTypes);
             return updatedTypes;
         });
     };
-
-    // Para debuggear los cambios en el estado
-    useEffect(() => {
-        console.log('Insurance types updated:', insuranceTypes);
-    }, [insuranceTypes]);
 
     const handleCancel = () => {
         resetForm();

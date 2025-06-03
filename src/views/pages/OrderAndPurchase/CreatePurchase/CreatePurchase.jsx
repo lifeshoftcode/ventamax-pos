@@ -203,7 +203,6 @@
 //     return (
 //         <Form
 //             layout='vertical'
-//             onValuesChange={(e) => console.log(e)}
 //             defaultValue={purchase}
 //         >
 //             <Modal >

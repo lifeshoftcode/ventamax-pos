@@ -16,11 +16,9 @@ const SwitchBusiness = () => {
   const handleChange = (value) => {
     setSelectedBusiness(value);
   };
-
   const handleSwitch = () => {
     if (selectedBusiness) {
-      // Lógica para cambiar el negocio activo (e.g., dispatch o localStorage)
-      console.log('Negocio seleccionado:', selectedBusiness);
+      // Logic to switch the active business
     }
   };
 

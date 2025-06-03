@@ -226,10 +226,8 @@ export const DuplicateProducts: React.FC = () => {
       setLoading(false);
     }
   };
-
   const handleMergeProducts = async (productId: string) => {
     try {
-      console.log(`Fusionando producto ${productId}`);
       // Implementación pendiente de la funcionalidad de fusión
       await loadDuplicateProducts();
     } catch (err) {

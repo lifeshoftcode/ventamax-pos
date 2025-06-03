@@ -8,22 +8,27 @@ import { Typography, InputNumber, message } from "antd";
 import { useFormatPrice } from "../../../../hooks/useFormatPrice";
 const { Title, Paragraph } = Typography;
 
-const CustomInput = ({ options, value, discount }) => {
+const CustomInput = ({ options, value, discount, disabled = false }) => {
   const [showMenu, setShowMenu] = useState(false);
   const dispatch = useDispatch()
   const inputRef = useRef(null);
-
   const handleChange = (newValue) => {
-    dispatch(addDiscount(Number(quitarCeros(newValue))))
+    if (!disabled) {
+      dispatch(addDiscount(Number(quitarCeros(newValue))))
+    }
   };
 
   const handleClick = () => {
-    setShowMenu(!showMenu);
+    if (!disabled) {
+      setShowMenu(!showMenu);
+    }
   };
 
   const handleSelect = (option) => {
-    setShowMenu(false);
-    dispatch(addDiscount(option))
+    if (!disabled) {
+      setShowMenu(false);
+      dispatch(addDiscount(option))
+    }
   };
 
   useClickOutSide(inputRef, showMenu, handleClick)
@@ -51,8 +56,7 @@ const CustomInput = ({ options, value, discount }) => {
             ))}
           </MenuOptions>
         </StyledMenu>
-      )}
-      <Wrapper >
+      )}      <Wrapper >
         <InputNumber
           value={value}
           onChange={handleChange}
@@ -63,6 +67,7 @@ const CustomInput = ({ options, value, discount }) => {
           min={0}
           max={100}
           onClick={handleClick}
+          disabled={disabled}
         />
       </Wrapper>
     </Container>

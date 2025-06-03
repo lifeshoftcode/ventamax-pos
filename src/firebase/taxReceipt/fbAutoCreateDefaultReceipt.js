@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { taxReceiptDefault } from "./taxReceiptsDefault";
 import { getTaxReceiptData } from "../../features/taxReceipt/taxReceiptSlice";
 import { removeDuplicateTaxReceipts } from "./removeDuplicateTaxReceipts";
+import { serializeFirestoreDocuments } from "../../utils/serialization/serializeFirestoreData";
 
 export const fbAutoCreateDefaultTaxReceipt = () => {
     const dispatch = useDispatch();
@@ -73,11 +74,10 @@ export const fbAutoCreateDefaultTaxReceipt = () => {
             console.error("Error en la transacción al crear los recibos por defecto:", err);
           }
           return; // Finalizamos si se crearon los documentos por defecto
-        }
-  
-        // Luego, actualizamos el estado con la data (ya limpia de duplicados)
+        }        // Luego, actualizamos el estado con la data (ya limpia de duplicados)
         const taxReceiptsArray = snapshot.docs.map((doc) => doc.data());
-        dispatch(getTaxReceiptData(taxReceiptsArray));
+        const serializedTaxReceipts = serializeFirestoreDocuments(taxReceiptsArray);
+        dispatch(getTaxReceiptData(serializedTaxReceipts));
       });
   
       return () => {

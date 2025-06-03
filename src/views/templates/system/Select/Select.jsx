@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import styled from 'styled-components'
 import { useClickOutSide } from '../../../../hooks/useClickOutSide';
 import { icons } from '../../../../constants/icons/icons';
@@ -128,12 +128,8 @@ export const Select = ({
                 </Item>
               ))}
             </List>
-          ) : (
-            filteredItems.length === 0 && (
+          ) : (            filteredItems.length === 0 && (
               <NoneItemMessageContainer>
-                {
-                  console.log('no hay resultados')
-                }
                 No hay {title}.
               </NoneItemMessageContainer>
             )

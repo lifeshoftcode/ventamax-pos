@@ -45,8 +45,12 @@ export const updateAllTotals = (state, paymentValue = null) => {
         }, 0);
         
         // Determina el valor de pago a utilizar
-        const pay = paymentValue !== null ? Number(paymentValue) : 
-                   totalPaymentFromMethods > 0 ? totalPaymentFromMethods : purchaseValue;
+        // Si se proporciona paymentValue, se usa. Si no, utiliza la suma de métodos de pago habilitados si es mayor que 0, sino cero.
+        const pay = paymentValue !== null 
+            ? Number(paymentValue) 
+            : totalPaymentFromMethods > 0 
+                ? totalPaymentFromMethods 
+                : 0;
 
         // Actualiza los totales de forma segura
         if (totalPurchase) totalPurchase.value = purchaseValue;

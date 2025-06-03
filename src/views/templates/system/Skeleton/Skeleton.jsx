@@ -6,15 +6,15 @@ export const Skeleton = ({
     children
 }) => {
     const [show, setShow] = useState(false)
-    
-    useEffect(() => {
+      useEffect(() => {
         if (loading) {
             setShow(false)
         } else {
-            setTimeout(() => {
+            const timeoutId = setTimeout(() => {
                 setShow(true)
-            }
-                , 3000)
+            }, 300)
+            
+            return () => clearTimeout(timeoutId)
         }
     }, [loading])
     return (

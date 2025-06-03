@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
-import { BiChevronLeft, BiChevronRight, BiChevronsLeft, BiChevronsRight } from 'react-icons/bi';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChevronLeft, faChevronRight, faAnglesLeft, faAnglesRight } from '@fortawesome/free-solid-svg-icons';
 
 /**
  * Componente que representa el encabezado del calendario con navegación
@@ -25,18 +26,17 @@ const Header = ({
         </MonthYear>
       </YearMonthContainer>
       
-      <NavigationContainer>
-        <NavButton onClick={goToPreviousYear} title="Año anterior">
-          <BiChevronsLeft />
+      <NavigationContainer>        <NavButton onClick={goToPreviousYear} title="Año anterior">
+          <FontAwesomeIcon icon={faAnglesLeft} />
         </NavButton>
         <NavButton onClick={goToPreviousMonth} title="Mes anterior">
-          <BiChevronLeft />
+          <FontAwesomeIcon icon={faChevronLeft} />
         </NavButton>
         <NavButton onClick={goToNextMonth} title="Mes siguiente">
-          <BiChevronRight />
+          <FontAwesomeIcon icon={faChevronRight} />
         </NavButton>
         <NavButton onClick={goToNextYear} title="Año siguiente">
-          <BiChevronsRight />
+          <FontAwesomeIcon icon={faAnglesRight} />
         </NavButton>
       </NavigationContainer>
     </StyledHeader>

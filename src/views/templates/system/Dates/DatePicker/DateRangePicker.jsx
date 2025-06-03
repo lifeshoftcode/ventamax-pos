@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import { FiCalendar } from "react-icons/fi";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCalendar } from '@fortawesome/free-solid-svg-icons';
 
 const Container = styled.div`
   display: flex;
@@ -74,18 +75,15 @@ const DateRangePicker = () => {
                     startDate.getFullYear(),
                     startDate.getMonth() + 3,
                     startDate.getDate()
-                ));
-                break;
+                ));                break;
             default:
                 break;
         }
-
-        console.log("End date:", endDate);
     };
 
     return (
         <Container>
-            <FiCalendar />
+            <FontAwesomeIcon icon={faCalendar} />
             <Input
                 type="date"
                 value={startDate instanceof Date ? startDate.toISOString().substr(0, 10) : startDate}

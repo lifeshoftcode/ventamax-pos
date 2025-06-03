@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import styled from 'styled-components'
-import { TbPlus } from 'react-icons/tb'
 import { notification } from 'antd'
 import { ProductFilter } from '../ProductFilter/ProductFilter'
 import { useDispatch } from 'react-redux'
@@ -81,7 +80,6 @@ export const StockedProductPicker = ({ addProduct, selectedProduct, selectProduc
         }
     }, [initialCost, newStock])
 
-    console.log(subTotal)
     return (
         <Container>
             <Group>

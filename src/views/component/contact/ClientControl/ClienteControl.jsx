@@ -124,7 +124,8 @@ export const ClientControl = () => {
 
           {mode === CLIENT_MODE_BAR.SEARCH.id && (
             <ClientButton
-              type="primary"
+              color='blue'
+              variant="solid"
               icon={icons.operationModes.add}
               onClick={openAddClientModal}
             >

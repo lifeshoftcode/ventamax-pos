@@ -2,11 +2,10 @@ import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import { useDispatch, useSelector } from 'react-redux'
 
-export const ProductItem = ({ product, Row, Col,  }) => {
+export const ProductItem = ({ product, Row, Col}) => {
     const dispatch = useDispatch()
     const [isOpen, setIsOpen] = useState(false)
     const [showNote, setShowNote] = useState(false)
-    console.log(product)
    
     return (
         <Row>

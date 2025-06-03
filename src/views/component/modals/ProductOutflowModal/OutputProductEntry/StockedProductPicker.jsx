@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import styled from 'styled-components'
-import { TbPlus } from 'react-icons/tb'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import { InputNumber, InputText } from '../../templates/system/Inputs/Input'
 import { AddProductButton } from '../modals/AddOrder/Button'
 import { ProductFilter } from '../ProductFilter/ProductFilter'
@@ -71,7 +72,6 @@ export const StockedProductPicker = ({ fn, productSelected, handleSelectProduct 
         }
     }, [initialCost, newStock])
 
-    console.log(product)
     return (
         <Container>
             <Group>
@@ -145,7 +145,7 @@ export const StockedProductPicker = ({ fn, productSelected, handleSelectProduct 
                     />
                 </div>
                 <div>
-                    <Button title={<TbPlus />} width='icon32' border='light' borderRadius='normal' onClick={AddToProductList} >
+                    <Button title={<FontAwesomeIcon icon={faPlus} />} width='icon32' border='light' borderRadius='normal' onClick={AddToProductList} >
                     </Button>
                 </div>
             </Group>

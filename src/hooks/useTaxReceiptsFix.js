@@ -8,15 +8,14 @@ import { db } from '../firebase/firebaseconfig';
 const defaultLength = (serie) => (serie === 'B' ? 8 : 10);
 
 export function useTaxReceiptsFix() {
-  const [taxReceipts, setTaxReceipts]   = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState(null);
-  const user        = useSelector(selectUser);
-  const businessID  = user?.businessID;
-
+  const [taxReceipts, setTaxReceipts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const user = useSelector(selectUser);
+  const businessID = user?.businessID;
   useEffect(() => {
     if (!businessID) {
-      console.warn('useTaxReceiptsFix: no businessID, no suscripción.');
+      // No businessID available yet, skip initialization
       setLoading(false);
       return;
     }
@@ -43,7 +42,7 @@ export function useTaxReceiptsFix() {
         /* 1) Primer pase: defaults + conversión */
         await Promise.all(
           snapshot.docs.map(async (docSnap) => {
-            const raw     = docSnap.data().data ?? {};
+            const raw = docSnap.data().data ?? {};
             const updates = {};
 
             // id por defecto
@@ -104,7 +103,7 @@ export function useTaxReceiptsFix() {
     }
     try {
       const docRef = doc(db, 'businesses', businessID, 'taxReceipts', docId);
-      const snap   = await getDoc(docRef);
+      const snap = await getDoc(docRef);
       if (!snap.exists()) throw new Error('Receipt not found');
 
       const current = snap.data().data?.sequence;

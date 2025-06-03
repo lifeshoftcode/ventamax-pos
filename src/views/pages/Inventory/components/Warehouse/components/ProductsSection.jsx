@@ -14,11 +14,8 @@ export const ProductsSection = ({ location }) => {
     const dispatch = useDispatch();
     const user = useSelector(selectUser);
     const navigate = useNavigate();
-    const { data: products, loading, error } = useListenProductsStockByLocation(location);
-
-    const handleDelete = async (product) => {
+    const { data: products, loading, error } = useListenProductsStockByLocation(location);    const handleDelete = async (product) => {
         if (!product) return;
-        console.log(product)
         try {
             await deleteProductStock(user, product.id)
         } catch (error) {

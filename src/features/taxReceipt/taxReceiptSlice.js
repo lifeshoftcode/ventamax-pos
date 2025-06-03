@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit'
 import { increaseSequence } from './increaseSequence'
 import { fbUpdateTaxReceipt } from '../../firebase/taxReceipt/fbUpdateTaxReceipt'
+import { serializeFirestoreData } from '../../utils/serialization/serializeFirestoreData'
 
 export const updateComprobante = (state, name) => {
     const comprobante = state.data.find((item) => item.data.name === name);
@@ -56,11 +57,12 @@ const initialState = {
 export const taxReceiptSlice = createSlice({
     name: 'taxReceipt',
     initialState,
-    reducers: {
-        getTaxReceiptData: (state, action) => {
-            state.data = action.payload;
+    reducers: {        getTaxReceiptData: (state, action) => {
+            // Serialize the payload to ensure no Firestore timestamps remain
+            const serializedPayload = serializeFirestoreData(action.payload);
+            state.data = serializedPayload;
             // Actualizar la lista de tipos de comprobantes disponibles
-            state.availableTypes = action.payload.map(item => item.data.name);
+            state.availableTypes = serializedPayload.map(item => item.data.name);
         },
         IncreaseEndConsumer: (state, action) => {
             if (state.settings.taxReceiptEnabled) {

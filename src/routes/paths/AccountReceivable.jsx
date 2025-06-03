@@ -1,6 +1,6 @@
 import AccountReceivableInfo from "../../views/pages/AccountReceivable/pages/AccountReceivableInfo/AccountReceivableInfo";
 import { AccountReceivableList } from "../../views/pages/AccountReceivable/pages/AccountReceivableList/AccountReceivableList";
-import { ReceivablePaymentReceipt } from "../../views/pages/Registro copy/ReceivablePaymentReceipt";
+import { ReceivablePaymentReceipt } from "../../views/pages/Registro/ReceivablePaymentReceipt";
 import ROUTES_NAME from "../routesName";
 
 const { ACCOUNT_RECEIVABLE_LIST, ACCOUNT_RECEIVABLE_INFO, RECEIVABLE_PAYMENT_RECEIPTS } = ROUTES_NAME.ACCOUNT_RECEIVABLE;

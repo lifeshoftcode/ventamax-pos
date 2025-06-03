@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { fbSignUp } from '../../../../../../firebase/Auth/fbAuthV2/fbSignUp';
 import { userAccess } from '../../../../../../hooks/abilities/useAbilities';
 import { SelectSignUpUserModal, toggleSignUpUser } from '../../../../../../features/modals/modalSlice';
+import { getAssignableRoles } from '../../../../../../abilities/roles';
 const { Modal, Form, Input, Button, Select, message, Alert, Spin, Typography, Switch } = antd;
 const { Option } = Select;
 import { useDispatch } from 'react-redux';
@@ -17,20 +18,30 @@ export const SignUpModal = () => {
     const [isOpenChangePassword, setIsOpenChangePassword] = useState(false)
     const [loading, setLoading] = useState(false)
     const signUpModal = useSelector(SelectSignUpUserModal)
-    const { isOpen, data } = signUpModal;
+    const { isOpen, data } = signUpModal;    
     const [fbError, setFbError] = useState(null);
     const dispatch = useDispatch()
+    const { abilities } = userAccess()
 
-    const userRoles = [
-        { value: 'admin', label: 'Admin' },
-        { value: 'manager', label: 'Gerente' },
-        { value: 'cashier', label: 'Cajero' },
-        { value: 'specialCashier1', label: 'Cajero - Especial 1' },
-        { value: 'specialCashier2', label: 'Cajero - Especial 2' },
-        { value: 'buyer', label: 'Comprador' },
-    ];
+    // Verificar permisos para gestionar usuarios
+    const canManageUsers = abilities.can('manage', 'User')
+    const canCreateUsers = abilities.can('create', 'User') || canManageUsers
+    const canUpdateUsers = abilities.can('update', 'User') || canManageUsers
+
+    // Obtener roles que el usuario actual puede asignar
+    const assignableRoles = getAssignableRoles(user);
 
     const handleSubmit = async (values) => {
+        // Verificar permisos antes de proceder
+        if (data && !canUpdateUsers) {
+            message.error('No tienes permisos para actualizar usuarios');
+            return;
+        }
+        if (!data && !canCreateUsers) {
+            message.error('No tienes permisos para crear usuarios');
+            return;
+        }
+
         setLoading(true);
         const userData = {
             ...data,
@@ -57,8 +68,7 @@ export const SignUpModal = () => {
         } finally {
             setTimeout(() => {
                 setLoading(false);
-            }, 1000);
-        }
+            }, 1000);        }
     };
 
     useEffect(() => {
@@ -74,11 +84,16 @@ export const SignUpModal = () => {
     }, [data])
 
     const handleClose = () => {
-
         dispatch(toggleSignUpUser({ isOpen: false }))
     }
+    
     const handleIsOpenChangePassWord = () => {
         setIsOpenChangePassword(!isOpenChangePassword)
+    }
+
+    // Si no tiene permisos para gestionar usuarios, no mostrar el modal
+    if (!canManageUsers && !canCreateUsers && !canUpdateUsers) {
+        return null;
     }
 
     return (
@@ -94,7 +109,7 @@ export const SignUpModal = () => {
                     <Button
                         key="submit"
                         type="primary"
-
+                        disabled={data ? !canUpdateUsers : !canCreateUsers}
                         onClick={() => form.submit()}
                     >
                         {data ? "Actualizar Usuario" : "Crear Usuario"}
@@ -133,26 +148,24 @@ export const SignUpModal = () => {
                             help="Elige un identificador único para acceder al sistema."
                         >
                             <Input />
-                        </Form.Item>
-                        <Form.Item
+                        </Form.Item>                        <Form.Item
                             label="Rol"
                             name="role"
                             rules={[{ required: true, message: 'Por favor, selecciona un rol!' }]}
+                            help={assignableRoles.length === 0 ? "No tienes permisos para asignar roles a otros usuarios." : "Selecciona el rol que tendrá el usuario en el sistema."}
                         >
                             <Select
-                                placeholder="Selecciona un rol"
-                                options={userRoles}
+                                placeholder={assignableRoles.length === 0 ? "Sin roles disponibles" : "Selecciona un rol"}
+                                options={assignableRoles}
+                                disabled={assignableRoles.length === 0}
                             />
                         </Form.Item>
                         {
                             !data && (
                                 <Form.Item
                                     label="Contraseña"
-                                    name="password"
-
-                                    rules={[
+                                    name="password"                                    rules={[
                                         { required: true, message: 'Por favor, ingresa tu contraseña!' },
-                                        { min: 6, message: 'La contraseña debe tener al menos 6 caracteres!' },
                                         { pattern: /(?=.*[A-Z])/, message: 'La contraseña debe tener al menos una letra mayúscula.' },
                                         { pattern: /(?=.*[a-z])/, message: 'La contraseña debe tener al menos  una letra minúscula.' },
                                         { pattern: /(?=.*[0-9])/, message: 'La contraseña debe tener al menos un número' }

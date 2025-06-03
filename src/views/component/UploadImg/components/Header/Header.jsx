@@ -1,14 +1,14 @@
 import React from 'react'
-import { IoIosArrowBack } from 'react-icons/io'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 import styled from 'styled-components'
 import { Button } from '../../../../templates/system/Button/Button'
 
 export const Header = ({setIsOpen}) => {
     return (
-        <Head>
-            <Button
+        <Head>            <Button
                 borderRadius='normal'
-                startIcon={<IoIosArrowBack />}
+                startIcon={<FontAwesomeIcon icon={faArrowLeft} />}
                 title='atrás'
                 onClick={() => setIsOpen(false)}
             />

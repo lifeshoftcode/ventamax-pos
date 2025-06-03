@@ -1,15 +1,14 @@
 // functions/src/modules/invoice/controllers/invoice.controller.js
 import { https, logger } from 'firebase-functions';
 import { processInvoiceData } from '../services/invoice.service.js';
-import crypto from "node:crypto";
+import { nanoid } from 'nanoid';
 /**
  * Endpoint callable para la funcionalidad de Invoice.
  * Retorna un mensaje y los datos procesados por el servicio.
  */
-export const handleInvoiceRequest = https.onCall(async (req, context) => {
-  const traceId =
+export const handleInvoiceRequest = https.onCall(async (req, context) => {  const traceId =
     context.rawRequest?.headers["x-cloud-trace-context"]?.split("/")[0] ??
-    crypto.randomUUID();
+    nanoid();
 
     const rawBody = context.rawRequest?.rawBody?.toString();
     logger.debug('⇢ Raw request body', {

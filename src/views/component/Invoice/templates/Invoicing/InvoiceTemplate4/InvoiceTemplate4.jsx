@@ -10,7 +10,9 @@ import {
   resetAmountToBuyForProduct,
   getProductsPrice,
   getProductsTax,
-  getTotalDiscount
+  getTotalDiscount,
+  getProductIndividualDiscount,
+  getProductsIndividualDiscounts
 } from '../../../../../../utils/pricing';
 import { separator } from '../../../../../../hooks/separator';
 import { SelectSettingCart } from '../../../../../../features/cart/cartSlice';
@@ -44,6 +46,7 @@ export const wrapText = (text, maxWidth = CENTER_WIDTH) => {
 };
 
 // Centrar texto tras envolver
+// eslint-disable-next-line react-refresh/only-export-components
 export const wrapAndCenter = (text, maxWidth = CENTER_WIDTH) => {
   const wrapped = wrapText(text, maxWidth);
   return wrapped
@@ -53,15 +56,18 @@ export const wrapAndCenter = (text, maxWidth = CENTER_WIDTH) => {
 };
 
 // Centrar una sola línea a un ancho dado
+// eslint-disable-next-line react-refresh/only-export-components
 export const centerText = (text, maxWidth = CENTER_WIDTH) => {
   const spaces = Math.floor((maxWidth - text.length) / 2);
   return ' '.repeat(spaces) + text;
 };
 
 // Línea separadora
+// eslint-disable-next-line react-refresh/only-export-components
 export const separatorLine = (maxWidth = CENTER_WIDTH) => '-'.repeat(maxWidth);
 
 // Formatear columnas (left, right, center)
+// eslint-disable-next-line react-refresh/only-export-components
 export const formatColumn = (text, width, align = 'left') => {
   let str = text.toString();
 
@@ -82,6 +88,7 @@ export const formatColumn = (text, width, align = 'left') => {
 };
 
 // Concatenar nombre del producto con medida y pie
+// eslint-disable-next-line react-refresh/only-export-components
 export const getFullProductName = (product) => {
   return product.name +
     (product.measurement ? ` Medida: [${product.measurement}]` : '') +
@@ -89,6 +96,7 @@ export const getFullProductName = (product) => {
 };
 
 // Determinar tipo de comprobante
+// eslint-disable-next-line react-refresh/only-export-components
 export const getReceiptInfo = (code) => {
   if (!code) {
     return { type: 'Desconocido', description: 'RECIBO DE PAGO' };
@@ -111,6 +119,7 @@ export const getReceiptInfo = (code) => {
    ========================================================= */
 
 // ----------------- Business Header -----------------
+// eslint-disable-next-line react-refresh/only-export-components
 export const renderBusinessHeader = (business, formatPhoneNumber) => {
   // SIN salto de línea al principio: empieza de inmediato
   let header = '';
@@ -123,6 +132,7 @@ export const renderBusinessHeader = (business, formatPhoneNumber) => {
 };
 
 // ----------------- Invoice Header -----------------
+// eslint-disable-next-line react-refresh/only-export-components
 export const renderInvoiceHeader = (data, fechaActual) => {
   let header = '';
   header += 'Fecha: ' + fechaActual + '\n';
@@ -138,6 +148,7 @@ export const renderInvoiceHeader = (data, fechaActual) => {
 };
 
 // ----------------- Client Info -----------------
+// eslint-disable-next-line react-refresh/only-export-components
 export const renderClientInfo = (client, formatPhoneNumber) => {
   if (!client) return ''; // nada si no hay cliente
 
@@ -190,6 +201,7 @@ export const renderClientInfo = (client, formatPhoneNumber) => {
 };
 
 // ----------------- Products -----------------
+// eslint-disable-next-line react-refresh/only-export-components
 export const renderProducts = (
   products,
   taxReceipt,
@@ -224,10 +236,15 @@ export const renderProducts = (
       const col1 = formatColumn(leftCol, 13, 'left');
       const col2 = formatColumn(separator(getTax(product, NCF)).toString(), 10, 'right');
       const col3 = formatColumn(separator(getTotalPrice(product, NCF)).toString(), 17, 'right');
-      prodText += col1 + col2 + col3 + '\n';
-
-      // Nombre completo del producto (y lo partimos en líneas de máx 40)
+      prodText += col1 + col2 + col3 + '\n';      // Nombre completo del producto (y lo partimos en líneas de máx 40)
       prodText += wrapText(getFullProductName(product), CENTER_WIDTH) + '\n';
+
+      // Descuento individual (si aplica)
+      if (product?.discount && product?.discount?.value > 0) {
+        const discountAmount = getProductIndividualDiscount(product);
+        const discountType = product.discount.type === 'percentage' ? `${product.discount.value}%` : 'Monto fijo';
+        prodText += wrapText(`Descuento: -${formatter(discountAmount)} (${discountType})`, CENTER_WIDTH) + '\n';
+      }
 
       // Garantía (si aplica)
       if (product?.warranty?.status) {
@@ -249,6 +266,7 @@ export const renderProducts = (
 };
 
 // ----------------- Payment Area -----------------
+// eslint-disable-next-line react-refresh/only-export-components
 export const renderPaymentArea = (
   data,
   formatter,
@@ -272,10 +290,11 @@ export const renderPaymentArea = (
   };
 
   const formatNumber = (num) => separator(num);
-
   // Calculos para subtotal, itbis y descuentos
   const subtotal = getProductsPrice(data?.products || []);
-  const discount = getTotalDiscount(subtotal, data?.discount?.value || 0);
+  const generalDiscount = getTotalDiscount(subtotal, data?.discount?.value || 0);
+  const individualDiscounts = getProductsIndividualDiscounts(data?.products || []);
+  const hasIndividualDiscounts = individualDiscounts > 0;
 
   // Etiquetas de métodos de pago
   const paymentLabel = {
@@ -295,11 +314,15 @@ export const renderPaymentArea = (
       label: 'SUBTOTAL',
       value2: formatNumber(subtotal),
       condition: true
+    },    {
+      label: 'DESCUENTO GENERAL',
+      value2: formatNumber(generalDiscount),
+      condition: !hasIndividualDiscounts && generalDiscount > 0
     },
     {
-      label: 'DESCUENTO',
-      value2: formatNumber(discount),
-      condition: discount > 0
+      label: 'DESCUENTOS PRODUCTOS',
+      value2: formatNumber(individualDiscounts),
+      condition: hasIndividualDiscounts
     },
     {
       label: 'ITBIS',
@@ -344,6 +367,7 @@ export const renderPaymentArea = (
 };
 
 // ----------------- Footer -----------------
+// eslint-disable-next-line react-refresh/only-export-components
 export const renderFooter = () => {
   let footer = '';
   footer += wrapText('Gracias por su compra, regrese pronto.', CENTER_WIDTH) + '\n';

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import styled from 'styled-components'
 
@@ -9,6 +9,7 @@ import { selectUser } from '../../../../../features/auth/userSlice'
 import { useCompareArrays } from '../../../../../hooks/useCompareArrays'
 import { fbEnabledTaxReceipt } from '../../../../../firebase/Settings/taxReceipt/fbEnabledTaxReceipt'
 import { useDialog } from '../../../../../Context/Dialog/DialogContext'
+import { serializeFirestoreDocuments } from '../../../../../utils/serialization/serializeFirestoreData'
 
 import { Spin, Typography } from 'antd'
 import AddReceiptDrawer from './components/AddReceiptModal/AddReceiptModal'
@@ -31,10 +32,10 @@ export const TaxReceiptSetting = () => {  const dispatch = useDispatch();
   const [isSaving, setIsSaving] = useState(false);
 
   const isUnchanged = useCompareArrays(taxReceiptLocal, taxReceipt);
-
   useEffect(() => {
-    dispatch(getTaxReceiptData(taxReceipt))
-    setTaxReceiptLocal(taxReceipt)
+    const serializedTaxReceipt = serializeFirestoreDocuments(taxReceipt);
+    dispatch(getTaxReceiptData(serializedTaxReceipt))
+    setTaxReceiptLocal(serializedTaxReceipt)
   }, [taxReceipt, dispatch])
 
   const handleSave = useCallback(async () => {

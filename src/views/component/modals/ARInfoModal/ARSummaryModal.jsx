@@ -582,9 +582,8 @@ export default function ARSummaryModal({ }) {
       isActive: item?.isActive,
       payments: item?.payments || []
     }));
-  }, [data?.installments]);
+}, [data?.installments]);
 
-  console.log('data', data.invoice)
   return (
     <>
       <Modal

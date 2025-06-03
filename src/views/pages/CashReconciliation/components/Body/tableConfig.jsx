@@ -96,7 +96,6 @@ export const tableConfig = () => {
 }
 
 const GetTotalValue = ({ cashCount }) => {
-  console.log('cashCount----', cashCount)
   const { totalSystem, totalDiscrepancy } = CashCountMetaData(cashCount, cashCount?.invoices);
   return useFormatPrice(totalSystem)
 }

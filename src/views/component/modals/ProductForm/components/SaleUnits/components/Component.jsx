@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import styled from 'styled-components';
-import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid';
 import { Button as AntButton, Input as AntInput, Switch as AntSwitch } from 'antd';
 import { faPlus, faPencilAlt, faTrashAlt, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -69,17 +69,16 @@ const FullWidthButton = styled(AntButton)`
   width: 100%;
 `;
 
-export default function Component() {
-  const [saleUnits, setSaleUnits] = useState([
+export default function Component() {  const [saleUnits, setSaleUnits] = useState([
     {
-      id: uuidv4(),
+      id: nanoid(),
       unitName: 'Caja',
       quantity: 30,
       pricing: { cost: 100, price: 150, listPrice: 160, avgPrice: 155, minPrice: 140, tax: 'IVA' },
       active: true,
     },
     {
-      id: uuidv4(),
+      id: nanoid(),
       unitName: 'Pastilla',
       quantity: 1,
       pricing: { cost: 3, price: 5, listPrice: 5.5, avgPrice: 5.25, minPrice: 4.5, tax: 'IVA' },
@@ -89,9 +88,8 @@ export default function Component() {
 
   const [editingUnit, setEditingUnit] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
   const addSaleUnit = (newUnit) => {
-    setSaleUnits([...saleUnits, { ...newUnit, id: uuidv4(), active: true }]);
+    setSaleUnits([...saleUnits, { ...newUnit, id: nanoid(), active: true }]);
   };
 
   const updateSaleUnit = (updatedUnit) => {

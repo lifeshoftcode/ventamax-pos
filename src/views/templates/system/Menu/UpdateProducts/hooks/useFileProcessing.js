@@ -43,19 +43,13 @@ const useFileProcessing = () => {
                 throw new Error('No se encontró ninguna hoja en el archivo Excel');
             }
 
-            console.log('Procesando archivo Excel:', file.name);
-            console.log('Número de filas:', worksheet.rowCount);
-            console.log('Número de columnas:', worksheet.columnCount);
-
             // Extraer datos como formato TSV
             let textContent = "";
 
             // Obtener encabezados de la primera fila
             const headers = [];
             worksheet.getRow(1).eachCell({ includeEmpty: false }, (cell) => {
-                headers.push(cell.value ? cell.value.toString().trim() : "");
-            });
-            console.log('Encabezados detectados:', headers);
+                headers.push(cell.value ? cell.value.toString().trim() : "");            });
 
             // Verificar que tenemos los encabezados mínimos necesarios
             for (const header of REQUIRED_HEADERS) {
@@ -96,10 +90,8 @@ const useFileProcessing = () => {
                 if (rowValues.some(val => val)) {
                     textContent += rowValues.join('\t') + '\n';
                     rowsExtracted++;
-                }
-            }
+                }            }
 
-            console.log(`Se extrajeron ${rowsExtracted} filas con datos`);
             return textContent;
         } catch (err) {
             console.error('Error processing Excel file:', err);
@@ -133,10 +125,8 @@ const useFileProcessing = () => {
 
             // Verificar que se importaron productos
             if (!importedProducts || importedProducts.length === 0) {
-                throw new Error('No se pudieron importar productos del archivo. Verifica el formato.');
-            }
+                throw new Error('No se pudieron importar productos del archivo. Verifica el formato.');            }
 
-            console.log(`Se importaron ${importedProducts.length} productos correctamente`);
             setIsLoading(false);
             return importedProducts;
         } catch (err) {

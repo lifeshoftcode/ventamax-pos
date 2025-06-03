@@ -14,13 +14,14 @@ import {
   SelectAddProductOutflowModal,
   SelectFileListModal,
   toggleFileListModal,
+  SelectDeveloperModal,
 } from "../../../features/modals/modalSlice"
 import { AnimatePresence } from "framer-motion"
 
 import { ProviderForm } from "../../pages/Contact/Provider/components/CreateContact/ProviderForm"
 import { MessageAlert } from "../../templates/system/Alerts/MessageAlert"
 import { Notification } from "../../templates/system/Notification/Notification"
-import { SmallNotification } from "../../templates/system/Notification/SmallNotification"
+import { TestModeIndicator } from "../../templates/system/Notification/TestModeIndicator"
 import Loader from "../../templates/system/loader/Loader"
 import ImageViewer from "../../templates/system/ImageViewer/ImageViewer"
 import AddCategoryModal from "./AddCategory/AddCategory"
@@ -50,6 +51,7 @@ import { WarehouseForm } from "../../pages/Inventory/components/Warehouse/forms/
 import ARSummaryModal from "./ARInfoModal/ARSummaryModal"
 import EvidenceUploadDrawer from "../../pages/OrderAndPurchase/PurchaseManagement/components/EvidenceUploadDrawer/EvidenceUploadDrawer"
 import { DeleteProductStockModal } from "../../pages/Inventory/components/Warehouse/components/DeleteProductStock/DeleteProductStockModal"
+import { DeveloperModal } from "../../../components/modals/DeveloperModal/DeveloperModal"
 
 export const ModalManager = () => {
 
@@ -65,6 +67,7 @@ export const ModalManager = () => {
   const ProductOutflowSelected = useSelector(SelectProductOutflow)
   const currentNotification = useSelector(selectCurrentNotification)
   const FileListSelected = useSelector(SelectFileListModal)
+  const DeveloperModalSelected = useSelector(SelectDeveloperModal)
   {/* <BusinessEditModal /> */ }
 
   {/* <ARInfoModal
@@ -162,6 +165,9 @@ export const ModalManager = () => {
         <DeleteProductStockModal
           key={'modal-delete-product-stock'}  
         />
+        <DeveloperModal
+          key={'modal-developer'}
+        />
       </AnimatePresence>
       <NoteModal />
       <Loader />
@@ -170,13 +176,13 @@ export const ModalManager = () => {
       <ActiveIngredientModal />
       <ARSummaryModal />
       <ShelfForm />
-      <RowShelfForm />
+      <RowShelfForm />      
       <SegmentForm />
       <WarehouseForm />
 
 
       <ImageViewer />
-      <SmallNotification />
+      <TestModeIndicator />
       <ConfirmationDialog />
     </Fragment>
   )

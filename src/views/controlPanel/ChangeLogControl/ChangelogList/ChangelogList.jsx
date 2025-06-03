@@ -6,9 +6,7 @@ import styled from 'styled-components';
 import { MenuApp } from '../../../templates/MenuApp/MenuApp';
 
 export const ChangelogList = () => {
-    const { changelogs, error } = useGetChangelogs();
-    console.log(changelogs)
-    return (
+    const { changelogs, error } = useGetChangelogs();    return (
         <Fragment>
             <MenuApp />
             <Container>

@@ -187,9 +187,7 @@ const GeneralForm = ({ files, attachmentUrls, onAddFiles, onRemoveFiles, errors,
         handleProductUpdate({ index: fullProduct.key, ...updatedValues });
         return false;
     };
-
     const handleBackOrderModalConfirm = (backOrderData) => {
-        console.log("back order =>", backOrderData)
         const totalBackOrderQuantity = backOrderData.selectedBackOrders.reduce((sum, bo) => sum + bo.quantity, 0);
         const purchaseQuantity = backOrderData.purchaseQuantity;
         const quantity = Math.max(0, purchaseQuantity - totalBackOrderQuantity);

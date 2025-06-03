@@ -14,10 +14,9 @@ import GeneralAndMonthlySales from './charts/GeneralAndMonthlySales/GeneralAndMo
 import { MonthlyFinancialReportChart } from './charts/MonthlyFinancialReportChart/MonthlyFinancialReportChart'
 
 export const Utility = ({ isOpen = true }) => {
-    const [datesSelected, setDatesSelected] = useState(getDateRange('thisMonth'));
-    const { expenses } = useFbGetExpenses(datesSelected);
+    const [datesSelected, setDatesSelected] = useState(getDateRange('thisMonth'));    const { expenses } = useFbGetExpenses(datesSelected);
     const { invoices } = fbGetInvoices(datesSelected);
-    console.log(invoices, expenses);
+    
     const variantsBackdrop = {
         open: { opacity: 1, zIndex: 1 },
         close: { opacity: 0, zIndex: -1 },

@@ -1,5 +1,5 @@
-import { IoMdClose } from 'react-icons/io'
-import { MdOutlineFileUpload } from 'react-icons/md'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faTimes, faUpload } from '@fortawesome/free-solid-svg-icons'
 import { useSelector } from 'react-redux'
 import styled from 'styled-components'
 import { AddFileBtn } from '../../../../templates/system/Button/AddFileBtn'
@@ -30,7 +30,7 @@ export const UploadImgAdmin = ({ ImgToUpload, setImgToUpload, img }) => {
                         ImgToUpload &&
                         <Button
                             borderRadius='normal'
-                            title={<IoMdClose />}
+                            title={<FontAwesomeIcon icon={faTimes} />}
                             width='icon32'
                             onClick={() => setImgToUpload(null)}
                             bgcolor='error'
@@ -40,7 +40,7 @@ export const UploadImgAdmin = ({ ImgToUpload, setImgToUpload, img }) => {
                         title="Agregar"
                         setFile={setImgToUpload}
                         file={ImgToUpload}
-                        startIcon={<MdOutlineFileUpload />}
+                        startIcon={<FontAwesomeIcon icon={faUpload} />}
                         id="addImg"
                         fn={handleSubmit}
                     />

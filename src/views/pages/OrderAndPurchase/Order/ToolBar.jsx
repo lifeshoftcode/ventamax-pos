@@ -1,5 +1,6 @@
 import React from 'react'
-import { CgMathPlus } from 'react-icons/cg'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import { useDispatch } from 'react-redux'
 import styled from 'styled-components'
 import { openModalAddOrder } from '../../../features/modals/modalSlice'
@@ -10,11 +11,10 @@ export const ToolBar = () => {
     const openModal = () => dispatch(openModalAddOrder());
     return (
         <Container>
-            <Wrapper>
-                <Button
+            <Wrapper>                <Button
                     borderRadius='normal'
                     bgcolor='primary'
-                    startIcon={<CgMathPlus/>}
+                    startIcon={<FontAwesomeIcon icon={faPlus}/>}
                     title='Pedido'
                     onClick={openModal}
                 />

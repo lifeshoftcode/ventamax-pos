@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useQueryClient } from '@tanstack/react-query';
 import { setBillingSettings } from '../../features/cart/cartSlice';
 
-const useInitializeBillingSettings = () => {
+export const useInitializeBillingSettings = () => {
     const user = useSelector(selectUser);
     const dispatch = useDispatch();
     const queryClient = useQueryClient();
@@ -45,10 +45,6 @@ const useInitializeBillingSettings = () => {
                 isLoading: false,
                 isError: true
             }));
-        });
-
-        return () => unsubscribe();
+        });        return () => unsubscribe();
     }, [user?.businessID, dispatch, queryClient]);
 };
-
-export default useInitializeBillingSettings;

@@ -1,45 +1,56 @@
 import React from 'react'
-// import { Button } from '../../../templates/system/Button/Button'
 import { ButtonGroup } from '../../../templates/system/Button/ButtonGroup'
 import WelcomeData from '../WelcomeData.json'
 import styled from 'styled-components'
 import ROUTES_NAME from '../../../../routes/routesName'
-import { useMatchRouteByName } from '../../../templates/MenuApp/GlobalMenu/useMatchRouterByName'
 import { useNavigate } from 'react-router-dom'
-import findRouteByName from '../../../templates/MenuApp/findRouteByName'
-import * as ant from 'antd'
-const { Button } = ant;
+import { Button } from 'antd'
+import { motion } from 'framer-motion'
+
 const Header = () => {
     const { LOGIN, SIGNUP } = ROUTES_NAME.AUTH_TERM
-
-    const loginPath = LOGIN
-    const signupPath = SIGNUP
     const navigate = useNavigate()
+    
     const handleNavigate = (path) => {
         navigate(path)
     }
 
+    const headerVariants = {
+        hidden: { opacity: 0, y: -20 },
+        visible: { 
+            opacity: 1, 
+            y: 0,
+            transition: { duration: 0.5, ease: "easeOut" }
+        }
+    }
+
     return (
-        <Head>
+        <Head
+            as={motion.div}
+            variants={headerVariants}
+            initial="hidden"
+            animate="visible"
+        >
             <Group>
                 <WebName>{WelcomeData.webName}</WebName>
-
-                {/* <Logo src={WelcomeData.logo} alt="" /> */}
             </Group>
             <Group>
                 <ButtonGroup>
                     <Button
-                        onClick={() => {
-                            handleNavigate(loginPath)
-                        }
-                        }
+                        type="primary"
+                        size="large"
+                        onClick={() => handleNavigate(LOGIN)}
                     >
                         Iniciar sesión
                     </Button>
-                
+                    {/* <Button
+                        size="large"
+                        onClick={() => handleNavigate(SIGNUP)}
+                    >
+                        Registrarse
+                    </Button> */}
                 </ButtonGroup>
-            </Group>
-        </Head>
+            </Group>        </Head>
     )
 }
 
@@ -54,27 +65,37 @@ const Head = styled.div`
   font-size: 25px;
   padding: 0 1em;
   justify-content: space-between;
-  background-color: var(--color) ;
+  background: linear-gradient(135deg, var(--color, #1890ff) 0%, #40a9ff 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  
+  @media (max-width: 768px) {
+    padding: 0 1em;
+    font-size: 20px;
+    height: 60px;
+  }
 `
+
 const Group = styled.div`
   display: flex;
   color: white;
+  align-items: center;
+  gap: 12px;
 `
-const Logo = styled.img`
-    height: 2em;
-    width: 2em;
-    margin: 0;
-    padding: 0;
-    display: block;
 
-`
 const WebName = styled.div`
+  font-size: 1.1em;
+  font-weight: 700;
+  margin: 0;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  
+  @media (max-width: 768px) {
     font-size: 1.2em;
-    font-weight: 700;
-    margin: 0;
-    color: white;
-    @media (max-width: 800px) {
-        font-size: 1em;
-        text-align: center;
-    }
+  }
+    @media (max-width: 480px) {
+    font-size: 1em;
+  }
 `

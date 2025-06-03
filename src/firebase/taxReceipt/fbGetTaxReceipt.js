@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { selectUser } from "../../features/auth/userSlice";
 import { useEffect, useState } from "react";
 import { selectTaxReceiptType } from "../../features/taxReceipt/taxReceiptSlice";
+import { serializeFirestoreDocuments } from "../../utils/serialization/serializeFirestoreData";
 
 export const fbGetTaxReceipt = () => {
   const user = useSelector(selectUser);
@@ -24,13 +25,14 @@ export const fbGetTaxReceipt = () => {
     }
 
     try {
-      const taxReceiptsRef = collection(db, "businesses", user.businessID, "taxReceipts");    
+      const taxReceiptsRef = collection(db, "businesses", user.businessID, "taxReceipts");
       unsubscribe = onSnapshot(
         taxReceiptsRef,
         (snapshot) => {
           const taxReceiptsArray = snapshot.docs.map(item => item.data());
-          setTaxReceipt(taxReceiptsArray);
-          const defaultOption = taxReceiptsArray.find(item => item.data.name === 'CONSUMIDOR FINAL');
+          const serializedTaxReceipts = serializeFirestoreDocuments(taxReceiptsArray);
+          setTaxReceipt(serializedTaxReceipts);
+          const defaultOption = serializedTaxReceipts.find(item => item.data.name === 'CONSUMIDOR FINAL');
           dispatch(selectTaxReceiptType(defaultOption?.data.name));
           setLoading(false); // Set loading to false after data is fetched
         },

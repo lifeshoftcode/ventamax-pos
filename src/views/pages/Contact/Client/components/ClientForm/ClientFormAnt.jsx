@@ -115,9 +115,7 @@ const ClientFormAnt = ({
                     message: 'Cliente Actualizado',
                     description: 'La información del cliente ha sido actualizada con éxito.'
                 });
-
             } else {
-                console.log('client', JSON.stringify(client))
                 clientCreated = await fbAddClient(user, client)
                 message.success({
                     message: 'Cliente Creado',
@@ -141,7 +139,6 @@ const ClientFormAnt = ({
                 message: 'Error al Procesar',
                 description: 'Hubo un error al procesar el formulario. Por favor, inténtelo de nuevo.'
             });
-            console.log('error:', info);
         } finally {
             setLoading(false);
             // Resetear el estado submitted después de un breve delay

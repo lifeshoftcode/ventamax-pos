@@ -464,7 +464,7 @@ export const InsuranceAuthModal = () => {
       }}
       style={{ top: 20 }}
       width={800}
-      destroyOnClose
+      destroyOnHidden
     >
       {/* Widget informativo del cliente actual con diseño minimalista y corporativo */}
       <ClientInfoWidget>

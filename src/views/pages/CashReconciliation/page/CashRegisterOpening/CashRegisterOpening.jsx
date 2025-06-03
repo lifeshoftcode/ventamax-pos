@@ -47,10 +47,8 @@ export const CashRegisterOpening = () => {
     } else {
       navigate(-1);
     }
-    dispatch(clearCashCount())
-  }
+    dispatch(clearCashCount())  }
 
-  console.log(openingDate)
   return (
     <Backdrop>
       <Container>

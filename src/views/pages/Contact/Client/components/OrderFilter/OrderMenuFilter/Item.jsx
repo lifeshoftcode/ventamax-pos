@@ -1,5 +1,6 @@
 import { Fragment, useState } from 'react'
-import { IoIosArrowForward } from 'react-icons/io'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import styled from 'styled-components'
 import { useSearchFilter, useSearchFilterOrderMenuOption } from '../../../../../../../hooks/useSearchFilter'
 import { Input } from './Input'
@@ -14,7 +15,7 @@ export const Item = ({ data, array, setArray, index }) => {
     return (
         <Container>
             <Head onClick={handleOpenItem}>
-                <IoIosArrowForward /> <span>{data.name}</span>
+                <FontAwesomeIcon icon={faChevronRight} /> <span>{data.name}</span>
             </Head>
             <Body isOpen={isItemOpen ? true : false} index={index}>
                 {

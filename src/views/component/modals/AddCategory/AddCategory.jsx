@@ -55,7 +55,7 @@ const AddCategoryModal = () => {
       okText={type === 'create' ? 'Crear' : 'Actualizar'}
       cancelText="Cancelar"
       width={400}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form
         form={form}

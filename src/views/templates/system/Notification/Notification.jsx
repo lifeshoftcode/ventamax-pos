@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { FaExclamationCircle, FaCheckCircle, FaInfoCircle } from 'react-icons/fa';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faExclamationCircle, faCheckCircle, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { removeNotification, selectCurrentNotification } from '../../../../features/notification/NotificationSlice';
@@ -38,15 +39,14 @@ export const Notification = () => {
         }
     }, [visible, dispatch]);
 
-    useEffect(() => {
-        if (type) {
+    useEffect(() => {        if (type) {
             switch (type) {
                 case 'error':
-                    return setIcon(<FaExclamationCircle />)
+                    return setIcon(<FontAwesomeIcon icon={faExclamationCircle} />)
                 case 'success':
-                    return setIcon(<FaCheckCircle />)
+                    return setIcon(<FontAwesomeIcon icon={faCheckCircle} />)
                 case 'info':
-                    return setIcon(<FaInfoCircle />)
+                    return setIcon(<FontAwesomeIcon icon={faInfoCircle} />)
                 case 'warning':
                     return setIcon(<FaInfoCircle />)
                 default:

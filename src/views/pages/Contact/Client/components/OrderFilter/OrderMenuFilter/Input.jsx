@@ -1,5 +1,6 @@
 import React, { useRef } from 'react'
-import { MdClose } from 'react-icons/md'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faTimes } from '@fortawesome/free-solid-svg-icons'
 import styled from 'styled-components'
 
 export const Input = ({data, onChange, fn}) => {
@@ -13,7 +14,7 @@ export const Input = ({data, onChange, fn}) => {
     <Container>
         <input type="text" ref={ref} onChange={onChange} placeholder={`Buscar ${data.name}`}/>
         <div onClick={handleDeleteText}>
-          <MdClose/>
+          <FontAwesomeIcon icon={faTimes}/>
         </div>
     </Container>
   )

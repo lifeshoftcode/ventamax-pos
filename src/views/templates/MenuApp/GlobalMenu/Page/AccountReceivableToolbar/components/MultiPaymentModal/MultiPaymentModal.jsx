@@ -166,14 +166,7 @@ export const MultiPaymentModal = ({ visible, onCancel, accounts = [] }) => {
     }
 
     setMethodErrors(updatedErrors);
-    return Object.keys(updatedErrors).length === 0;
-  };
-
-  console.log('accounts', accounts);
-  console.log('selectedAccounts', selectedAccounts);
-  console.log('paymentMethods', paymentMethods);
-  console.log('totalPaid', totalPaid);
-  console.log('methodErrors', methodErrors);
+    return Object.keys(updatedErrors).length === 0;  };
 
   const validatePaymentForm = () => {
     let isValid = true;
@@ -282,9 +275,8 @@ export const MultiPaymentModal = ({ visible, onCancel, accounts = [] }) => {
       setSelectedAccounts([]);
     }
   };
-
   const handleDateRangeChange = (dates) => {
-    console.log('Selected date range:', dates);
+    // Handle date range change
   };
 
   const handlePrint = useReactToPrint({
@@ -318,10 +310,7 @@ export const MultiPaymentModal = ({ visible, onCancel, accounts = [] }) => {
             console.warn(`No se encontró la cuenta con ID: ${id}`);
             return null;
           }
-          
-          // Acceder al balance correctamente - puede estar en account.balance o account.ver.account
-          // Logeamos los datos para depuración
-          console.log('Procesando cuenta:', account);
+            // Acceder al balance correctamente - puede estar en account.balance o account.ver.account
           
           return {
             id: account.ver.account.id,
@@ -346,12 +335,8 @@ export const MultiPaymentModal = ({ visible, onCancel, accounts = [] }) => {
         user
       };
 
-      console.log("Procesando pago:", paymentData);
-
       try {
         // Procesar el pago utilizando el método adecuado
-        console.log('Procesando pagos múltiples...');
-        console.log("paymentData", paymentData);
         const result = await fbProcessMultiplePaymentsAR(user, paymentData, setReceipt);
 
         setSubmitted(true);
@@ -525,10 +510,9 @@ export const MultiPaymentModal = ({ visible, onCancel, accounts = [] }) => {
             disabled={submitted || selectedAccounts.length === 0}
           >
             Procesar Pago
-          </Button>
-        ),
+          </Button>        ),
       ]}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form
         form={form}

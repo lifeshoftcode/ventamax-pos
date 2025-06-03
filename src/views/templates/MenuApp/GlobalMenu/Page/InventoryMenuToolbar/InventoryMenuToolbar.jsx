@@ -39,11 +39,9 @@ export const InventoryMenuToolbar = ({ side = 'left' }) => {
     });
     const [showProgress, setShowProgress] = useState(false);
 
-    const handleImport = async (file) => {
-        try {
+    const handleImport = async (file) => {        try {
             setShowProgress(true);
             const productData = await importProductData(file, 'es');
-            console.log('productData', productData);
             await fbAddActiveIngredients(user, productData);
             await fbAddProducts(user, productData, 10000, (progress) => {
                 setImportProgress(progress.stats);

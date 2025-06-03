@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import React, { Fragment, useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import styled from 'styled-components'
 import { MenuApp } from '../..'
 import { getDateRange } from '../../../utils/date/getDateRange'

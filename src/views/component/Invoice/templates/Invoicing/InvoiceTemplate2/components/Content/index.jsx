@@ -51,8 +51,8 @@ export default function Content ({data}){
             size="small"
             columns={columns}
             dataSource={data?.products || []}
+            rowKey={(record) => record.id}
             pagination={false}
-            // bordered
           />
         </TableContainer>
       </Container>

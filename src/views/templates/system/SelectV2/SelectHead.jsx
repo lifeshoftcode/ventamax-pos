@@ -1,22 +1,21 @@
 import React from 'react'
-import { IoIosArrowDown } from 'react-icons/io'
-import { MdClear } from 'react-icons/md'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faChevronDown, faTimes } from '@fortawesome/free-solid-svg-icons'
 import styled from 'styled-components'
 
 export const SelectHead = ({isOpen, setIsOpen, showSelectTitle, data }) => {
     return (
-        <Head>
-        {!isOpen ? (
+        <Head>        {!isOpen ? (
           <Group onClick={() => setIsOpen(true)}>
             <h3>{showSelectTitle}</h3>
-            <IoIosArrowDown />
+            <FontAwesomeIcon icon={faChevronDown} />
           </Group>
         ) : null}
         {isOpen ? (
           <Group>
             <InputText size="s" placeholder={`Buscar ${data.name}`} />
             <Button onClick={() => setIsOpen(false)}>
-              <MdClear />
+              <FontAwesomeIcon icon={faTimes} />
             </Button>
           </Group>
         ) : null}

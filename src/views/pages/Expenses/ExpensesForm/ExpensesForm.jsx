@@ -72,12 +72,11 @@ const ExpensesForm = () => {
                     Cancelar
                 </Button>,
                 <Button key="submit" type="primary" onClick={handleSubmit} icon={<i className="fas fa-save" />}>
-                    {isAddMode ? "Guardar Gasto" : "Actualizar Gasto"}
-                </Button>
+                    {isAddMode ? "Guardar Gasto" : "Actualizar Gasto"}                </Button>
             ]}
             style={{ top: 10 }}
             width={600}
-            destroyOnClose
+            destroyOnHidden
             centered
             maskClosable={false}
         >

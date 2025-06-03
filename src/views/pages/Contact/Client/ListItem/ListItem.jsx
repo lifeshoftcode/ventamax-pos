@@ -12,17 +12,11 @@ import {
   StatusIndicatorDot,
   Button
 } from '../../../'
-import { IoMdCart } from 'react-icons/io'
-import { MdDelete, MdEdit } from 'react-icons/md'
-import { IoCart, IoCartSharp, IoTrashSharp } from 'react-icons/io5'
-import { TbEdit } from 'react-icons/tb'
 export const ListItem = ({ e, index }) => {
   const [openMoreInfo, setOpenMoreInfo] = useState(false)
   const HandleChangeOpenMoreInfoStatus = () => {
     setOpenMoreInfo(!openMoreInfo)
-
   }
-  console.log(openMoreInfo)
   return (
     <div className={`${style.Container}`} onClick={HandleChangeOpenMoreInfoStatus}>
       <div className={style.Btn}>

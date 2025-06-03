@@ -56,7 +56,7 @@ export const Login = ({ setLoading = null }) => {
     const handleFinish = async ({ username, password }) => {
         setLoading(true);
         try {
-            const user = await fbSignIn({ name: username, password }, dispatch);
+            const user = await fbSignIn({ name: username, password });
             updateAppState(dispatch, user);
             navigate(ROUTES_PATH.BASIC_TERM.HOME);
             notification.success({
@@ -126,4 +126,3 @@ export const Login = ({ setLoading = null }) => {
         </Container >
     )
 }
-

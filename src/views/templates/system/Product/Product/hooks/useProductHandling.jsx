@@ -6,8 +6,6 @@ import { openProductStockSimple } from '../../../../../../features/productStock/
 import { useProductStockCheck } from '../../../../../../hooks/useProductStockCheck'; 
 import { getTotalPrice } from '../../../../../../utils/pricing'; 
 import { useProductInCart, useProductStockStatus } from "./useProductCartAndStock";
-
-
 export const useProductHandling = (product, taxReceiptEnabled) => {
   const dispatch = useDispatch();
   const [productState, setProductState] = useState({

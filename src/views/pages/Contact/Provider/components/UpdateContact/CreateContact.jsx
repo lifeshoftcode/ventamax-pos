@@ -1,6 +1,5 @@
 import { nanoid } from 'nanoid'
 import React, { useState } from 'react'
-import { MdClose } from 'react-icons/md'
 import { useDispatch } from 'react-redux'
 import styled from 'styled-components'
 import { handleModalCreateClient } from '../../../../../../features/modals/modalSlice'
@@ -21,7 +20,7 @@ export const CreateContact = ({isOpen}) => {
             value: ''
         }
     })
-    console.log(newClient)
+    
     function validateNewClient(client) {
         if (!client.name || !client.personalID) {
             alert("El nombre y el ID personal son obligatorios");
@@ -45,15 +44,15 @@ export const CreateContact = ({isOpen}) => {
             try {
                 createClient(newClient)
             } catch (error) {
-                console.log(error)
+                // Handle error silently or with proper error handling
             }
         }
-    }
+    }    
     const showClient = async () => {
         try {
-            console.log(newClient, '//////....../////')
+            // Client data ready for display
         } catch (err) {
-            console.log(err)
+            // Handle error
         }
     }
     const handleSubmit = async () => {

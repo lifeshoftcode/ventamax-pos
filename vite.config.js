@@ -2,12 +2,23 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { createStyleImportPlugin } from 'vite-plugin-style-import';
 import path from 'path';
+import { analyzer } from 'vite-bundle-analyzer'
 // import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
+  optimizeDeps: {
+    include: ['classnames']
+  },
   plugins: [
     react(),
     // tailwindcss(),
+    analyzer({
+      analyzerMode: 'server',
+      openAnalyzer: true,
+      reportTitle: 'Vite Bundle Report',
+      defaultSizes: 'gzip',
+      analyzerPort: 8888,
+    }),
     createStyleImportPlugin({
       libs: [
         {
@@ -48,7 +59,8 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0'
-  }, build: {
+  },
+   build: {
     sourcemap: false,
     chunkSizeWarningLimit: 1600,
     rollupOptions: {

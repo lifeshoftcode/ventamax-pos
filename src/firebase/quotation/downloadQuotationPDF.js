@@ -1,6 +1,14 @@
 import { httpsCallable } from "firebase/functions"
 import { functions } from "../firebaseconfig"
 import printJS from 'print-js';
+// import { generateInvoiceLetterPdf, generateInvoiceLetterPdfNoLogo } from "../../pdf/invoices/templates/template2-pdf-lib/InvoiceLetterPdf";
+import { generateInvoiceLetterPdf } from "../../pdf/invoicesAndQuotation/invoices/templates/template2/InvoiceLetterPdf";
+
+export function sanitizeNumbers(obj) {
+  return JSON.parse(JSON.stringify(obj, (k, v) =>
+    (typeof v === 'number' && !Number.isFinite(v)) ? null : v
+  ));
+}
 
 export async function downloadQuotationPdf(business, data, onDialogClose) {
     try {
@@ -20,14 +28,14 @@ export async function downloadQuotationPdf(business, data, onDialogClose) {
 }
 
 export async function downloadInvoiceLetterPdf(business, data, onDialogClose) {
-    const { user, seller, ...restData } = data;
-    const payload = {
-        business,
-        data: restData,
-    };
     try {
-        const fn = httpsCallable(functions, 'invoiceLetterPdf')
-        const { data: base64 } = await fn(payload);
+        console.log('business', business);
+        console.log('data', data);
+        
+        // Intentar generar PDF con logo
+        console.log('🔄 Intentando generar PDF...');
+        const base64 = await generateInvoiceLetterPdf(business, data);
+        
         printJS({ 
             printable: base64, 
             type: 'pdf', 
@@ -36,7 +44,7 @@ export async function downloadInvoiceLetterPdf(business, data, onDialogClose) {
             onPrintDialogClose: onDialogClose
         });
     } catch (e) {
-        console.error('PDF generation failed', e.message);
+        console.error('❌ PDF generation with logo failed:', e.message);
         console.error(e.stack);
     }
 }

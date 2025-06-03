@@ -26,10 +26,10 @@ export const useProductInCart = (productId) => {
     }, [productsSelected, productId]);
 
     useEffect(() => {
-        if (selectedProduct) {
-            //producto encontrado
+        if (selectedProduct) { 
+        //producto encontrado
         } else {
-            console.log('Producto no encontrado en el carrito.');
+            // Producto no encontrado en el carrito
         }
     }, [selectedProduct]);
 
@@ -39,6 +39,7 @@ export const useProductInCart = (productId) => {
     };
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useProductStockStatus = (productInCart, originalProduct) => {
 
     if (!productInCart && !originalProduct) {

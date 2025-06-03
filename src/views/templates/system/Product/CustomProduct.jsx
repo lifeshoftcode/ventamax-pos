@@ -2,7 +2,8 @@ import React from 'react'
 import styled from 'styled-components'
 import { useDispatch } from 'react-redux';
 import { handleModalSetCustomPizza } from '../../../../features/modals/modalSlice'
-import { FaPizzaSlice } from 'react-icons/fa';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faPizzaSlice } from '@fortawesome/free-solid-svg-icons';
 
 export const CustomProduct = ({ product }) => {
     const dispatch = useDispatch();
@@ -14,7 +15,7 @@ export const CustomProduct = ({ product }) => {
         <ProductContainer  onClick={() => handleGetThisProduct(product)} imageHiddenRef={imageHiddenRef ? true : false}>
             <ProductImgWrapper imageHiddenRef={imageHiddenRef ? true : false}>
                 <div>
-                    {<FaPizzaSlice/>}
+                    {<FontAwesomeIcon icon={faPizzaSlice} />}
                 </div>
             </ProductImgWrapper>
             <Body>

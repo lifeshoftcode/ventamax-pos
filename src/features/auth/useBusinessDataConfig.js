@@ -1,14 +1,32 @@
 import { useDispatch, useSelector } from "react-redux"
 import { selectUser } from "./userSlice"
 import { useEffect } from "react"
-import { fbGetBusinessInfo } from "../../firebase/businessInfo/fbGetBusinessInfo"
+import { subscribeToBusinessInfo } from "../../firebase/businessInfo/fbGetBusinessInfo"
+import { setBusiness } from "./businessSlice"
 
 export const useBusinessDataConfig = () => {
-    const user = useSelector(selectUser);
     const dispatch = useDispatch();
-    useEffect(() => {
-        if (!user || !user?.businessID) return;
-        fbGetBusinessInfo(user, dispatch)
+    const businessID = useSelector(selectUser)?.businessID;
 
-    }, [user])
+    useEffect(() => {
+        if (!businessID) {
+            dispatch(setBusiness(null))
+            return
+        }
+
+        const unsubscribe = subscribeToBusinessInfo(
+            businessID,
+            (business) => {
+                dispatch(setBusiness(business));
+            },
+            (error) => {
+                console.error("Error al obtener la información del negocio:", error);
+                dispatch(setBusiness(null));
+            }
+        );
+
+        return unsubscribe;
+
+    }, [businessID, dispatch])
+
 }

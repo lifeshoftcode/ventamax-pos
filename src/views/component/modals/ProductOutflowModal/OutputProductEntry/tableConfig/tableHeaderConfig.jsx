@@ -1,4 +1,5 @@
-import { TbPlus } from "react-icons/tb"
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import { Button } from "../../../../../templates/system/Button/Button"
 import { useSelector } from "react-redux"
 import { SelectProductSelected } from "../../../../../../features/productOutflow/productOutflow"
@@ -40,7 +41,7 @@ export const tableHeaderColumns = ({Group }) => {
                     <span>{subtitle}</span>
                     <Button
                         borderRadius={'normal'}
-                        title={<TbPlus />}
+                        title={<FontAwesomeIcon icon={faPlus} />}
                     />
                 </Group>
             )
