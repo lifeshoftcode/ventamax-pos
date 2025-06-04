@@ -10,6 +10,7 @@ import { useDialog } from '../../../../../../Context/Dialog/DialogContext';
 import { message } from 'antd';
 import { useCompareArrays } from '../../../../../../hooks/useCompareArrays';
 import { serializeFirestoreDocuments } from '../../../../../../utils/serialization/serializeFirestoreData';
+import { ensureSequenceNeverGoesBackward } from '../../../../../../utils/sequenceSafety.js';
 
 export function useTaxReceiptSetting() {
   const dispatch = useDispatch();
@@ -60,8 +61,20 @@ export function useTaxReceiptSetting() {
       suffix++;
       serie = String(suffix).padStart(2, '0');
     }
+    
+    // CRITICAL FIX: Never use hardcoded '0000000000' sequence
+    // Instead, ensure sequence is higher than any existing sequence
+    const safeSequence = ensureSequenceNeverGoesBackward(0, taxReceiptLocal);
+    
     const newReceipt = {
-      data: { name: 'NUEVO COMPROBANTE', type: 'B', serie, sequence: '0000000000', increase: 1, quantity: 2000 }
+      data: { 
+        name: 'NUEVO COMPROBANTE', 
+        type: 'B', 
+        serie, 
+        sequence: safeSequence, // Use safe sequence as number, not hardcoded string
+        increase: 1, 
+        quantity: 2000 
+      }
     };
     setTaxReceiptLocal([...taxReceiptLocal, newReceipt]);
     message.success('Nuevo comprobante agregado. No olvides guardar los cambios.');

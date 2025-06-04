@@ -12,8 +12,16 @@ export const increaseSequence = (sequence, increase, maxChars = 10) => {
   const base = BigInt(sequence);
   const inc = BigInt(increase);
   let result = base + inc;
+  
+  // Convert to string and prevent wraparound
+  const resultStr = result.toString();
+  
+  // If result exceeds max digits, cap it at max possible value instead of wrapping
+  if (resultStr.length > maxChars) {
+    return '9'.repeat(maxChars);
+  }
 
-  return result.toString().slice(-maxChars).padStart(maxChars, '0');
+  return resultStr.padStart(maxChars, '0');
 }
 
 /**

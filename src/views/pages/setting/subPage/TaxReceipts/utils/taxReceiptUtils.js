@@ -1,4 +1,5 @@
 // src/utils/taxReceiptUtils.js
+import { ensureSequenceNeverGoesBackward, formatSequence } from '../utils/sequenceSafety.js';
 
 /**
  * Genera un nuevo comprobante con una serie única
@@ -15,12 +16,16 @@ export function generateNewTaxReceipt(localReceipts) {
     newSerie = counter < 10 ? `0${counter}` : `${counter}`;
   }
 
+  // CRITICAL FIX: Never use hardcoded '0000000000' sequence
+  // Instead, ensure sequence is higher than any existing sequence
+  const safeSequence = ensureSequenceNeverGoesBackward(0, localReceipts);
+
   return {
     data: {
       name: 'NUEVO COMPROBANTE',
       type: 'B',
       serie: newSerie,
-      sequence: '0000000000',
+      sequence: safeSequence, // Use safe sequence as number, not hardcoded string
       increase: 1,
       quantity: 2000,
       disabled: false // Aseguramos que los nuevos comprobantes estén activos
