@@ -19,7 +19,7 @@ export const CashRegisterClosure = () => {
   const navigate = useNavigate()
 
   const [peerReviewAuthorizationIsOpen, setPeerReviewAuthorizationIsOpen] = useState(false)
-  const [closingDate, setClosingDate] = useState(DateTime.now())
+  const [closingDate] = useState(DateTime.now())
 
   const actualUser = useSelector(selectUser)
   const cashCount = useSelector(selectCashCount)
@@ -27,19 +27,45 @@ export const CashRegisterClosure = () => {
   const cashCountIsOpen = cashCount?.state === 'open';
   const cashCountIsClosed = cashCount?.state === 'closed';
 
-  useEffect(() => {
-    if (cashCountIsOpen) fbCashCountChangeState(cashCount, actualUser, 'closing');
-  }, [])
-
-
+  // Check permissions early and redirect if needed
   useEffect(() => {
     if (!cashCount?.opening?.initialized) {
       navigate('/cash-reconciliation')
-    };
-  }, [cashCount])
+      return;
+    }
+    
+    // Validate user permissions
+    if (cashCount?.opening?.employee?.id && 
+        cashCount.opening.employee.id !== actualUser?.uid && 
+        actualUser?.role !== "admin") {
+      notification.error({
+        message: 'Error',
+        description: 'No tienes permisos para realizar esta acción',
+      });
+      navigate('/cash-reconciliation');
+      return;
+    }
+  }, [cashCount, actualUser, navigate])
+
+  // Handle state change with proper dependencies
+  useEffect(() => {
+    if (cashCountIsOpen && actualUser && cashCount) {
+      fbCashCountChangeState(cashCount, actualUser, 'closing');
+    }
+  }, [cashCountIsOpen, actualUser, cashCount?.id]) // Fix dependencies
 
   const handleOpenPeerReviewAuthorization = () => {
-    if ((cashCount.opening.employee.id !== actualUser.uid) && actualUser.role !== "admin") {
+    // Early return if no cashCount to prevent null reference
+    if (!cashCount?.opening?.employee?.id) {
+      notification.error({
+        message: 'Error',
+        description: 'Datos de caja incompletos',
+      });
+      return;
+    }
+
+    // Permission check is now redundant due to useEffect above, but kept for safety
+    if ((cashCount.opening.employee.id !== actualUser?.uid) && actualUser?.role !== "admin") {
       notification.error({
         message: 'Error',
         description: 'No tienes permisos para realizar esta acción',

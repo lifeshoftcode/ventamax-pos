@@ -1,6 +1,6 @@
 import { useSelector } from 'react-redux';
 import { selectUser } from '../../features/auth/userSlice';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/firebaseconfig';
 const items = [
@@ -34,9 +34,9 @@ const items = [
 ]
 export const useGetWarehouseData = () => {
   const user = useSelector(selectUser);
-  const memoizedUser = useMemo(() => user, [user]);
-  const memorizedItems = useMemo(() => items, [items]);
-
+  const memoizedUser = useMemo(() => user, [user?.uid, user?.businessID]); // Fix memoization
+  // Remove unnecessary memoization of constant array
+  
   const [data, setData] = useState({
     warehouses: [],
     shelves: [],
@@ -46,21 +46,18 @@ export const useGetWarehouseData = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchData = async (user, items) => {
-    if (!user.businessID || items.length === 0) {
+  const fetchData = useCallback(async (user, items) => {
+    if (!user?.businessID || items.length === 0) {
       setLoading(false);
       return;
     }
 
     setLoading(true);
     setError(null);
-    let warehouses = [];
-    let shelves = [];
-    let rows = [];
-    let segments = [];
-
-    for (const item of items) {
-      try {
+    
+    try {
+      // Batch the operations for better performance
+      const promises = items.map(async (item) => {
         let docPath = `businesses/${user.businessID}/warehouses/${item.warehouseId}`;
         
         if (item.shelfId) {
@@ -77,30 +74,54 @@ export const useGetWarehouseData = () => {
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
-          const docData = docSnap.data();
-          if (item.segmentId) segments.push(docData);
-          else if (item.rowShelfId) rows.push(docData);
-          else if (item.shelfId) shelves.push(docData);
-          else if (item.warehouseId) warehouses.push(docData);
+          return {
+            data: docSnap.data(),
+            type: item.segmentId ? 'segment' : 
+                  item.rowShelfId ? 'row' : 
+                  item.shelfId ? 'shelf' : 'warehouse'
+          };
         }
-      } catch (error) {
-        console.error("Error obteniendo el documento:", error);
-        setError(error);
-      }
-    }
+        return null;
+      });
 
-    setData({
-      warehouses,
-      shelves,
-      rows,
-      segments,
-    });
-    setLoading(false);
-  };
+      const results = await Promise.all(promises);
+      
+      const warehouses = [];
+      const shelves = [];
+      const rows = [];
+      const segments = [];
+      
+      results.forEach(result => {
+        if (result) {
+          switch (result.type) {
+            case 'segment':
+              segments.push(result.data);
+              break;
+            case 'row':
+              rows.push(result.data);
+              break;
+            case 'shelf':
+              shelves.push(result.data);
+              break;
+            case 'warehouse':
+              warehouses.push(result.data);
+              break;
+          }
+        }
+      });
+
+      setData({ warehouses, shelves, rows, segments });
+    } catch (error) {
+      console.error("Error obteniendo documentos:", error);
+      setError(error);
+    } finally {
+      setLoading(false);
+    }
+  }, []); // fetchData doesn't depend on external values
 
   useEffect(() => {
     fetchData(memoizedUser, items);
-  }, [memoizedUser, memorizedItems]);
+  }, [memoizedUser, fetchData]);
 
   return { data, loading, error };
 };

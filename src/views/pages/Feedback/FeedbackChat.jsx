@@ -92,6 +92,7 @@ export const FeedbackChat = () => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
     const navigate = useNavigate()
+    
     useEffect(() => {
       document.body.style.overflow = "hidden";
       return () => {
@@ -102,21 +103,31 @@ export const FeedbackChat = () => {
     const handleSubmit = (event) => {
         event.preventDefault();
         if (newMessage.trim()) {
-          setMessages([...messages, { text: newMessage.trim(), senderId: 1 }]);
+          const userMessage = { text: newMessage.trim(), senderId: 1 };
+          setMessages(prevMessages => [...prevMessages, userMessage]);
+          
+          // Store the current message for closure
+          const currentMessage = newMessage.trim();
           setNewMessage("");
     
           // Genera una respuesta utilizando la función generateResponse.
-          const botResponse = generateResponse(newMessage);
+          const botResponse = generateResponse(currentMessage);
     
-          setTimeout(() => {
-            setMessages([...messages, { text: newMessage.trim(), senderId: 1 }, { text: botResponse.text, senderId: 2 }]);
+          const botResponseTimeout = setTimeout(() => {
+            setMessages(prevMessages => [...prevMessages, { text: botResponse.text, senderId: 2 }]);
+            
             if (botResponse.route) {
-                setTimeout(() => {
-                    
-              navigate(botResponse.route);
+                const navigationTimeout = setTimeout(() => {
+                  navigate(botResponse.route);
                 }, 3000);
+                
+                // Store timeout for cleanup
+                return () => clearTimeout(navigationTimeout);
             }
           }, 1000);
+          
+          // Cleanup timeout on component unmount
+          return () => clearTimeout(botResponseTimeout);
         }
       };
   

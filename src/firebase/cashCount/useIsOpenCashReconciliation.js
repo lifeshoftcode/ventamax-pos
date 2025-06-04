@@ -1,34 +1,53 @@
-import { collection, doc, getDocs, onSnapshot, query, where } from "firebase/firestore"
+import { collection, doc, onSnapshot, query, where } from "firebase/firestore"
 import { db } from "../firebaseconfig"
 import { useEffect, useState } from "react";
 import { selectUser } from "../../features/auth/userSlice";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { fbGetDocs } from "../firebaseOperations";
 
 export function useIsOpenCashReconciliation() {
     const [value, setValue] = useState(false);
     const [cashReconciliation, setCashReconciliation] = useState(null);
     const user = useSelector(selectUser);
-    const dispatch = useDispatch();
 
     useEffect(() => {
-        if (!user || !user?.businessID) { return }
+        if (!user || !user?.businessID) { 
+            setValue('none');
+            setCashReconciliation(null);
+            return;
+        }
+        
         const cashReconciliationRef = collection(db, 'businesses', user?.businessID, 'cashCounts');
         const q = query(cashReconciliationRef, where("cashCount.state", "in", ["open", "closing"]));
 
         const unsubscribe = onSnapshot(q,
             querySnapshot => {
-                const isOpen = querySnapshot.docs.some(doc => doc.data().cashCount.state === 'open');
                 const isEmpty = querySnapshot.empty;
-                const isClosing = querySnapshot.docs.some(doc => doc.data().cashCount.state === 'closing');
-                const isSameUser = querySnapshot.docs.some(doc => doc.data().cashCount.opening.employee.id === user.uid)
+                
                 if (isEmpty) {
-                    setValue('none'); // o 'empty' o null, lo que prefieras
+                    setValue('none');
+                    setCashReconciliation(null);
                     return;
                 }
-                if (isOpen && isSameUser) {
+                
+                // Find the document that belongs to the current user
+                const userDoc = querySnapshot.docs.find(doc => {
+                    const data = doc.data();
+                    return data.cashCount?.opening?.employee?.id === user.uid;
+                });
+                
+                if (!userDoc) {
+                    setValue('closed');
+                    setCashReconciliation(null);
+                    return;
+                }
+                
+                const cashCountData = userDoc.data().cashCount;
+                setCashReconciliation(cashCountData);
+                
+                if (cashCountData.state === 'open') {
                     setValue('open');
-                } else if (isClosing && isSameUser) {
+                } else if (cashCountData.state === 'closing') {
                     setValue('closing');
                 } else {
                     setValue('closed');
@@ -36,19 +55,19 @@ export function useIsOpenCashReconciliation() {
             },
             error => {
                 console.error("Error en la suscripción a Firestore: ", error);
-                // Aquí podrías establecer algún estado para manejar este error en la UI si lo necesitas.
+                setValue('error');
+                setCashReconciliation(null);
             }
-
         );
 
         // Cuando el componente se desmonta, cancela la suscripción
         return () => unsubscribe();
-    }, [user]);
+    }, [user?.uid, user?.businessID]); // Fix dependencies
 
     return { status: value, cashCount: cashReconciliation };
 }
 
-export async function checkOpenCashReconciliation(user, transaction = null) {
+export async function checkOpenCashReconciliation(user) {
     try {
         if (!user || !user.businessID || !user.uid) {
             throw new Error('Datos del usuario incompletos');
