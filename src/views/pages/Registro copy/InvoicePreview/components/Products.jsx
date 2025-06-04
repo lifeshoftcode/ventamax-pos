@@ -60,8 +60,6 @@ const ProductTable = ({ products }) => {
         ...product,
     }));
 
-    console.log(dataSource);
-
     return <Table
         size='small'
         columns={columns}

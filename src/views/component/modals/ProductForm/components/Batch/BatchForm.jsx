@@ -57,7 +57,7 @@ export const BatchForm = ({
         form.submit();
       })
       .catch((info) => {
-        console.log('Validate Failed:', info);
+        // Validation failed
       });
   };
 
@@ -74,9 +74,7 @@ export const BatchForm = ({
       productId: product?.id,
       expirationDate: DateUtils.convertDayjsToTimestamp(values?.expirationDate),
       manufacturingDate: DateUtils.convertDayjsToTimestamp(values?.manufacturingDate),
-      receivedDate: DateUtils.convertDayjsToTimestamp(values?.receivedDate),
-    };
-    console.log(batchData);
+      receivedDate: DateUtils.convertDayjsToTimestamp(values?.receivedDate),    };
 
     try {
       if (mode === "create") {
@@ -111,10 +109,8 @@ export const BatchForm = ({
     notification.error({
       message: "Error al Crear/Editar Lote",
       description: "Por favor, revisa los errores en el formulario.",
-    });
-  };
-  console.log()
-
+    });  };
+  
   const disablePastDates = (current) => {
     return current && current < DateTime.now().startOf('day');
   };

@@ -114,10 +114,8 @@ const BackOrderList = ({ productId }) => {
     reserved: "Reservado"
   };
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const user = useSelector(selectUser);
+  const [isModalOpen, setIsModalOpen] = useState(false);  const user = useSelector(selectUser);
   const { backOrders, loading, error } = useBackOrdersByProduct( productId);
-  console.log("-------", backOrders);
 
   if (loading) return <Spin size="small" />;
   if (error || !backOrders?.length) return null;

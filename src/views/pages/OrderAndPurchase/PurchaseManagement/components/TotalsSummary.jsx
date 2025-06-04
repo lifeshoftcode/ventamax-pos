@@ -70,9 +70,7 @@ const TotalsSummary = ({ replenishments }) => {
     );
 };
 
-
   const totals = calculateTotals();
-  console.log(replenishments);
 
   return (
     <StyledCard>

@@ -80,12 +80,9 @@ export const DailyPurchasesBarChart = ({ purchases }) => {
 
     const byMonth = spanInMonths > 2;
 
-    const purchasesByDay = useMemo(() => accumulatePurchaseData(purchases, byMonth), [purchases, byMonth]);
-    const data = useMemo(() => {
-        console.log(purchasesByDay)
+    const purchasesByDay = useMemo(() => accumulatePurchaseData(purchases, byMonth), [purchases, byMonth]);    const data = useMemo(() => {
         const labels = Object.keys(purchasesByDay)
             .sort((a, b) => parseDate(b) - parseDate(a));
-        console.log(labels)
         const dataTotals = labels.map(label => purchasesByDay[label].total);
 
         return {
@@ -116,9 +113,7 @@ export const DailyPurchasesBarChart = ({ purchases }) => {
             if (chartRef.current && chartRef.current instanceof Chart) {
                 chartRef.current.destroy();
             }
-        };
-    }, []);
-    console.log(purchases)
+        };    }, []);
 
     return (
         <Container>

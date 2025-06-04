@@ -3,23 +3,31 @@ const SALES_TERM = {
     BILLS: '/bills',
     PREORDERS: '/preorders'
 }
+
 const CASH_RECONCILIATION_TERM = {
     CASH_RECONCILIATION_LIST: '/cash-reconciliation',
     CASH_RECONCILIATION_OPENING: '/cash-register-opening',
     CASH_RECONCILIATION_CLOSURE: '/cash-register-closure/:id',
     CASH_RECONCILIATION_INVOICE_OVERVIEW: '/cash-register-invoices-overview',
 }
+
 const CHANGELOG_TERM = {
     CHANGELOG_CREATE: '/changelog/create',
     CHANGELOG_MANAGE: '/changelog/manage',
     CHANGELOG_LIST: '/changelogs/list'
 }
+
 const DEV_VIEW_TERM = {
-    CREATE_BUSINESS: '/create-business',
-    MANAGE_BUSINESS: '/manage-business',
+    CREATE_BUSINESS: '/dev/business/create',
+    BUSINESSES: '/dev/businesses',
     ALL_USERS: '/all-users',
     CHANGELOG_CREATE: CHANGELOG_TERM.CHANGELOG_CREATE,
     CHANGELOG_MANAGE: CHANGELOG_TERM.CHANGELOG_MANAGE,
+    APP_CONFIG: {
+        ROOT: '/dev/app-config',
+        LOGIN_IMAGE: '/dev/app-config/login-image',
+    },
+    SWITCH_BUSINESS: '/dev/business/switch',
 }
 
 const UTILITY_TERM = {
@@ -46,7 +54,6 @@ const SHELVE_BASE_PATH = `${WAREHOUSE_BASE_PATH}/shelf/:shelfId`;
 const ROW_BASE_PATH = `${SHELVE_BASE_PATH}/row/:rowId`;
 const SEGMENT_BASE_PATH = `${ROW_BASE_PATH}/segment/:segmentId`;
 
-
 const INVENTORY_TERM = {
     CREATE_PRODUCT: `${INVENTORY_BASE_PATH}/create-product`,
     PRODUCT: `${INVENTORY_BASE_PATH}/product/:productId`,
@@ -70,6 +77,7 @@ const CONTACT_TERM = {
     CLIENTS: '/contact',
     SUPPLIERS: '/suppliers',
 }
+
 const SETTING_TERM = {
     SETTINGS: '/settings',
     SETTING: '/general-config',
@@ -80,6 +88,11 @@ const SETTING_TERM = {
     APP_INFO: '/app-info',
     BUSINESS_INFO: '/business-info',
     TAX_RECEIPT: '/tax-receipt',
+    GENERAL_CONFIG_BILLING: '/general-config/billing',
+    GENERAL_CONFIG_BUSINESS: '/general-config/business',
+    GENERAL_CONFIG_TAX_RECEIPT: '/general-config/tax-receipt',
+    GENERAL_CONFIG_USERS: '/general-config/users',
+    GENERAL_CONFIG_APP_INFO: '/general-config/app-info',
 }
 const PURCHASE_TERM = {
     PURCHASES: '/purchases',
@@ -107,6 +120,14 @@ const ACCOUNT_RECEIVABLE_TERM = {
     RECEIVABLE_PAYMENT_RECEIPTS: '/account-receivable/receipts',
 }
 
+const INSURANCE_TERM = {
+    INSURANCE_CONFIG: '/insurance/config',
+    INSURANCE_LIST: '/insurance/list',
+    INSURANCE_CREATE: '/insurance/create',
+    INSURANCE_EDIT: '/insurance/edit/:id',
+    INSURANCE_DETAILS: '/insurance/details/:id',
+}
+
 const ROUTES_PATH = {
     UTILITY_TERM,
     BASIC_TERM,
@@ -121,7 +142,8 @@ const ROUTES_PATH = {
     PURCHASE_TERM,
     ORDER_TERM,
     DEV_VIEW_TERM,
-    CHANGELOG_TERM
+    CHANGELOG_TERM,
+    INSURANCE_TERM
 }
 export const ROUTES = {
     ...ROUTES_PATH,

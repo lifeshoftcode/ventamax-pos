@@ -103,9 +103,9 @@ const InventoryCard = ({ item }) => {
                   // Opcional: manejar acción si se cancela
                 },
               });
-        }catch(err){
-            console.log(err)
-        }  
+            }catch(err){
+            // Handle error appropriately
+        }
     }
 
 

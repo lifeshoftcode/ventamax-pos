@@ -3,12 +3,11 @@ import { useDispatch } from "react-redux"
 import { addItem, deleteItem } from "../../../features/category/categorySlicer"
 import styled from "styled-components"
 import { motion } from "framer-motion"
-import { icons } from "../../../constants/icons/icons"
 import getIconFromText from "../../../utils/text/getIconFromText"
 
 export const Category = ({ category, ref, onClick, type, icon, themeColor, selected, index }) => {
     const [isSelected, setIsSelected] = useState(false)
-    const dispatch = useDispatch()
+    const dispatch = useDispatch();
     const start = (category, ref) => {
         if (isSelected === false) {
             setIsSelected(!isSelected)
@@ -18,9 +17,11 @@ export const Category = ({ category, ref, onClick, type, icon, themeColor, selec
             setIsSelected(!isSelected)
             dispatch(deleteItem(category))
         }
-        setTimeout(() => {
-            ref.current.scrollTo(0, 0)
-        }, 100)
+        requestAnimationFrame(() => {
+            if (ref.current) {
+                ref.current.scrollTo(0, 0)
+            }
+        })
     }
     const effectCategory = {
         hidden: { y: 20, opacity: 0 },

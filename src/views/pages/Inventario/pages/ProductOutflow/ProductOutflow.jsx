@@ -58,15 +58,13 @@ export const ProductOutflow = () => {
         if (doc.id === outflowProduct.data.id) {
           dispatch(setProductOutflowData({ data: doc }))
         }
-      });
-    }
+      });    }
   }, [outflowList])
-  console.log(outflowList)
+  
   useEffect(() => {
     fbGetProductOutflow({ user, setOutflowList, setOutflowListLoader, dispatch })
   }, [user])
 
-  console.log(outflowList)
   return (
     <Container>
       <Header />

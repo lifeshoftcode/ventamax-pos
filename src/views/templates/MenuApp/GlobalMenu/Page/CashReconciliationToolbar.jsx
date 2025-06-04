@@ -1,11 +1,13 @@
 import React from 'react'
 import { useMatch, useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
-import { Button } from '../../../system/Button/Button'
 import { useDispatch, useSelector } from 'react-redux'
 import { setUserNotification } from '../../../../../features/UserNotification/UserNotificationSlice'
 import { selectUser } from '../../../../../features/auth/userSlice'
 import { selectCashReconciliation } from '../../../../../features/cashCount/cashStateSlice'
+import { Button, Tooltip } from 'antd'
+import { icons } from '../../../../../constants/icons/icons'
+
 
 export const CashReconciliationToolbar = ({ side = 'left', searchData, setSearchData }) => {
     const matchWithCashReconciliation = useMatch("/cash-reconciliation")
@@ -45,11 +47,17 @@ export const CashReconciliationToolbar = ({ side = 'left', searchData, setSearch
             <Container>
                 {
                     side === 'right' && (
+                        <Tooltip
+                            title="Crear cuadre de caja"
+                            placement="bottomRight"
+                        >
                         <Button
                             onClick={handleSwitchToCashRegisterOpening}
-                            title={`Abrir Cuadre`}
-                            borderRadius={'light'}
-                        />
+                            icon={icons.operationModes.add}
+                        >
+                          Cuadre
+                        </Button>
+                        </Tooltip>
                     )
                 }
             </Container>

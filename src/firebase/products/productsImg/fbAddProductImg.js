@@ -1,6 +1,6 @@
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { storage } from "../../firebaseconfig";
-import { v4 } from 'uuid';
+import { nanoid } from 'nanoid';
 
 export const fbAddProductImg = (user, file, onProgress) => {
     return new Promise((resolve, reject) => {
@@ -10,7 +10,7 @@ export const fbAddProductImg = (user, file, onProgress) => {
             return;
         }
 
-        const storageRef = ref(storage, `businesses/${user.businessID}/productsImages/${v4()}.jpg`);
+        const storageRef = ref(storage, `businesses/${user.businessID}/productsImages/${nanoid()}.jpg`);
         const uploadTask = uploadBytesResumable(storageRef, file);
 
         uploadTask.on('state_changed',

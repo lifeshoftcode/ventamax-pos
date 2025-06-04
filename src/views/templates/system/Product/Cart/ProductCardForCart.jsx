@@ -3,7 +3,8 @@ import style from './ProductCardForCartStyle.module.scss'
 import { separator } from '../../../../../hooks/separator'
 import { useDispatch } from 'react-redux'
 import { totalShoppingItems, deleteProduct } from '../../../../../features/cart/cartSlice'
-import { IoClose } from 'react-icons/io5'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faTimes } from '@fortawesome/free-solid-svg-icons'
 
 export const ProductCardForCart = ({ item }) => {
   const dispatch = useDispatch()
@@ -20,7 +21,7 @@ export const ProductCardForCart = ({ item }) => {
     <li className={style.group} >
       <div className={`${style.Item} ${style.Item1}`}>{item.productName}</div>
       <div className={style.CrossContainer} onClick={() => deleteProductFromCart(item.id)}>
-        <IoClose className={style.Cross} />
+        <FontAwesomeIcon icon={faTimes} className={style.Cross} />
       </div>
       <div className={`${style.Item} ${style.Item3}`}>RD${separator(item.price.total)}</div>
       <Counter

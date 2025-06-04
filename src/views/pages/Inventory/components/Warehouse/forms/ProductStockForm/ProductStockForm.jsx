@@ -5,7 +5,7 @@ import {
   createProductStock,
   updateProductStock,
   useListenProductsStock,
-} from "../../../../../../../firebase/warehouse/ProductStockService";
+} from "../../../../../../../firebase/warehouse/productStockService";
 import { useGetProductsWithBatch } from "../../../../../../../hooks/products/useGetProductsWithBatch";
 import useListenBatches from "../../../../../../../hooks/products/useListenBatch";
 import { useDispatch, useSelector } from "react-redux";
@@ -88,10 +88,8 @@ export function ProductStockForm() {
       batchId: "",
     }));
   };
-
   const handleBatchChange = (batchId) => {
     const existingProductStock = productsStock?.find(product => product.batchId === batchId && product.location.id === locationId);
-    console.log("existingProductStock  ", productsStock);
     if (existingProductStock) {
       antd.Modal.confirm({
         title: "Este batch ya existe en la ubicación actual",
@@ -168,12 +166,11 @@ export function ProductStockForm() {
   };
 
   return (
-    <Modal
-      title={formData.id ? "Actualizar Producto en Stock" : "Agregar Producto en Stock"}
+    <Modal      title={formData.id ? "Actualizar Producto en Stock" : "Agregar Producto en Stock"}
       open={isOpen}
       onCancel={handleClose}
       footer={null}
-      destroyOnClose
+      destroyOnHidden
     >
       <Spin spinning={isLoading}>
         <FormContainer form={form} layout="vertical" onFinish={handleSubmit}>

@@ -19,6 +19,12 @@ const TEMPLATES_CONFIG = {
     width: '210mm',
     height: '297mm',
     padding: '0mm',
+  },
+  template4: {
+    format: '80mm',
+    width: '80mm',
+    height: 'auto',
+    padding: '0mm', 
   }
 };
 
@@ -105,7 +111,7 @@ export default function InvoiceTemplates({ previewInModal = true, hidePreviewBut
         onCancel={() => setIsModalVisible(false)}
         width={'1000px'}
         style={{ top: 20 }}
-        destroyOnClose={true}
+        destroyOnHidden={true}
         footer={[
           <Button key="print" onClick={handlePrint} type="primary">
             Imprimir

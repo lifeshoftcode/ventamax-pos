@@ -3,7 +3,6 @@ import { initTaxes } from '../../views/component/modals/UpdateProduct/Initialize
 import { warrantyOptions } from '../../views/component/modals/ProductForm/components/sections/WarrantyInfo'
 import { nanoid } from 'nanoid';
 
-
 const createEmptyProduct = () => ({
     name: '',
     image: '',

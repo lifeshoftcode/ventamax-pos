@@ -3,6 +3,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { defaultAR } from '../../schema/accountsReceivable/accountsReceivable';
 import { DateTime } from 'luxon';
 import { getAccountReceivableDetails } from '../../firebase/accountsReceivable/fbGetAccountReceivableDetails'; // Asegúrate de que la ruta es correcta
+import { applyUpdates } from '../../utils/reduxStateUtils';
 
 // Estado inicial con un único objeto defaultAR
 const initialState = {
@@ -41,42 +42,17 @@ const accountsReceivableSlice = createSlice({
     initialState,
     reducers: {
         setAR(state, action) {
-            const ar = action.payload;
-            state.ar = { ...state.ar, ...ar };
-            state.ar.updatedAt = DateTime.now().toMillis();
+            const hasUpdated = applyUpdates(state.ar, action.payload);
+            if (!hasUpdated) state.ar.updatedAt = DateTime.now().toMillis();
         },
         setAccountReceivableInfo(state, action) {
             const { ar, payments, installments, paymentInstallments } = action.payload;
-            if(ar){ state.info.ar = ar }
-            if(payments){ state.info.payments = payments }
-            if(installments){ state.info.installments = installments }
-            if(paymentInstallments){ state.info.paymentInstallment = paymentInstallments }
+            if (ar) { state.info.ar = ar }
+            if (payments) { state.info.payments = payments }
+            if (installments) { state.info.installments = installments }
+            if (paymentInstallments) { state.info.paymentInstallment = paymentInstallments }
         },
-        updateInvoiceId(state, action) {
-            state.ar.invoiceId = action.payload;
-        },
-        updateClientId(state, action) {
-            state.ar.clientId = action.payload;
-        },
-        updateFrequency(state, action) {
-            state.ar.paymentFrequency = action.payload;
-        },
-        updateDues(state, action) {
-            state.ar.totalInstallments = action.payload;
-        },
-        updateAmountByDue(state, action) {
-            state.ar.installmentAmount = action.payload;
-        },
-        updateComments(state, action) {
-            state.ar.comments = action.payload;
-        },
-        toggleIsClosed(state) {
-            state.ar.isClosed = !state.ar.isClosed;
-        },
-        toggleActiveStatus(state) {
-            state.ar.isActive = !state.ar.isActive;
-        },
-        toggleARInfoModal(state){
+        toggleARInfoModal(state) {
             const isOpen = state.arDetailsModal.isOpen;
             state.arDetailsModal.isOpen = !isOpen;
             if (!isOpen) {
@@ -110,7 +86,7 @@ const accountsReceivableSlice = createSlice({
             .addCase(fetchAccountReceivableDetails.fulfilled, (state, action) => {
                 state.loading = false;
                 const { accountReceivable, client, invoice, installments } = action.payload;
-                
+
                 // Extraer todos los pagos de los installments
                 const payments = installments?.reduce((allPayments, installment) => {
                     if (installment.payments && Array.isArray(installment.payments)) {
@@ -125,7 +101,7 @@ const accountsReceivableSlice = createSlice({
 
                 // Update ar state
                 state.ar = { ...state.ar, ...accountReceivable };
-                
+
                 // Update info state with flattened payments
                 state.info = {
                     ar: accountReceivable || {},
@@ -143,18 +119,12 @@ const accountsReceivableSlice = createSlice({
     },
 });
 
-export const { 
-    setAR, 
-    toggleARInfoModal, 
+export const {
+    setAR,
+    toggleARInfoModal,
     setARDetailsModal,
-    updateFrequency, 
-    setAccountReceivableInfo, 
-    updateDues, 
-    updateAmountByDue, 
-    updateComments, 
-    toggleIsClosed, 
-    toggleActiveStatus, 
-    resetAR 
+    setAccountReceivableInfo,
+    resetAR
 } = accountsReceivableSlice.actions;
 
 export default accountsReceivableSlice.reducer;

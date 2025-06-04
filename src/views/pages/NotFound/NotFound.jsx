@@ -1,7 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
-import { FaExclamationTriangle } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import ROUTES_NAME from '../../../routes/routesName';
 import { useMatchRouteByName } from '../../templates/MenuApp/GlobalMenu/useMatchRouterByName';
 
@@ -14,7 +15,7 @@ const Container = styled.div`
   background-color: #f8f8f8;
 `;
 
-const Icon = styled(FaExclamationTriangle)`
+const IconWrapper = styled.div`
   font-size: 6rem;
   color: #ff8c00;
   margin-bottom: 2rem;
@@ -54,7 +55,9 @@ export const NotFound = () => {
   const {HOME} = ROUTES_NAME.BASIC_TERM
   return (
     <Container>
-      <Icon />
+      <IconWrapper>
+        <FontAwesomeIcon icon={faExclamationTriangle} />
+      </IconWrapper>
       <Title>¡Vaya!</Title>
       <Subtitle>No pudimos encontrar la página que estás buscando.</Subtitle>
       <Button to={HOME}>Volver al inicio</Button>

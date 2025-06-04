@@ -18,10 +18,9 @@ export const OrderCard = ({ orderData, index, Row, Col, activeId, setActiveId })
     //const orderItemSelectedRef = useSelector(selectOrderItemSelected)
     const {data} = orderData
     const handleViewNotes = () => {  
-      
         dispatch(toggleViewOrdersNotes({data, isOpen: 'open'}))   
     }
-   console.log(data, 'data.......................................')
+   
     return (
         <Row>
             

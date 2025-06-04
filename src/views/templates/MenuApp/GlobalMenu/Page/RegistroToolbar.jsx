@@ -1,9 +1,8 @@
 import React from 'react'
 import { useMatch } from 'react-router-dom'
 import styled from 'styled-components'
-import { useDispatch } from 'react-redux'
+import { notification } from 'antd'
 import routesName from '../../../../../routes/routesName'
-import { addNotification } from '../../../../../features/notification/NotificationSlice'
 import exportToExcel from '../../../../../hooks/exportToExcel/useExportToExcel'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faListAlt, faTable } from '@fortawesome/free-solid-svg-icons'
@@ -12,8 +11,6 @@ import { formatBill } from '../../../../../hooks/exportToExcel/formatBill'
 import { DateTime } from 'luxon'
 
 export const RegistroToolbar = ({ side = 'left', data, searchData, setSearchData }) => {
-  const dispatch = useDispatch()
-
   const { BILLS } = routesName.SALES_TERM;
   const matchWithCashReconciliation = useMatch(BILLS);
   const invoices = data;
@@ -29,8 +26,11 @@ export const RegistroToolbar = ({ side = 'left', data, searchData, setSearchData
 
   const handleExportButton = (type) => {
     if (invoices.length === 0) {
-      dispatch(addNotification({ title: 'Error al exportar', message: 'No hay Facturas para exportar', type: 'error' }))
-      return
+      notification.error({
+        message: 'Error al exportar',
+        description: 'No hay Facturas para exportar'
+      });
+      return;
     }
     switch (type) {
       case 'Resumen':

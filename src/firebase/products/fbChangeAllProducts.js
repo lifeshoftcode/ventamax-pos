@@ -1,6 +1,7 @@
 import { collection, doc, getDocs, writeBatch } from "firebase/firestore";
 import { db } from "../firebaseconfig";
 import { getTax } from "../../utils/pricing";
+
 const businessIDs = [
     "2mJ94xMLICgM2KjPgXrD",
     "EDW44d69fhdvE5QmuL2I",

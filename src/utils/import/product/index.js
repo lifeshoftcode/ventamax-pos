@@ -4,7 +4,7 @@ import { readExcelFile } from "../excelReader";
 import { productHeaderMappings } from "./headerMappings";
 import { transformConfig } from "./transformFunctions";
 import { processMappedData } from "../processMappedData";
-import { filterEssentialHeaders } from "./filterEssentialHeaders";
+import { filterEssentialHeaders, createSelectedHeaders } from "./filterEssentialHeaders";
 
 export const importProductData = async (file, language = 'en') => {
     if (!file) {
@@ -31,11 +31,10 @@ export const importProductData = async (file, language = 'en') => {
     }
 };
 // Función específica para generar una plantilla de productos en Excel
-export const createProductTemplate = async (language = 'es') => {
+export const createProductTemplate = async (language = 'es', optionalFields = []) => {
     try {
-
-        const headers = filterEssentialHeaders(productHeaderMappings, language);
-        console.log('Columnas esenciales:', headers);
+        const headers = createSelectedHeaders(productHeaderMappings, language, optionalFields);
+        console.log('Columnas seleccionadas:', headers);
         const fileName = `Plantilla_Productos_${language}.xlsx`;
         await createExcelTemplate(headers, fileName);
     } catch (error) {

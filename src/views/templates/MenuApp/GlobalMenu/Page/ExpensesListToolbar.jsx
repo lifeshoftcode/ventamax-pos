@@ -8,16 +8,26 @@ import ROUTES_NAME from '../../../../../routes/routesName'
 import { icons } from '../../../../../constants/icons/icons'
 import { useMatch, useNavigate } from 'react-router-dom'
 import { ExpenseChart } from '../../../../pages/Expenses/ExpensesList/components/ExpenseReport/ExpenseReport'
-import { toggleExpenseChartModal } from '../../../../../features/expense/expenseUISlice'
+import { openExpenseFormModal, toggleExpenseChartModal } from '../../../../../features/expense/expenseUISlice'
 import { useDispatch } from 'react-redux'
+import { resetExpense, setExpense } from '../../../../../features/expense/expenseManagementSlice'
 
 
-export const ExpensesListToolbar = ({ side = 'left', searchData, setSearchData }) => {
-    const navigate = useNavigate();
+export const ExpensesListToolbar = ({ side = 'left', searchData, setSearchData }) => {    const navigate = useNavigate();
     const { EXPENSES_LIST, EXPENSES_CREATE } = ROUTES_NAME.EXPENSES_TERM;
     const matchWithExpenseList = useMatch(EXPENSES_LIST);
     const dispatch = useDispatch();
-    const handleGoToCreateExpense = () => navigate(EXPENSES_CREATE);
+    
+    // Configuramos para abrir el modal en lugar de navegar
+    const handleOpenCreateExpenseModal = () => {
+        // Resetear el estado del formulario para crear uno nuevo
+        dispatch(resetExpense());
+        // Establecer modo 'add'
+        dispatch(setExpense({ mode: 'add' }));
+        // Abrir el modal
+        dispatch(openExpenseFormModal());
+    };
+    
     const handleOpenExpensesChart = () => {
         dispatch(toggleExpenseChartModal())
     }
@@ -44,11 +54,10 @@ export const ExpensesListToolbar = ({ side = 'left', searchData, setSearchData }
                             <Button
                                 title='Ver Reporte'
                                 onClick={handleOpenExpensesChart}
-                                />
-                            <Button
+                                />                            <Button
                                 title='Gasto'
                                 startIcon={icons.operationModes.add}
-                                onClick={handleGoToCreateExpense}
+                                onClick={handleOpenCreateExpenseModal}
                             />
                         </Group>
                     )

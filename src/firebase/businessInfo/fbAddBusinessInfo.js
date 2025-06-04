@@ -1,18 +1,32 @@
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore"
+import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore"
 import { db } from "../firebaseconfig"
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { nanoid } from 'nanoid';
+import { nanoid } from "nanoid";
+
+export const createBusiness = async (businessData) => {
+    try {
+        const business = {
+            ...businessData,
+            id: nanoid(),
+            createdAt: serverTimestamp(),
+        }
+        const businessRef = doc(db, "businesses", business.id);
+        await setDoc(businessRef, { business });
+        return business.id;
+    } catch (error) {
+        console.error("Error creating business info:", error);
+        throw error;
+    }
+};
 
 export const fbUpdateBusinessInfo = async (user, businessInfo) => {
     if (!user || !user.businessID) return;
-
+ 
     const businessInfoRef = doc(db, "businesses", user.businessID);
     try {
         const businessDoc = await getDoc(businessInfoRef);
 
-        if (!businessDoc.exists()) {
-            await setDoc(businessInfoRef, { business: { ...businessInfo } });
-        } else {
+        if (businessDoc.exists()) {
             await updateDoc(businessInfoRef, { business: { ...businessInfo } });
         }
     } catch (error) {

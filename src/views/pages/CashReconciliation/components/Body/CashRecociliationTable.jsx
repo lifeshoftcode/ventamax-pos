@@ -1,23 +1,62 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import { tableConfig } from './tableConfig'
-import { fbGetCashCounts, fbGetCashCountsDefault } from '../../../../../firebase/cashCount/fbGetCashCounts/fbGetCashCounts'
+import { fbListenCashCounts } from '../../../../../firebase/cashCount/fbGetCashCounts/fbGetCashCounts'
 import { useDispatch, useSelector } from 'react-redux'
 import { selectUser } from '../../../../../features/auth/userSlice'
 import { AdvancedTable } from '../../../../templates/system/AdvancedTable/AdvancedTable'
 import { useNavigate } from 'react-router-dom'
 import { clearCashCount, setCashCount } from '../../../../../features/cashCount/cashCountManagementSlice'
-import { DateTime } from 'luxon'
+import { FilterBar } from '../../../../component/FilterBar/FilterBar'
+import { useBusinessUsers } from '../../../../../firebase/users/useBusinessUsers'
+import { DateTime } from 'luxon' // Import DateTime
 
 export const CashReconciliationTable = () => {
   const [dateRange, setDateRange] = useState({
     startDate: null,
     endDate: null
-  })
+  });
+  const [searchTerm, setSearchTerm] = useState('')
   const [cashCounts, setCashCounts] = useState([])
+  const [loading, setLoading] = useState(true)
   const user = useSelector(selectUser)
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const { users: usersList } = useBusinessUsers();
+  const filterConfig = {
+    defaultValues: {
+      status: 'open', // Cambiado de 'active' a null, para que no haya filtro inicial
+      user: null,
+      createdAtDateRange: null,
+    },
+    defaultSort: {
+      isAscending: false,
+    },
+    filters: [    
+       {
+        key: 'status',
+        type: 'select',
+        placeholder: 'Estado',
+        clearText: 'Limpiar estado',
+      },
+      {
+        key: 'user',
+        type: 'select',
+        placeholder: 'Usuario',
+        clearText: 'Limpiar usuario',
+        showSearch: true,
+        icon: null,
+      },
+    ],
+    showSortButton: true,
+    showResetButton: true,
+  };
+
+  const [filterState, setFilterState] = useState({
+    filters: filterConfig.defaultValues,
+    isAscending: filterConfig.defaultSort.isAscending,
+  });
 
   const handleClick = (cashCount) => {
     let cashCountToUpdate = {
@@ -30,16 +69,27 @@ export const CashReconciliationTable = () => {
     dispatch(setCashCount(cashCountToUpdate));
     navigate(`/cash-register-closure/${cashCountToUpdate?.id}`);
   }
- 
-  useEffect(() => {
-    fbGetCashCounts(user, setCashCounts, dateRange)
 
-  }, [user, dateRange])
   useEffect(() => {
-    if (user) {
-      fbGetCashCountsDefault(user, setCashCounts)
+    setLoading(true);
+    const currentFilterDateRange = filterState.filters?.createdAtDateRange;
+    const newStartDate = currentFilterDateRange?.startDate ?? null; // Expecting Milliseconds
+    const newEndDate = currentFilterDateRange?.endDate ?? null;     // Expecting Milliseconds
+
+    if (newStartDate !== dateRange.startDate || newEndDate !== dateRange.endDate) {
+      setDateRange({ startDate: newStartDate, endDate: newEndDate });
     }
-  }, [user])
+
+    try{
+      fbListenCashCounts(user, setCashCounts, dateRange, filterState, searchTerm);
+    }catch (error) {
+      console.error('Error in date range:', error);
+      setCashCounts([]);
+    } finally {
+      setLoading(false);
+    }
+
+  }, [user, dateRange, filterState, searchTerm]) // dateRange is still a dependency
 
   const data = cashCounts.map((cashCount) => {
     return {
@@ -56,52 +106,51 @@ export const CashReconciliationTable = () => {
     }
   })
 
-
   const columns = tableConfig()
-  const handleLabelState = (state) => {
-    const stateLabels = {
-      open: 'Abierto',
-      closing: 'Cerrando Cuadre',
-      closed: 'Cerrado',
-      pending: 'Pendiente',
-    }
-    return stateLabels[state] || '';
-  }
-  const filtersConfig = [
-    {
-      label: 'Estado',
-      accessor: 'status',
-      format: (value) => `${handleLabelState(value)}`,
+
+  const dataConfig = {
+    user: {
+      data: usersList,
+      accessor: ({ user }) => ({
+        label: user.realName?.trim() ? user.realName : user.name,
+        value: user.id,
+      }),
     },
-    {
-      label: 'Usuarios',
-      accessor: 'user',
-    }
-  ]
+    status: {
+      data: [
+        { label: 'Abierto', value: 'open' },
+        { label: 'Cerrando Cuadre', value: 'closing' },
+        { label: 'Cerrado', value: 'closed' },
+      ],
+      accessor: item => ({
+        label: item.label,
+        value: item.value,
+      }),
+    },
+  };
 
   return (
     <Container>
+      <FilterBar
+        config={filterConfig}
+        dataConfig={dataConfig}
+        onChange={newFilterStateFromBar => {
+          setFilterState(newFilterStateFromBar);
+        }}
+      />
       <AdvancedTable
         columns={columns}
         data={data}
         elementName={'cuadre de caja'}
         tableName={'cash_reconciliation_table'}
-        filterConfig={filtersConfig}
-        filterUI
-        datePicker
-        defaultDate={'today'}
-        dateRange={dateRange}
-        setDateRange={setDateRange}
-        datesKeyConfig='date'
         onRowClick={(row) => handleClick(row.action)}
+        loading={loading}
       />
     </Container>
   )
 }
 
 const Container = styled.div`
-  display: grid;
-
-  grid-template-rows: 1fr;
-  overflow: hidden;
-`
+  display: flex;
+  flex-direction: column;
+  `

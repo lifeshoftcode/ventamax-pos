@@ -64,6 +64,14 @@ const DateUtils = {
     // Convert Milliseconds to Friendly Date
     convertMillisToFriendlyDate: (millis) => {
         if (!millis) return new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
+        
+        // Handle Firestore Timestamp objects
+        if (typeof millis === 'object' && millis.seconds !== undefined) {
+            millis = (millis.seconds * 1000) + (millis.nanoseconds / 1000000);
+        } else if (typeof millis === 'string') {
+            millis = JSON.parse(millis);
+        }
+        
         const date = DateTime.fromMillis(millis);
         return date.isValid ? date.toFormat("dd/MM/yyyy HH:mm") : "Invalid milliseconds";
     },

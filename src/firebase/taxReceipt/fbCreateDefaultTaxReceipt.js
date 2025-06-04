@@ -7,7 +7,6 @@ import { fbCreateTaxReceipt } from "./fbCreateTaxReceipt"
 
 const FbCreateDefaultTaxReceipt = () => {
     const user = useSelector(selectUser);
-
     useEffect(() => {
         try {
             validateUser(user);

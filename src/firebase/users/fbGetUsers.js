@@ -1,23 +1,32 @@
-import { collection, onSnapshot, query, where } from "firebase/firestore"
+import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore"
 import { db } from "../firebaseconfig"
 
-export const fbGetUsers = async (setUser, user) => {
+export const fbGetUsers = (currentUser, setUsers, onError) => {
+    if (!currentUser?.businessID) { return }
 
-    if (!user || !user?.businessID) { return }
-
-    const businessID = user.businessID
     const usersRef = collection(db, "users")
-    const q = query(usersRef, where("user.businessID", "==", businessID))
-    onSnapshot(q, (snapshot) => {
-        const usersArray = snapshot.docs
-            .map((doc) => doc.data())
-            .sort((a, b) => a.user.createAt.seconds - b.user.createAt.seconds)
-            .map((doc, index) => {
-                doc.user.number = index + 1
-                return doc
-            })
-            .reverse()
+    const q = query(
+        usersRef,
+        where("user.businessID", "==", currentUser.businessID),
+        orderBy("user.createAt", "desc")
+    )
+    const unsubscribe = onSnapshot(q,
+        (snapshot) => {
+            const usersArray = snapshot.docs
+                .map((doc, i) => ({
+                    ...doc.data(),
+                    number: i + 1,
+                }))
 
-        setUser(usersArray)
-    })
+            setUsers(usersArray)
+        },
+        (error) => {
+            if (onError) {
+                onError(error)
+            } else {
+                console.error("Error fetching users: ", error)
+            }
+        }
+    )
+    return unsubscribe
 }

@@ -9,16 +9,14 @@ export const LogoContainer = () => {
     return (
         <Container>
             <Header>
-                <Wrapper>
-                    <Title
-                        level={4}
-                    >
+                <LogoBadge>
+                    <Title level={4}>
                         Facturación en Línea
                     </Title>
                     <LogoWrapper>
                         <Logo />
                     </LogoWrapper>
-                </Wrapper>
+                </LogoBadge>
                 <AppName>
                     VENTAMAX
                 </AppName>
@@ -29,66 +27,70 @@ export const LogoContainer = () => {
             <IntroText>
                 Lleva tu negocio siguiente nivel con nuestro sistema de punto de facturación fácil de utilizar y muy rápido.
             </IntroText>
-        </Container >
+        </Container>
     )
 }
 
 const Container = styled.div`
-    display: grid;
-    justify-content: center;
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    align-content: center;
-    margin-bottom: 1.5em;
-`
-const Wrapper = styled.div`
-    display: grid;
-    grid-template-columns: min-content min-content;
-    align-items: center;
-    align-content: center;
-    width: min-content;
-   
-    position: relative;
-`
-const Header = styled.div`
-    display: grid;
-    width: 100%;
     justify-content: center;
+    text-align: center;
+    margin-bottom: 1em;
     width: 100%;
-    position: relative;
-    gap: 0.2em;
-    margin-bottom: 1.7em;
 `
 
-const Title = styled(Typography.Title)`
+const LogoBadge = styled.div`
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5em;
+    width: fit-content;
+`
+
+const Header = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 1em;
+`
+
+const Title = styled.div`
     white-space: nowrap;
     margin: 0 !important;
-    padding:  0.4em 0.8em;
-    padding-right: 5em;
-    position: absolute;
+    font-size: 1.2em !important;
+    padding: 0.4em 1.2em;
+    padding-right: 3em;
     background-color: var(--color);
-    right: 3.5em;
     color: white !important;
     border-radius: 40px 0px 0px 40px;
+    position: absolute;
+    right: 3em;
+    
     @media (max-width: 900px){
         padding-right: 2em;
     }
     @media (max-width: 800px){
         display: none;
-        align-items:  center;
     }
-
 `
+
 const LogoWrapper = styled.div`
     z-index: 2;
+    display: flex;
+    justify-content: center;
 `
-const AppName = styled.div`
-    font-size: 1.2em;
+
+const AppName = styled.span`
+    font-size: 1.5em;
+    margin: 0em 0;
     font-weight: 700;
-   
+    text-align: center;
     color: white;
-    @media (max-width: 600px){
-        text-align:  center;
-    }
+    letter-spacing: 1px;
 `
 const IntroText = styled.div`
     font-size: 1.1em;
@@ -97,10 +99,11 @@ const IntroText = styled.div`
         text-align:  center;
     }
 `
-const WelcomeTitle = styled(Typography.Title)`
+const WelcomeTitle = styled.div`
     color: var(--color) !important;
-    font-size: 1.6em; // Adjust the font size as needed
-    margin-top: 0.5em;
+    font-size: 2em !important; // Adjust the font size as needed
+    font-weight: 600 !important;
+    margin: 0em 0 1em;
     @media (max-width: 600px){
         text-align:  center;
     }

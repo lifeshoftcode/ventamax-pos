@@ -4,12 +4,12 @@ import { separator } from "./separator"
 export const useFormatPrice = (value, symbol = monetarySymbols.dollarSign, ) => {
     switch (symbol) {
         case 'rd':
-            return `${monetarySymbols.rd}  ${separator(value)}`
+            return `${monetarySymbols.rd}${separator(value)}`
         case 'euro':
-            return `${monetarySymbols.euroSign}  ${separator(value)}`
+            return `${monetarySymbols.euroSign}${separator(value)}`
         case 'pound':
-            return `${monetarySymbols.poundSign}  ${separator(value)}`
+            return `${monetarySymbols.poundSign}${separator(value)}`
         default:
-            return `${symbol}  ${separator(value)}`
+            return `${symbol}${separator(value)}`
     }
 }

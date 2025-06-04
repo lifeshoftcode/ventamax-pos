@@ -3,7 +3,7 @@ import styled from 'styled-components'
 
 export const Collection = () => {
     const handleClick = () => {
-        console.log('click')
+        // Handle click logic here
     }
   return (
     <Container>

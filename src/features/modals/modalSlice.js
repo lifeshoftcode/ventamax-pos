@@ -54,7 +54,8 @@ const initialState = {
     },
     modalToggleSignUp: {
         isOpen: false,
-        data: null
+        data: null,
+        businessID: null
     },
     modalConfirmOpenCashReconciliation: {
         isOpen: false,
@@ -62,6 +63,10 @@ const initialState = {
     modalFileList: {
         isOpen: false,
         fileList: []
+    },
+    modalDeveloper: {
+        isOpen: false,
+        activeTab: 'console'
     }
 }
 const modalSlice = createSlice({
@@ -193,6 +198,10 @@ const modalSlice = createSlice({
                 state.modalToggleSignUp.data = action.payload.data;
             }
 
+            if(action.payload?.businessID) {
+                state.modalToggleSignUp.businessID = action.payload.businessID;
+            }
+
             if (action.payload?.isOpen === undefined) {
                 const isOpen = state.modalToggleSignUp.isOpen;
                 state.modalToggleSignUp.isOpen = !isOpen;
@@ -201,6 +210,7 @@ const modalSlice = createSlice({
             if (action.payload?.isOpen === false) {
                 state.modalToggleSignUp.isOpen = false;
                 state.modalToggleSignUp.data = null;
+                state.modalToggleSignUp.businessID = null;
                 return
             }
             if (action.payload?.isOpen === true) {
@@ -223,6 +233,16 @@ const modalSlice = createSlice({
             } else {
                 state.modalFileList.fileList = data.fileList;
 
+            }
+        },
+        toggleDeveloperModal: (state, action) => {
+            const payload = action.payload;
+            const isOpen = !state.modalDeveloper.isOpen;
+            
+            state.modalDeveloper.isOpen = isOpen;
+            
+            if (payload?.activeTab) {
+                state.modalDeveloper.activeTab = payload.activeTab;
             }
         }
     }
@@ -251,7 +271,8 @@ export const {
     toggleAddProductOutflow,
     toggleSignUpUser,
     toggleConfirmOpenCashReconciliation,
-    toggleFileListModal
+    toggleFileListModal,
+    toggleDeveloperModal
 
 } = modalSlice.actions
 
@@ -271,4 +292,5 @@ export const SelectAddProductOutflowModal = state => state.modal.modalToggleAddP
 export const SelectSignUpUserModal = state => state.modal.modalToggleSignUp;
 export const SelectConfirmOpenCashReconciliationModal = state => state.modal.modalConfirmOpenCashReconciliation;
 export const SelectFileListModal = state => state.modal.modalFileList;
+export const SelectDeveloperModal = state => state.modal.modalDeveloper;
 export default modalSlice.reducer

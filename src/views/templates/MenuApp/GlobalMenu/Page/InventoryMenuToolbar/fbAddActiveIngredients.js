@@ -40,26 +40,18 @@ export const fbAddActiveIngredients = async (user, products) => {
           id: ingredientDocRef.id,
           name: ingredient,
           createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        };
+          updatedAt: serverTimestamp(),        };
         batch.set(ingredientDocRef, activeIngredient);
         operationCount++;
-        console.log(`Ingrediente activo agregado: ${ingredient}`);
       } else {
         // Actualizar el campo updatedAt del ingrediente existente
         const { docSnapshot } = existingActiveIngredientsByName.get(ingredientNameLowerCase);
         batch.update(docSnapshot.ref, { updatedAt: serverTimestamp() });
         operationCount++;
-        console.log(`Ingrediente activo actualizado: ${ingredient}`);
       }
-    }
-
-    // Confirmar el batch
+    }    // Confirmar el batch
     if (operationCount > 0) {
       await batch.commit();
-      console.log('Ingredientes activos procesados exitosamente.');
-    } else {
-      console.log('No se encontraron nuevos ingredientes activos para procesar.');
     }
   } catch (error) {
     console.error('Error al procesar los ingredientes activos:', error);

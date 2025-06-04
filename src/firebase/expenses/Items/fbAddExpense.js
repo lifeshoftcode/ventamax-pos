@@ -2,8 +2,9 @@ import { Timestamp, doc, setDoc } from "firebase/firestore";
 import { nanoid } from "nanoid";
 import { db } from "../../firebaseconfig";
 import { fbUploadFile } from "../../img/fbUploadFileAndGetURL";
-import DateUtils from "../../../utils/date/dateUtils";
 import { getNextID } from "../../Tools/getNextID";
+import { toTimestamp } from "../../../utils/firebase/toTimestamp";
+import { sanitizeFirebaseData } from "../../../utils/firebase/sanitizeFirebaseData";
 
 export const fbAddExpense = async (user, setLoading, expense, receiptImage, ) => {
     try {
@@ -18,29 +19,50 @@ export const fbAddExpense = async (user, setLoading, expense, receiptImage, ) =>
             ...expense,
             dates: {
                 ...expense.dates,
-                expenseDate: Timestamp.fromMillis(DateUtils.convertDateToMillis(expense.dates.expenseDate)),
+                expenseDate: toTimestamp(expense.dates.expenseDate),
                 createdAt: Timestamp.now(),
             },
             status: "active",
             numberId: numberId,
             id: nanoid(),
         };
+        
         setLoading({ isOpen: true, message: "Subiendo imagen del recibo al servidor..." });
 
-        if (receiptImage) {
-            const url = await fbUploadFile(user, 'expensesReceiptImg', receiptImage);
-            modifiedExpense.receiptImageUrl = url;
+        if (receiptImage && receiptImage.length > 0) {
+            const uploadPromises = receiptImage.map(file => fbUploadFile(user, 'expensesReceiptImg', file.file));
+            const urls = await Promise.all(uploadPromises);
+            
+            // Update attachment URLs in the expense object
+            modifiedExpense.attachments = receiptImage.map((file, index) => ({
+                id: file.id,
+                name: file.name,
+                type: file.type,
+                url: urls[index]
+            }));
         }
 
-        setLoading({ isOpen: true, message: "Registrando detalles del gasto en la base de datos..." });
+        setLoading({ isOpen: true, message: "Sanitizando y registrando detalles del gasto..." });
 
-        const expenseRef = doc(db, 'businesses', user.businessID, 'expenses', modifiedExpense.id);
+        // Sanitizar los datos antes de guardarlos
+        const sanitizedExpense = sanitizeFirebaseData(modifiedExpense);
 
-        await setDoc(expenseRef, { expense: modifiedExpense })
+        const data = {
+            ...sanitizedExpense,
+            createdBy: user.uid,
+        };
 
+        const expenseRef = doc(db, 'businesses', user.businessID, 'expenses', sanitizedExpense.id);
+
+        await setDoc(expenseRef, { expense: data });
+        
+        setLoading({ isOpen: false, message: "" });
+        
+        return true; // Indicate success
 
     } catch (error) {
         console.error("Error adding expense: ", error);
-        return false;
+        setLoading({ isOpen: false, message: "" });
+        throw error; // Throw the error so it can be caught by the caller
     }
 }

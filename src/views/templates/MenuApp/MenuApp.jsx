@@ -9,6 +9,7 @@ import { GlobalMenu } from './GlobalMenu/GlobalMenu'
 import { icons } from '../../../constants/icons/icons'
 import { GoBackButton } from '../system/Button/GoBackButton'
 import { Input } from 'antd';
+import { NotificationButton } from './Components/NotificationButton/NotificationButton'
 
 export const MenuApp = ({ 
   data, 
@@ -19,6 +20,7 @@ export const MenuApp = ({
   searchData, 
   displayName = "",
   showBackButton = true, // Nueva prop para controlar si se muestra el botón
+  showNotificationButton = false, // Nueva prop para controlar si se muestra el botón de notificaciones
   onBackClick          // Nueva prop para manejar el click personalizado
 }) => {
   const dispatch = useDispatch();
@@ -43,6 +45,8 @@ export const MenuApp = ({
         <Group>
           <OpenMenuButton isOpen={isOpenMenu} onClick={handledMenu} />
           {showBackButton && <GoBackButton onClick={onBackClick} />}
+          {showNotificationButton && <NotificationButton handleCloseMenu={closeMenu} />}
+
           {sectionName && (
             <SectionName>{sectionNameIcon}{sectionName}</SectionName>
           )}
@@ -170,10 +174,12 @@ const SectionName = styled.div`
   font-size: 1.1em;
   color: white;
   height: 1.8em;
+  max-width: 250px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   gap: 0.4em;
   border-radius: 6px;
-  white-space: nowrap;
   background-color: rgba(0, 0, 0, 0.200);
   padding: 0 0.4em;
-
 `

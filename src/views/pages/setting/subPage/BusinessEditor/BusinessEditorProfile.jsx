@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import * as antd from 'antd';
-const { Form, Input, Button, Select, message,  Upload } = antd;
-import { PlusOutlined, LoadingOutlined } from '@ant-design/icons';
+import { Form, Input, Button, Select, message, Upload, Card, Typography, Divider } from 'antd';
+import { PlusOutlined, LoadingOutlined, ShopOutlined, MailOutlined, PhoneOutlined, HomeOutlined } from '@ant-design/icons';
 import { fbUpdateBusinessInfo, fbUpdateBusinessLogo } from '../../../../../firebase/businessInfo/fbAddBusinessInfo';
 import { selectUser } from '../../../../../features/auth/userSlice';
 import { selectBusinessData } from '../../../../../features/auth/businessSlice';
@@ -13,7 +12,7 @@ import { useWindowWidth } from '../../../../../hooks/useWindowWidth';
 import imageCompression from 'browser-image-compression';
 
 const { Option } = Select;
-
+const { Title, Text } = Typography;
 
 const BusinessProfileEditor = () => {
   const business = useSelector(selectBusinessData);
@@ -83,16 +82,6 @@ const BusinessProfileEditor = () => {
     }
   };
 
-  const getImageDimensions = (file) => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = URL.createObjectURL(file);
-      img.onload = () => {
-        resolve(Math.max(img.width, img.height));
-      };
-    });
-  };
-
   const handleChange = async (info) => {
     if (info.file.status === 'uploading') {
       setLoading(true);
@@ -137,10 +126,9 @@ const BusinessProfileEditor = () => {
         rnc: values.rnc || '',
         address: values.address || '',
         name: values.name || '',
-        invoice: invoiceData
-      };
+        businessType: values.businessType || 'general',
+        invoice: invoiceData      };
 
-      console.log(businessData)
       await fbUpdateBusinessInfo(user, businessData);
       message.success('Información actualizada');
     } catch (error) {
@@ -162,162 +150,207 @@ const BusinessProfileEditor = () => {
   );
 
   const formContent = (
-    <Form form={form} layout="vertical" onFinish={handleSubmit}>
-      <Form.Item
-        name="logo"
-        label="Logo del negocio"
-        extra="Formato: JPG/PNG. Tamaño máximo: 2MB. Dimensiones recomendadas: 400x200px">
-        <Upload
-          name="avatar"
-          listType="picture-card"
-          className="avatar-uploader"
-          showUploadList={false}
-          beforeUpload={beforeUpload}
-          onChange={handleChange}
-          customRequest={({ onSuccess }) => setTimeout(() => onSuccess("ok"), 0)}
-        >
-          {imageUrl ? (
-            <PreviewContainer>
-              <img src={imageUrl} alt="logo" />
-            </PreviewContainer>
-          ) : (
-            uploadButton
-          )}
-        </Upload>
-      </Form.Item>
-      <Form.Item
-        name="name"
-        label="Nombre"
-        rules={[{ required: true, message: 'Por favor, ingresa el nombre del negocio' }]}>
-        <Input placeholder="Nombre del negocio" />
-      </Form.Item>
-      
-      <Form.Item
-        name="rnc"
-        label="RNC"
-      >
-        <Input placeholder="Ingresa el RNC" />
-      </Form.Item>
+    <StyledForm form={form} layout="vertical" onFinish={handleSubmit}>
+      <FormSection>
+        <Title level={4}><ShopOutlined /> Información General</Title>
+        <Card>
+          <Form.Item
+            name="businessType"
+            label="Tipo de Negocio"
+            rules={[{ required: true, message: 'Por favor, selecciona el tipo de negocio' }]}
+          >
+            <Select placeholder="Selecciona el tipo de negocio">
+              <Option value="general">General</Option>
+              <Option value="pharmacy">Farmacia</Option>
+            </Select>
+          </Form.Item>
 
-      <Form.Item
-        name="email"
-        label="Correo electrónico"
-        rules={[
-          { type: 'email', message: 'Ingresa un correo electrónico válido' }
-        ]}
-      >
-        <Input placeholder="ejemplo@dominio.com" />
-      </Form.Item>
+          <LogoSection>
+            <Form.Item
+              name="logo"
+              label="Logo del negocio"
+              extra="Formato: JPG/PNG. Tamaño máximo: 2MB. Dimensiones recomendadas: 400x200px">
+              <Upload
+                name="avatar"
+                listType="picture-card"
+                className="avatar-uploader"
+                showUploadList={false}
+                beforeUpload={beforeUpload}
+                onChange={handleChange}
+                customRequest={({ onSuccess }) => setTimeout(() => onSuccess("ok"), 0)}
+              >
+                {imageUrl ? (
+                  <PreviewContainer>
+                    <img src={imageUrl} alt="logo" />
+                  </PreviewContainer>
+                ) : (
+                  uploadButton
+                )}
+              </Upload>
+            </Form.Item>
+          </LogoSection>
 
-      <Form.Item
-        name="tel"
-        label="Teléfono"
-        rules={[{ required: true, message: 'Por favor, ingresa el teléfono' }]}>
-        <Input placeholder="55 1234 5678" />
-      </Form.Item>
-      <Form.Item
-        name="country"
-        label="País"
-      >
-        <Select placeholder="Selecciona un país">
-          {countries.map(country => (
-            <Option key={country.id} value={country.id}>{country.name}</Option>
-          ))}
-        </Select>
-      </Form.Item>
-      <Form.Item
-        name="province"
-        label="Provincia/Estado"
-      >
-        <Input placeholder="Provincia o Estado" />
-      </Form.Item>
-      <Form.Item
-        name="address"
-        label="Dirección"
-        rules={[{ required: true, message: 'Por favor, ingresa la dirección' }]}>
-        <Input placeholder="Calle 123, Colonia, Ciudad, Estado" />
-      </Form.Item>
-      <Form.Item
-        name={['invoice', 'invoiceMessage']}
-        label="Mensaje en la factura"
-      >
-        <Input.TextArea rows={4} placeholder="Escribe un mensaje personalizado para la factura, como 'Gracias por su compra'" />
-      </Form.Item>
-      <Form.Item>
-        <Button type="primary" htmlType="submit">
-          Guardar
+          <Form.Item
+            name="name"
+            label="Nombre"
+            rules={[{ required: true, message: 'Por favor, ingresa el nombre del negocio' }]}>
+            <Input placeholder="Nombre del negocio" />
+          </Form.Item>
+
+          <Form.Item
+            name="rnc"
+            label="RNC">
+            <Input placeholder="Ingresa el RNC" />
+          </Form.Item>
+        </Card>
+      </FormSection>
+
+      <FormSection>
+        <Title level={4}><MailOutlined /> Contacto</Title>
+        <Card>
+          <TwoColumns>
+            <Form.Item
+              name="email"
+              label="Correo electrónico"
+              rules={[{ type: 'email', message: 'Ingresa un correo electrónico válido' }]}
+            >
+              <Input placeholder="ejemplo@dominio.com" />
+            </Form.Item>
+
+            <Form.Item
+              name="tel"
+              label="Teléfono"
+              rules={[{ required: true, message: 'Por favor, ingresa el teléfono' }]}>
+              <Input placeholder="55 1234 5678" />
+            </Form.Item>
+          </TwoColumns>
+        </Card>
+      </FormSection>
+
+      <FormSection>
+        <Title level={4}><HomeOutlined /> Ubicación</Title>
+        <Card>
+          <TwoColumns>
+            <Form.Item
+              name="country"
+              label="País"
+            >
+              <Select placeholder="Selecciona un país">
+                {countries.map(country => (
+                  <Option key={country.id} value={country.id}>{country.name}</Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              name="province"
+              label="Provincia/Estado"
+            >
+              <Input placeholder="Provincia o Estado" />
+            </Form.Item>
+          </TwoColumns>
+
+          <Form.Item
+            name="address"
+            label="Dirección"
+            rules={[{ required: true, message: 'Por favor, ingresa la dirección' }]}>
+            <Input placeholder="Calle 123, Colonia, Ciudad, Estado" />
+          </Form.Item>
+        </Card>
+      </FormSection>
+
+      <FormSection>
+        <Title level={4}>Configuración de Factura</Title>
+        <Card>
+          <Form.Item
+            name={['invoice', 'invoiceMessage']}
+            label="Mensaje en la factura"
+          >
+            <Input.TextArea 
+              rows={4} 
+              placeholder="Escribe un mensaje personalizado para la factura, como 'Gracias por su compra'" 
+            />
+          </Form.Item>
+        </Card>
+      </FormSection>
+
+      <FormActions>
+        <Button type="primary" htmlType="submit" size="large">
+          Guardar Cambios
         </Button>
-      </Form.Item>
-    </Form>
+      </FormActions>
+    </StyledForm>
   );
 
   return (
     <Wrapper>
-      <MenuApp sectionName={"Formulario de Negocio"} />
-      <Container>
-      {formContent}
-      </Container>
+      <PageContainer>
+        {formContent}
+      </PageContainer>
     </Wrapper>
   );
 };
 
 export default BusinessProfileEditor;
 
-const Container = styled.div`
-  padding: 20px;
-  max-width: 600px;
-  width: 100%;
-  margin: 0 auto;
-  overflow-y: auto;
-`;
-
 const Wrapper = styled.div`
   display: grid;
-  max-height: 100vh;
-  grid-template-rows: min-content 1fr;
-  overflow: hidden;
-`
-const ContainerForm = styled.div`
-max-width: 600px;
-margin: 0 auto;
-`
 
-const TwoColumnLayout = styled.div`
+`;
+
+const PageContainer = styled.div`
+  padding: 24px;
+  width: 100%;
+  overflow-y: auto;
+  `;
+
+const StyledForm = styled(Form)`
+max-width: 900px;
+margin: 0 auto;
+  background: transparent;
+`;
+
+const FormSection = styled.div`
+  margin-bottom: 32px;
+
+  .ant-card {
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  }
+
+  .ant-typography {
+    margin-bottom: 16px;
+  }
+`;
+
+const TwoColumns = styled.div`
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
-  align-items: start;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
   }
 `;
 
-const LeftColumn = styled.div`
-  width: 100%;
-`;
+const LogoSection = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
 
-const RightColumn = styled.div`
-  width: 100%;
-  position: sticky;
-  top: 1rem;
-`;
+  .avatar-uploader {
+    .ant-upload {
+      width: 300px !important;
+      height: 150px !important;
+      border-radius: 8px;
+      background: #fafafa;
+      border: 2px dashed #d9d9d9;
+      transition: all 0.3s ease;
 
-const AvatarUploader = styled(Upload)`
-  .ant-upload {
-    width: 400px !important;
-    height: 200px !important;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #fafafa;
-    border: 1px dashed #d9d9d9;
-  }
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+      &:hover {
+        border-color: #1890ff;
+      }
+    }
   }
 `;
 
@@ -332,6 +365,16 @@ const PreviewContainer = styled.div`
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
-    object-position: center;
+    border-radius: 4px;
+  }
+`;
+
+const FormActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
+  
+  button {
+    min-width: 150px;
   }
 `;

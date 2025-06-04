@@ -3,7 +3,7 @@ import { db } from "../firebaseconfig";
 import { validateUser } from "../../utils/userValidation";
 import { MovementReason, MovementType } from "../../models/Warehouse/Movement";
 import { nanoid } from "nanoid";
-import { getProductStockByBatch, getProductStockById } from '../warehouse/productStockService';
+import { getProductStockById } from '../warehouse/productStockService';
 import { getBatchById, updateBatchStatusForProductStock } from "../warehouse/batchService";
 import sales from "../../views/templates/MenuApp/MenuData/items/sales";
 

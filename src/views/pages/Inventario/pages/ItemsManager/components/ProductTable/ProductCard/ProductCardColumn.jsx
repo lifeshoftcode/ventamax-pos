@@ -1,25 +1,23 @@
 import React from 'react'
-import { IoMdTrash } from 'react-icons/io';
-import { TbEdit } from 'react-icons/tb';
-import styled from 'styled-components';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faTrash, faPencil } from '@fortawesome/free-solid-svg-icons'
+import styled from 'styled-components'
 import { useFormatPrice } from '../../../../../../hooks/useFormatPrice';
 import { Button } from '../../../../../templates/system/Button/Button';
 
 export const ProductCardColumn = ({handleDeleteProduct, handleUpdateProduct, product}) => {
     return (
         <Container>
-            <Head>
-                <Button
+            <Head>                <Button
                     title="Editar"
-                    startIcon={<TbEdit />}
+                    startIcon={<FontAwesomeIcon icon={faPencil} />}
                     borderRadius='normal'
                     // variant='contained'
                     color={'gray-dark'}
                     bgcolor='editar'
                     onClick={() => handleUpdateProduct(product)}
-                />
-                <Button
-                    startIcon={<IoMdTrash />}
+                />                <Button
+                    startIcon={<FontAwesomeIcon icon={faTrash} />}
                     // width='icon32'
                     color={'gray-dark'}
                     borderRadius='normal'

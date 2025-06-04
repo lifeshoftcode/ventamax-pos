@@ -2,17 +2,17 @@ export const validateExpense = (expense) => {
     let errors = {};
 
     if (!expense.description) {
-        errors.name = 'Descripción es requerido';
+        errors.description = 'Descripción es requerida';
     }
     if (!expense.amount) {
         errors.amount = 'Importe es requerido';
     }
 
-    if (!expense.category) {
-        errors.category = 'Categoría es requerido';
+    if (!expense.categoryId) {
+        errors.category = 'Categoría es requerida';
     }
-    if (!expense.dates.expenseDate) {
-        errors.expenseDate = 'Fecha de gasto es requerido';
+    if (!expense.dates?.expenseDate) {
+        errors.dates = { expenseDate: 'Fecha de gasto es requerida' };
     }
 
     return errors;

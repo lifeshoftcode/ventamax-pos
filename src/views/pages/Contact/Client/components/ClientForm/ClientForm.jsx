@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid'
 import React, { useEffect, useState } from 'react'
-import { MdClose } from 'react-icons/md'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faTimes } from '@fortawesome/free-solid-svg-icons'
 import { useDispatch, useSelector } from 'react-redux'
 import styled from 'styled-components'
 import { handleModalCreateClient, toggleClientModal } from '../../../../../../features/modals/modalSlice'
@@ -54,19 +55,17 @@ export const ClientForm = ({ isOpen, mode, data }) => {
     }
 
     const handleCreateClient = async () => {
-        if (validateClient(client)) {
-            try {
+        if (validateClient(client)) {            try {
                 fbAddClient(user, client)
             } catch (error) {
-                console.log(error)
+                // Handle error appropriately
             }
         }
     }
-    const handleUpdateClient = async () => {
-        try {
+    const handleUpdateClient = async () => {        try {
             fbUpdateClient(user, client)
         } catch (error) {
-            console.log(error)
+            // Handle error appropriately
         }
     }
     const handleOpenModal = async () => {
@@ -81,19 +80,17 @@ export const ClientForm = ({ isOpen, mode, data }) => {
                 delivery: {
                     status: false,
                     value: ''
-                }
-            })
+                }            })
         } catch (error) {
-            console.log(error)
+            // Handle error appropriately
         }
     }
     const handleSubmit = async () => {
-        if (mode === create) {
-            try {
+        if (mode === create) {            try {
                 await handleCreateClient();
                 await handleOpenModal();
             } catch (err) {
-                console.log(err)
+                // Handle error appropriately
             }
         } else if (mode === update) {
             await handleUpdateClient();
@@ -110,7 +107,7 @@ export const ClientForm = ({ isOpen, mode, data }) => {
                             width='icon32'
                             borderRadius='normal'
                             variant='text'
-                            title={<MdClose />}
+                            title={<FontAwesomeIcon icon={faTimes} />}
                             onClick={handleOpenModal}
                         ></Button>
                         <Typography

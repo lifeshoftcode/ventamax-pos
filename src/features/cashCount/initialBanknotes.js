@@ -2,51 +2,51 @@ export const initialBanknotes = [
     {
         ref: '1',
         value: 1,
-        quantity: "",
+        quantity: null,
     },
     {
         ref: '5',
         value: 5,
-        quantity: "",
+        quantity: null,
     },
     {
         ref: '10',
         value: 10,
-        quantity: "",
+        quantity: null,
     },
     {
         ref: '25',
         value: 25,
-        quantity: ""
+        quantity: null,
     },
     {
         ref: '50',
         value: 50,
-        quantity: "",
+        quantity: null,
     },
     {
         ref: '100',
         value: 100,
-        quantity: "",
+        quantity: null,
     },
     {
         ref: '200',
         value: 200,
-        quantity: "",
+        quantity: null,
     },
     {
         ref: '500',
         value: 500,
-        quantity: "",
+        quantity: null,
     },
     {
         ref: '1000',
         value: 1000,
-        quantity: "",
+        quantity: null,
     },
     {
         ref: '2000',
         value: 2000,
-        quantity: "",
+        quantity: null,
     }
 ]

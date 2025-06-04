@@ -6,61 +6,69 @@ import { useDispatch, useSelector } from "react-redux";
 import { selectUser } from "../../../features/auth/userSlice";
 import { db } from "../../firebaseconfig";
 import { selectExpenseList, setExpenseList } from "../../../features/expense/expensesListSlice";
+import { toMillis } from "../../../utils/date/toMillis";
 
-export const useFbGetExpenses = (dates) => {
+export const useFbGetExpenses = (range) => {
     const dispatch = useDispatch();
-    
     const user = useSelector(selectUser);
-    
-    const [lastDates, setLastDates] = useState(null);
-    
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
     const expenses = useSelector(selectExpenseList);
     const setExpenses = (expenses) => dispatch(setExpenseList(expenses));
-    console.log(dates);
-    console.log(expenses);
-    console.log(lastDates);
 
-    
     useEffect(() => {
         if (!user?.businessID) return;
-        
-        setLastDates(dates);
 
-        const expensesCollection = collection(db, 'businesses', user.businessID, 'expenses');
-        const startDate = new Date(dates?.startDate);
-        const endDate = new Date(dates?.endDate);
+        const start = toMillis(range?.startDate);
+        const end = toMillis(range?.endDate);
 
-        const expensesQuery = query(
-            expensesCollection,
-            where('expense.dates.createdAt', '>=', startDate),
-            where('expense.dates.createdAt', '<=', endDate)
-        );
+        const expensesRef = collection(db, 'businesses', user.businessID, 'expenses');
+
+        const q = start && end
+            ? query(
+                expensesRef,
+                where('expense.dates.expenseDate', '>=', start),
+                where('expense.dates.expenseDate', '<=', end)
+            )
+            : query(expensesRef);
+
+            setLoading(true);
 
         const fetchData = () => {
-            const unsubscribe = onSnapshot(expensesQuery, async(snapshot) => {
-                const expenseArray = snapshot.docs.map((doc) => {
-                    const data = doc.data();
-                    console.log(data);
-                    return {
-                        expense: {
-                            ...data.expense,
-                            dates: {
-                                ...data.expense.dates,
-                                createdAt: data?.expense.dates.createdAt.seconds * 1000,
-                                expenseDate: data?.expense.dates.expenseDate.seconds * 1000,
+            const unsubscribe = onSnapshot(q,
+                async (snapshot) => {
+                    const list = snapshot.docs.map((doc) => {
+                        const expense = doc.data()?.expense;
+                        return {
+                            expense: {
+                                ...expense,
+                                dates: {
+                                    ...expense.dates,
+                                    createdAt: expense.dates.createdAt ? expense.dates.createdAt.seconds * 1000  : null,
+                                    expenseDate: expense.dates.expenseDate ? expense.dates.expenseDate.seconds * 1000 : null,
+                                }
                             }
                         }
-                    }});
-                setExpenses(expenseArray);
-            });
-
+                    },
+                    );
+                    setLoading(false);
+                    setExpenses(list);
+                    setError(null);
+                },
+                (error) => {
+                    console.error("Error fetching expenses: ", error);
+                    setError(error);
+                    setLoading(false);
+                }
+            );
             return () => unsubscribe();
         };
 
         fetchData();
 
-    }, [user, dates]);
+    }, [user, range]);
 
-    return { expenses };
+    return { expenses, loading, error };
 
 }

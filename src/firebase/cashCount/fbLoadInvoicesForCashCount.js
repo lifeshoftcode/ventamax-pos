@@ -1,61 +1,34 @@
-import { doc, getDoc } from "firebase/firestore";
+import { getDoc, query, orderBy, getDocs, where, collection } from "firebase/firestore";
 import { db } from "../firebaseconfig";
 
-const getInvoices = async (invoiceRefs) => {
-    const invoices = await Promise.all(invoiceRefs.map(async (ref) => {
-        const invoiceDoc = await getDoc(ref);
+export const fbLoadInvoicesForCashCount = async (user, cashCountID) => {
+    if (!user.businessID || !cashCountID) return [];
+    console.log('user.businessID', user.businessID);
+    console.log('cashCountID', cashCountID);
+    const invoicesRef = collection(db, 'businesses', user.businessID, 'invoices');
 
-        if (!invoiceDoc) {
-            console.error('invoiceDoc is undefined for ref:', ref);
-            return null;
-        }
+    const q = query(
+        invoicesRef,
+        where("data.cashCountId", "==", cashCountID),
+    )
 
-        let invoiceData = invoiceDoc.data();
-
-        if (!invoiceData) {
-            console.error('invoiceData is undefined for ref:', ref);
-            return null;
-        }
-
-        invoiceData = {
-            ...invoiceData,
-            ['data']: {
-                ...invoiceData.data,
-            }
-        }
-
-        return invoiceData;
-    }));
-
-    return invoices.filter(invoice => invoice !== null);
-}
-
-
-export const fbLoadInvoicesForCashCount = async (user, cashCountID, dataType) => {
-    const cashCountRef = doc(db, 'businesses', user?.businessID, 'cashCounts', cashCountID);
-    const cashCountDoc = await getDoc(cashCountRef);
-
-    if (cashCountDoc.exists()) {
-        const cashCountData = cashCountDoc.data();
-        const invoiceRefs = cashCountData.cashCount.sales;
-
-        switch (dataType) {
-            case 'count':
-                return invoiceRefs.length;
-            case 'invoices':
-                const invoices = await getInvoices(invoiceRefs);
-                return invoices;
-            case 'all':
-                return {
-                    count: invoiceRefs.length,
-                    invoices: await getInvoices(invoiceRefs),
-                    loading: false
-                }
-            default:
-                return null;
-        }
-
-    } else {
-        return null; 
+    try {
+        const invoiceSnap = await getDocs(q);
+        return invoiceSnap.docs
+            .map(doc => doc.data())
+            .filter(doc => doc.data?.status !== "cancelled")
+            .sort((a, b) => {
+                const timeA = typeof a.data.date.toMillis === "function"
+                    ? a.data.date.toMillis()
+                    : new Date(a.data.date).getTime();
+                const timeB = typeof b.data.date.toMillis === "function"
+                    ? b.data.date.toMillis()
+                    : new Date(b.data.date).getTime();
+                return timeB - timeA;
+            })
+    } catch (err) {
+        console.error("Error al cargar facturas:", err);
+        return [];
     }
-}
+};
+

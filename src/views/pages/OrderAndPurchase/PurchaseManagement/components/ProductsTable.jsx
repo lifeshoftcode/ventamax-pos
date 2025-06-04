@@ -39,9 +39,8 @@ const EditableCell = ({
       autoFocus
     />;
   };
-
+  
   const handleClick = () => {
-    console.log('EditableCell handleClick =>', { dataIndex, onCellClick });
     if (dataIndex === 'quantity' && loadingQuantity === record.key) {
       return; // Disable click while loading
     }

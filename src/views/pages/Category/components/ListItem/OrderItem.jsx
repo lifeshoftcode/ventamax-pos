@@ -59,12 +59,10 @@ export const OrderItem = ({ cat, Row, Col }) => {
   const handleAccept = () => {
     switch (mode) {
       case 'DELETE':
-        console.log('delete');
         fbDeleteCategory(user, cat.id);
         antd.message.success('Categoría eliminada', 2.5)
         break;
       case 'EDIT':
-        console.log('edit');
         fbUpdateCategory(category, user)
         antd.message.success('Categoría actualizada', 2.5)
         break;
@@ -158,5 +156,4 @@ ${props => {
         `
     }
   }}
-  
-    `
+`

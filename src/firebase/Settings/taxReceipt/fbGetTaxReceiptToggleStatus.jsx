@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { selectUser } from "../../../features/auth/userSlice";
 import { setTaxReceiptEnabled } from "../../../features/cart/cartSlice";
 
-export const usefbTaxReceiptToggleStatus = () => {
+export const useFbTaxReceiptToggleStatus = () => {
     const user = useSelector(selectUser)
     const dispatch = useDispatch();
     useEffect(() => {

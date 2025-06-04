@@ -107,11 +107,6 @@ const Registro = () => {
       );
       return;
     }
-
-    // Aquí puedes realizar alguna lógica de registro con los datos ingresados
-    console.log('Nombre:', nombre);
-    console.log('Email:', email);
-    console.log('Contraseña:', password);
   };
 
   return (

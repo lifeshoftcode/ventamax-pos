@@ -6,6 +6,7 @@ import { DatePicker } from '../../../../../../templates/system/Dates/DatePicker/
 import { DateRangeFilter } from '../../../../../../templates/system/Button/TimeFilterButton/DateRangeFilter';
 import { icons } from '../../../../../../../constants/icons/icons';
 import { sortAccounts } from '../../../../../../../utils/sorts/sortAccountsReceivable';
+import useBusiness from '../../../../../../../hooks/useBusiness';
 
 const FilterContainer = styled.div`
   height: 3em;
@@ -21,9 +22,12 @@ export const FilterAccountReceivable = ({
   setDatesSelected = () => {},
   accounts = [],
   onSort = () => {},
+  onClientTypeChange = () => {}, // Nueva prop para manejar el cambio de tipo de cliente
 }) => {
   const [sortCriteria, setSortCriteria] = useState('defaultCriteria');
   const [sortDirection, setSortDirection] = useState('asc');
+  const [clientType, setClientType] = useState('normal'); // 'normal' o 'insurance'
+  const { isPharmacy } = useBusiness();
 
   const handleSort = (newCriteria) => {
     setSortCriteria(newCriteria);
@@ -46,6 +50,11 @@ export const FilterAccountReceivable = ({
     setDatesSelected(dates);
   };
 
+  const handleClientTypeChange = (value) => {
+    setClientType(value);
+    onClientTypeChange(value);
+  };
+
   const sortOptions = [
     { value: 'defaultCriteria', label: 'Por defecto' },
     { value: 'date', label: 'Fecha' },
@@ -54,6 +63,11 @@ export const FilterAccountReceivable = ({
     { value: 'balance', label: 'Balance' },
     { value: 'initialAmount', label: 'Monto Inicial' },
   ];
+  
+  // Agregar opción de ordenamiento por aseguradora si es una farmacia
+  if (isPharmacy) {
+    sortOptions.splice(4, 0, { value: 'insurance', label: 'Aseguradora' });
+  }
 
   const vw = useViewportWidth();
 
@@ -62,6 +76,20 @@ export const FilterAccountReceivable = ({
       <Row>
         <DatePicker inputMovilWidth setDates={setDatesSelected} dates={datesSelected} />
         <DateRangeFilter setDates={handleTimeChange} dates={datesSelected} />
+        
+        {isPharmacy && (
+          <CompactClientSelector>
+            <Select
+              defaultValue="normal"
+              style={{ width: 130 }}
+              onChange={handleClientTypeChange}
+              options={[
+                { value: 'normal', label: 'Clientes' },
+                { value: 'insurance', label: 'Aseguradoras' },
+              ]}
+            />
+          </CompactClientSelector>
+        )}
       </Row>
       <Buttons>
         <OrderOptions>
@@ -82,7 +110,7 @@ export const FilterAccountReceivable = ({
         {vw < 900 && (
           <MoreInfo>
             <Label>Total de Cuentas</Label>
-            <Label>#{processedAccounts.length}</Label>
+            <Label>#{accounts.length}</Label>
           </MoreInfo>
         )}
       </Buttons>
@@ -170,4 +198,10 @@ const MoreInfo = styled.div`
   display: flex;
   gap: 1em;
   align-items: center;
+`;
+
+const CompactClientSelector = styled.div`
+  display: flex;
+  align-items: center;
+
 `;

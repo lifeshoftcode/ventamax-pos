@@ -1,7 +1,8 @@
 // import React from 'react'
 // import styled from 'styled-components'
 // import { Button } from '../Button/Button'
-// import { IoMdTrash } from 'react-icons/io'
+// import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+// import { faTrash } from '@fortawesome/free-solid-svg-icons';
 // import { useSelector } from 'react-redux'
 // //import { handleDeleteProduct } from '../../../../features/Alert/alertslice'
 // import { selectDeleteProductAlert, handleDeleteProductAlertSuccess, handleDeleteProductAlert } from '../../../../features/Alert/AlertSlice'

@@ -1,37 +1,56 @@
-import { collection, doc, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../firebaseconfig";
 import { useDispatch, useSelector } from "react-redux";
 import { selectUser } from "../../features/auth/userSlice";
-import { validateUser } from "../../utils/userValidation";
 import { useEffect, useState } from "react";
 import { selectTaxReceiptType } from "../../features/taxReceipt/taxReceiptSlice";
+import { serializeFirestoreDocuments } from "../../utils/serialization/serializeFirestoreData";
 
 export const fbGetTaxReceipt = () => {
-  const [taxReceipt, setTaxReceipt] = useState([]);
   const user = useSelector(selectUser);
   const dispatch = useDispatch();
-  useEffect(() => {
-    try {
-      if(!user.businessID){
-        setTaxReceipt([]);
-        return
-      }
-      const { businessID } = user;
-      const taxReceiptsRef = collection(db, "businesses", businessID, "taxReceipts");
 
-      const unsubscribe = onSnapshot(taxReceiptsRef, (snapshot) => {
-        let taxReceiptsArray = snapshot.docs.map(item => item.data());
-        setTaxReceipt(taxReceiptsArray);
-        const defaultOption = taxReceiptsArray.find(item => item.data.name === 'CONSUMIDOR FINAL')
-        dispatch(selectTaxReceiptType(defaultOption.data.name))
-      });
-      return () => {
-        unsubscribe();
-      };
-    } catch (error) {
-      console.log(error);
+  const [taxReceipt, setTaxReceipt] = useState([]);
+  const [isLoading, setLoading] = useState(true);
+  useEffect(() => {
+    let unsubscribe;
+    
+    // Siempre iniciamos cargando
+    setLoading(true);
+
+    if (!user.businessID) {
+      setTaxReceipt([]);
+      setLoading(false);
+      return;
     }
-  }, [user]);
-  
-  return { taxReceipt };
+
+    try {
+      const taxReceiptsRef = collection(db, "businesses", user.businessID, "taxReceipts");
+      unsubscribe = onSnapshot(
+        taxReceiptsRef,
+        (snapshot) => {
+          const taxReceiptsArray = snapshot.docs.map(item => item.data());
+          const serializedTaxReceipts = serializeFirestoreDocuments(taxReceiptsArray);
+          setTaxReceipt(serializedTaxReceipts);
+          const defaultOption = serializedTaxReceipts.find(item => item.data.name === 'CONSUMIDOR FINAL');
+          dispatch(selectTaxReceiptType(defaultOption?.data.name));
+          setLoading(false); // Set loading to false after data is fetched
+        },
+        (error) => {
+          console.error("Error fetching tax receipts: ", error);
+          setLoading(false);
+          setTaxReceipt([]);
+        }
+      );
+    } catch (error) {
+      console.error("Exception in tax receipts fetch: ", error);
+      setLoading(false);
+      setTaxReceipt([]);
+    }
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [user, dispatch]);
+
+  return { taxReceipt, isLoading };
 };

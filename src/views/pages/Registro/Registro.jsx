@@ -27,7 +27,6 @@ export const Registro = () => {
     setProcessedInvoices([...invoices]);
   }, [invoices]);
   const vw = useViewportWidth()
-  console.log(processedInvoices)
 
   return (
     <Fragment>

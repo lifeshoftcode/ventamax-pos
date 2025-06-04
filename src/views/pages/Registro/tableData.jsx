@@ -14,15 +14,21 @@ import { fbCashCountStatus } from "../../../firebase/cashCount/fbCashCountStatus
 import { Tag } from "../../templates/system/Tag/Tag";
 import { openInvoicePreviewModal } from "../../../features/invoice/invoicePreviewSlice";
 import { Invoice } from "../../component/Invoice/components/Invoice/Invoice";
+import { selectBusinessData } from "../../../features/auth/businessSlice";
+import { downloadInvoiceLetterPdf } from "../../../firebase/quotation/downloadQuotationPDF";
+import { notification } from "antd";
+import { SelectSettingCart } from "../../../features/cart/cartSlice";
 
 const EditButton = ({ value }) => {
   const dispatch = useDispatch()
   const data = value.data;
   const user = useSelector(selectUser)
-  const [isCashCountOpen, setIsCashCountOpen] = useState();
+  const business = useSelector(selectBusinessData) || {};
   const componentToPrintRef = useRef(null)
   const [isAllowEdit, setIsAllowEdit] = useState(false)
   const is48HoursOld = data?.date?.seconds < (Date.now() / 1000) - 172800
+  const cartSettings = useSelector(SelectSettingCart)
+  const invoiceType = cartSettings.billing.invoiceType;
 
   useEffect(() => {
     const checkCashCountStatus = async () => {
@@ -53,10 +59,32 @@ const EditButton = ({ value }) => {
     }
     dispatch(addInvoice({ invoice: invoiceData }))
   }
-
   const handleRePrint = useReactToPrint({
     content: () => componentToPrintRef.current,
   })
+  const handleInvoicePrinting = async () => {
+    if (invoiceType === 'template2') {
+      try {
+        await downloadInvoiceLetterPdf(business, data, () => {
+          notification.success({
+            message: 'PDF Generado',
+            description: 'El PDF ha sido generado exitosamente',
+            duration: 4
+          });
+        });
+      } catch (e) {
+        notification.error({
+          message: 'Error al imprimir',
+          description: `No se pudo generar el PDF: ${e.message}`,
+          duration: 4
+        });
+        console.error('❌ PDF generation failed:', e);
+        console.error('❌ Error stack:', e.stack);
+      }
+    } else {
+      handleRePrint();
+    }
+  }
 
   const handleViewMore = () => {
     dispatch(openInvoicePreviewModal(data))
@@ -66,11 +94,11 @@ const EditButton = ({ value }) => {
     <div style={{
       display: 'flex',
       gap: '10px',
-    }}>
-      <Invoice ref={componentToPrintRef} data={data} />
+    }}>      
+    <Invoice ref={componentToPrintRef} data={data} />
       <Button
         icon={<FontAwesomeIcon icon={faPrint} />}
-        onClick={handleRePrint}
+        onClick={handleInvoicePrinting}
       />
       <Button
         icon={icons.editingActions.edit}

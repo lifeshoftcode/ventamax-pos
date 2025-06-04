@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import { BsChevronDown } from "react-icons/bs";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
 
 
 export const CustomSelect = ({
@@ -129,6 +130,6 @@ const CustomSelectInput = styled.div`
   }
 `;
 
-const ChevronIcon = styled(BsChevronDown)`
+const ChevronIcon = styled(FontAwesomeIcon).attrs({ icon: faChevronDown })`
   margin-left: auto;
 `;

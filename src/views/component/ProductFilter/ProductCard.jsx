@@ -10,9 +10,8 @@ export const ProductCard = ({ data, fn, close }) => {
     try {
 
       fn(data);
-      close();
-    } catch (error) {
-      console.log(error)
+      close();    } catch (error) {
+      // Handle error appropriately
     }
   }
   return (

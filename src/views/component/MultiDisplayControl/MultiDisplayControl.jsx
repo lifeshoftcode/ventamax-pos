@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import Style from './MultiDisplayControl.module.scss'
 import {PlusIcon} from '../../../assets/index'
 
@@ -21,9 +21,6 @@ export const MultiDisplayControl = () => {
     if(lastItem === 8){
       alert('ya excediste el numero de pantallas')
     }
-    
-
-    console.log(list)
   }
 
 

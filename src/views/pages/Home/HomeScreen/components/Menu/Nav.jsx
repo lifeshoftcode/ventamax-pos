@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { FiChevronRight, FiChevronDown } from 'react-icons/fi';
 import { SidebarItem } from './SidebarItem';
 export const Sidebar = ({ items }) => {
     const [isCompact, setIsCompact] = useState(false);

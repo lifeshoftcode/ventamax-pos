@@ -10,14 +10,13 @@ export async function fbUpsertClient(user, client, transaction = null) {
         if (!client) return;
         if (!client.id) return;
         if (client.id === 'GC-0000') return client;
+        
         const clientId = client.id
-
         const clientRef = doc(db, 'businesses', user.businessID, 'clients', clientId);
 
         const clientSnapshot = await fbGetDoc(clientRef);
         const clientExist = clientSnapshot.exists();
         const clientData = clientSnapshot.data();
-        console.log(clientData)
         const compareVersion = compareObjects({
             object1: clientData,
             object2: client,

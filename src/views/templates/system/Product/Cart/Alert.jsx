@@ -1,8 +1,10 @@
-import { IoMdTrash } from 'react-icons/io'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faTrash } from '@fortawesome/free-solid-svg-icons'
 import { useDispatch } from 'react-redux'
 import styled from 'styled-components'
 import { totalTaxes, deleteProduct, totalPurchase, setChange, totalShoppingItems } from '../../../../../features/cart/cartSlice'
 import { Button, ButtonGroup } from '../../Button/Button'
+
 export const Alert = ({ isOpen, handleIsOpen, id }) => {
     const dispatch = useDispatch()
     const handleDelete = (id) => {
@@ -32,7 +34,7 @@ export const Alert = ({ isOpen, handleIsOpen, id }) => {
                 <ButtonGroup>
                     <Button
                     borderRadius='normal'
-                        title={<IoMdTrash />}
+                        title={<FontAwesomeIcon icon={faTrash} />}
                         width='icon32'
                         onClick={() => handleDelete(id)}
                     />

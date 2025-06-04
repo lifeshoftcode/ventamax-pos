@@ -13,7 +13,6 @@ export const SelectBody = ({
     setValue 
 }) => {
     const handleSelect = select => {
-        console.log(select)
         setSelectedId(select.id);
         setValue(select);
         setShowSelectTitle(select[property]);

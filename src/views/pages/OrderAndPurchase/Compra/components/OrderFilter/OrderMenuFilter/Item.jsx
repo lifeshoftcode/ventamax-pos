@@ -1,6 +1,6 @@
 import React, { Fragment, useEffect, useState } from 'react'
-import { IoIosArrowBack, IoIosArrowForward } from 'react-icons/io'
-import { MdArrowForward } from 'react-icons/md'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faArrowLeft, faArrowRight, faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import styled from 'styled-components'
 import { useSearchFilter, useSearchFilterOrderMenuOption } from '../../../../../../hooks/useSearchFilter'
 import { Input } from './Input'
@@ -13,9 +13,8 @@ export const Item = ({ data, array, setArray, index }) => {
     const [isItemOpen, setIsItemOpen] = useState(false)
     const handleOpenItem = () => setIsItemOpen(!isItemOpen)
     return (
-        <Container>
-            <Head onClick={handleOpenItem}>
-                <IoIosArrowForward /> <span>{data.name}</span>
+        <Container>            <Head onClick={handleOpenItem}>
+                <FontAwesomeIcon icon={faChevronRight} /> <span>{data.name}</span>
             </Head>
             <Body isOpen={isItemOpen ? true : false} index={index}>
                 {

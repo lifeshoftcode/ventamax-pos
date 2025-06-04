@@ -4,10 +4,9 @@ import { getCat } from '../../../../firebase/firebaseconfig'
 export const SelectCategory = () => {
     const [categories, setCategories] = useState([])
     useEffect(() => {
-        getCat(setCategories)
-
+        getCat(setCategories)    
     }, [])
-    console.log(categories)
+    
     return (
         <select name="" id="">
             <option value="">categoría</option>

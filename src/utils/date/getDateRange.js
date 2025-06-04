@@ -20,6 +20,7 @@ export function getDateRange(parameter) {
         secondQuarter: DateTime.local(currentYear, 4, 1).startOf('day'),
         thirdQuarter: DateTime.local(currentYear, 7, 1).startOf('day'),
         fourthQuarter: DateTime.local(currentYear, 10, 1).startOf('day'),
+        last30Days: now.minus({ days: 30 }).startOf('day'),
     }
     const rangeEnd = {
         empty: null,
@@ -37,6 +38,15 @@ export function getDateRange(parameter) {
         secondQuarter: DateTime.local(currentYear, 6, DateTime.local(currentYear, 6, 1).daysInMonth).endOf('month').endOf('day'),
         thirdQuarter: DateTime.local(currentYear, 9, DateTime.local(currentYear, 9, 1).daysInMonth).endOf('month').endOf('day'),
         fourthQuarter: DateTime.local(currentYear, 12, DateTime.local(currentYear, 12, 1).daysInMonth).endOf('month').endOf('day'),
+        last30Days: now.endOf('day'),
+    }
+
+    if (!rangeStart[parameter] || !rangeEnd[parameter]) {
+        console.warn(`Parámetro de rango de fecha no reconocido: ${parameter}. Usando 'thisMonth' por defecto.`);
+        return {
+            startDate: rangeStart.thisMonth.toMillis(),
+            endDate: rangeEnd.thisMonth.toMillis()
+        };
     }
 
     return { 

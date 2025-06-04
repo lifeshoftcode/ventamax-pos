@@ -14,13 +14,14 @@ import {
   SelectAddProductOutflowModal,
   SelectFileListModal,
   toggleFileListModal,
+  SelectDeveloperModal,
 } from "../../../features/modals/modalSlice"
 import { AnimatePresence } from "framer-motion"
 
 import { ProviderForm } from "../../pages/Contact/Provider/components/CreateContact/ProviderForm"
 import { MessageAlert } from "../../templates/system/Alerts/MessageAlert"
 import { Notification } from "../../templates/system/Notification/Notification"
-import { SmallNotification } from "../../templates/system/Notification/SmallNotification"
+import { TestModeIndicator } from "../../templates/system/Notification/TestModeIndicator"
 import Loader from "../../templates/system/loader/Loader"
 import ImageViewer from "../../templates/system/ImageViewer/ImageViewer"
 import AddCategoryModal from "./AddCategory/AddCategory"
@@ -50,6 +51,7 @@ import { WarehouseForm } from "../../pages/Inventory/components/Warehouse/forms/
 import ARSummaryModal from "./ARInfoModal/ARSummaryModal"
 import EvidenceUploadDrawer from "../../pages/OrderAndPurchase/PurchaseManagement/components/EvidenceUploadDrawer/EvidenceUploadDrawer"
 import { DeleteProductStockModal } from "../../pages/Inventory/components/Warehouse/components/DeleteProductStock/DeleteProductStockModal"
+import { DeveloperModal } from "../../../components/modals/DeveloperModal/DeveloperModal"
 
 export const ModalManager = () => {
 
@@ -65,6 +67,12 @@ export const ModalManager = () => {
   const ProductOutflowSelected = useSelector(SelectProductOutflow)
   const currentNotification = useSelector(selectCurrentNotification)
   const FileListSelected = useSelector(SelectFileListModal)
+  const DeveloperModalSelected = useSelector(SelectDeveloperModal)
+  {/* <BusinessEditModal /> */ }
+
+  {/* <ARInfoModal
+                key={'modal-ar-info-modal'}
+             /> */}
 
   return (
     <Fragment>
@@ -75,11 +83,6 @@ export const ModalManager = () => {
             isOpen={AddClientModalSelected}
           />
         )}
-        {/* <BusinessEditModal /> */}
-        {/* <UpdateProductModal
-            key='modal-update-product'
-            isOpen={UpdateProdModalSelected}
-          /> */}
         <BarcodePrintModal
           key={'modal-barcode-print'}
         />
@@ -116,9 +119,7 @@ export const ModalManager = () => {
         <PaymentForm
           key={'modal-payment-form'}
         />
-        {/* <ARInfoModal
-            key={'modal-ar-info-modal'}
-         /> */}
+
         {ProviderModalDataSelected.isOpen && (
           <ProviderForm
             key={'modal-provider'}
@@ -133,7 +134,9 @@ export const ModalManager = () => {
           />
         )}
 
-        <ProductStockForm />
+        <ProductStockForm
+          key={'modal-product-stock-form'}
+        />
 
         <AddCategoryModal
           key={'modal-add-category'}
@@ -156,8 +159,15 @@ export const ModalManager = () => {
           />
         )}
 
-        <EvidenceUploadDrawer />
-        <DeleteProductStockModal />
+        <EvidenceUploadDrawer
+          key={'modal-evidence-upload-drawer'}
+        />
+        <DeleteProductStockModal
+          key={'modal-delete-product-stock'}  
+        />
+        <DeveloperModal
+          key={'modal-developer'}
+        />
       </AnimatePresence>
       <NoteModal />
       <Loader />
@@ -166,13 +176,13 @@ export const ModalManager = () => {
       <ActiveIngredientModal />
       <ARSummaryModal />
       <ShelfForm />
-      <RowShelfForm />
+      <RowShelfForm />      
       <SegmentForm />
       <WarehouseForm />
 
 
       <ImageViewer />
-      <SmallNotification />
+      <TestModeIndicator />
       <ConfirmationDialog />
     </Fragment>
   )

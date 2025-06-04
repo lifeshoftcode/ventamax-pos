@@ -2,7 +2,6 @@ import React from 'react'
 import styled from 'styled-components'
 
 export const StatusIndicatorDot = ({color}) => {
-    console.log(color)
   return (
     <Container color={color}>
 

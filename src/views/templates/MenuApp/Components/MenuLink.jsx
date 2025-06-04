@@ -38,7 +38,7 @@ export const MenuLink = ({ item, Items }) => {
           <Icon color={item.color}>
             {item.icon}
           </Icon>
-          {item.title}
+          <span>{item.title}</span>
         </Group>
         {
           item.tag && <Tag color={item.tag.color} style={{ fontSize: 16 }}>{item.tag.text}</Tag>
@@ -102,8 +102,14 @@ const MenuItemDiv = styled.div`
 const Group = styled.div`
   display: flex;
   gap: 1rem;
-  svg{
-    font-size: 1.2rem;
+  align-items: center;
+  overflow: hidden;
+  max-width: 80%;
+  
+  span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 `
 const Icon = styled.div`

@@ -3,8 +3,8 @@ import styled from 'styled-components'
 import * as antd from 'antd'
 import { icons } from '../../../../../../../../../constants/icons/icons'
 import { useDispatch, useSelector } from 'react-redux'
-import { selectCart, setPaymentMethod } from '../../../../../../../../../features/cart/cartSlice'
-const { Radio, Input, Form, Checkbox, InputNumber } = antd
+import { selectCart, setPaymentMethod, recalcTotals } from '../../../../../../../../../features/cart/cartSlice'
+const { Radio, Input, Form, Checkbox, InputNumber, message } = antd
 
 export const PaymentMethods = () => {
     const dispatch = useDispatch()
@@ -12,6 +12,8 @@ export const PaymentMethods = () => {
     const cart = useSelector(selectCart)
     const cartData = cart.data;
     const paymentMethods = cartData.paymentMethod;
+    const totalPurchase = cartData.totalPurchase.value;
+    
     const paymentInfo = {
         cash: {
             label: 'Efectivo',
@@ -26,18 +28,81 @@ export const PaymentMethods = () => {
             icon: icons.finances.transfer
         }
     }
+    
     useEffect(() => {
         if (cashInputRef.current && document.activeElement !== cashInputRef.current && paymentMethods.some(method => method.method === 'cash' && method.status)) {
             cashInputRef.current.focus();
             cashInputRef.current.select();
         }
-    }, [])
+    }, [])    // Verifica si hay algún método de pago con valor establecido
+    useEffect(() => {
+        // Evitamos bucles infinitos estableciendo una flag para controlar si debemos actualizar
+        const totalPaymentValue = paymentMethods.reduce((total, method) => {
+            return method.status ? total + (Number(method.value) || 0) : total;
+        }, 0);
+
+        // Solo actualizamos si hay un método activo sin valor y totalPurchase tiene un valor válido
+        if (totalPaymentValue === 0 && totalPurchase > 0) {
+            const cashMethod = paymentMethods.find(method => method.method === 'cash' && method.status);
+            if (cashMethod && cashMethod.value === 0) {
+                // Usamos dispatch directamente para actualizar el método sin llamar a handleValueChange
+                dispatch(setPaymentMethod({ ...cashMethod, value: totalPurchase }));
+            }
+        }
+    // Solo se ejecuta cuando cambia totalPurchase (no cuando paymentMethods cambia)
+    // para evitar bucles infinitos
+    }, [totalPurchase]);
+    // Si es cuenta por cobrar, asegurar al menos un método activo
+    useEffect(() => {
+        if (cartData.isAddedToReceivables) {
+            const anyEnabled = paymentMethods.some(m => m.status);
+            if (!anyEnabled) {
+                const defaultMethod = paymentMethods.find(m => m.method === 'cash') || paymentMethods[0];
+                if (defaultMethod) {
+                    dispatch(setPaymentMethod({ ...defaultMethod, status: true, value: 0 }));
+                    dispatch(recalcTotals());
+                }
+            }
+        }
+    }, [cartData.isAddedToReceivables, paymentMethods, dispatch]);    
     const handleStatusChange = (method, status) => {
-        dispatch(setPaymentMethod({ ...method, status }));
+        // Si se está habilitando un método de pago y no tiene valor establecido, establece el monto restante necesario
+        let newValue = method.value;
+        
+        if (status && (!newValue || newValue === 0)) {
+            const currentTotal = paymentMethods.reduce((total, m) => {
+                if (m.status && m.method !== method.method) {
+                    return total + (Number(m.value) || 0);
+                }
+                return total;
+            }, 0);
+            
+            const remaining = totalPurchase - currentTotal;
+            newValue = remaining > 0 ? remaining : 0;
+        }
+        
+        // Prevent disabling last payment method for accounts receivable
+        const isAddedToReceivables = cartData.isAddedToReceivables;
+        if (!status && isAddedToReceivables) {
+            const enabledCount = paymentMethods.filter(m => m.status).length;
+            if (enabledCount === 1) {
+                message.warning('Debe seleccionar al menos un método de pago');
+                return;
+            }
+        }
+        // Combinamos las dos operaciones en una sola actualización de estado
+        // para evitar renderizaciones múltiples y posibles bucles
+        dispatch(setPaymentMethod({ ...method, status, value: status ? newValue : 0 }));
+        // Recalculate totals after changing payment status
+        dispatch(recalcTotals());
     };
 
     const handleValueChange = (method, newValue) => {
-        dispatch(setPaymentMethod({ ...method, value: newValue }));
+        // No llamamos a recalcTotals después de setPaymentMethod
+        // ya que el middleware cartTotalsListener se encarga de esto
+        dispatch(setPaymentMethod({ ...method, value: Number(newValue) }));
+        // Recalculate totals after changing payment value
+        dispatch(recalcTotals(Number(newValue)));
     };
 
     const handleReferenceChange = (method, newReference) => {

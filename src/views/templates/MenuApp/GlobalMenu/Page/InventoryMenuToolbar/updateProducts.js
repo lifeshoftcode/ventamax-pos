@@ -12,23 +12,17 @@ export async function updateProductListPrices(items, userBusinessID) {
     const updatePromises = items.map(async (item) => {
         try {
             // Buscar el documento del producto usando `name` y `barCode`
-            const docSnapshot = await findProductDocument(item, userBusinessID);
-
-            if (docSnapshot) {
+            const docSnapshot = await findProductDocument(item, userBusinessID);            if (docSnapshot) {
                 // Actualizar el `listPrice` si se encuentra el documento
                 await updateProductListPrice(docSnapshot.id, item, userBusinessID);
-                console.log(`Producto actualizado: ${item.name} (ID: ${docSnapshot.id})`);
             } else {
-                console.log(`No se encontró el producto con Name: ${item.name} y BarCode: ${item.barCode}`);
+                // Product not found - could log to a separate system if needed
             }
         } catch (error) {
             console.error(`Error al actualizar el producto ${item.name}:`, error);
         }
-    });
-
-    // Espera a que todas las actualizaciones se completen
+    });    // Espera a que todas las actualizaciones se completen
     await Promise.all(updatePromises);
-    console.log("Actualización de precios completada.");
 }
 
 /**

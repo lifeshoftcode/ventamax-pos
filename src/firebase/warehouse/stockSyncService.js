@@ -82,13 +82,23 @@ export const useAutoStockSync = (intervalMinutes = 720) => { // 720 minutos = 12
     if (shouldSync()) {
       syncProductsStock(user.businessID);
     }
-
-    // Configurar el intervalo para sincronización periódica
-    const interval = setInterval(() => {
-      if (shouldSync()) {
-        syncProductsStock(user.businessID);
+    const scheduleSync = () => {
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(() => {
+          if (shouldSync()) {
+            syncProductsStock(user.businessID);
+          }
+        });
+      } else {
+        setTimeout(() => {
+          if (shouldSync()) {
+            syncProductsStock(user.businessID);
+          }
+        }, 0);
       }
-    }, 5 * 60 * 1000); // Revisar cada 5 minutos si es necesario sincronizar
+    };
+
+    const interval = setInterval(scheduleSync, 10 * 60 * 1000); // Increased from 5 to 10 minutes
 
     // Limpiar el intervalo al desmontar
     return () => clearInterval(interval);

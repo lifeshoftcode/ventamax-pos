@@ -4,8 +4,7 @@ import { icons } from '../../../../constants/icons/icons';
 import {
     addAmountToProduct,
     diminishAmountToProduct,
-    onChangeValueAmountToProduct,
-    addPaymentMethodAutoValue
+    onChangeValueAmountToProduct
 } from '../../../../features/cart/cartSlice';
 import { Alert } from '../Product/Cart/Alert';
 import styled from 'styled-components';
@@ -13,11 +12,12 @@ import styled from 'styled-components';
 export const Counter = ({ amountToBuy, stock, id, item }) => {
     const dispatch = useDispatch();
     const [DeletePrevent, setDeletePrevent] = useState(false);
-    const [inputAmount, setInputAmount] = useState(amountToBuy || 1); // Estado para el input
+    const [inputAmount, setInputAmount] = useState(amountToBuy || 1);
 
     useEffect(() => {
         setInputAmount(amountToBuy);
     }, [amountToBuy]);
+
     // Manejador para cambiar el valor del input en tiempo real
     const handleInputChange = (e) => {
         const value = parseInt(e.target.value, 10);
@@ -58,18 +58,20 @@ export const Counter = ({ amountToBuy, stock, id, item }) => {
         <Fragment>
             <Container>
                 <ButtonCounter onClick={handleDiminishCounter}>
-                    {icons.mathOperations.subtract}
+                    <MinusIcon>−</MinusIcon>
                 </ButtonCounter>
                 <CounterDisplay
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={inputAmount}
-                    onChange={handleInputChange}  // Validación y actualización en tiempo real
+                    onChange={handleInputChange}
                 />
                 <ButtonCounter
                     onClick={handleIncreaseCounter}
-                    disabled={item.restrictSaleWithoutStock && inputAmount >= stock} // Deshabilitar si se alcanza el stock y hay restricción
+                    disabled={item.restrictSaleWithoutStock && inputAmount >= stock}
                 >
-                    {icons.mathOperations.add}
+                    <PlusIcon>+</PlusIcon>
                 </ButtonCounter>
             </Container>
             <Alert
@@ -82,34 +84,36 @@ export const Counter = ({ amountToBuy, stock, id, item }) => {
 };
 
 const Container = styled.div`
-    display: grid;
-    grid-template-columns: min-content 1fr min-content;
+    display: flex;
     align-items: center;
-    background-color: var(--White3);
-    height: 1.6em;
-    padding: 0 0.2em;
-    border-radius: 6px;
+    background-color: #f5f5f7;
+    height: 32px;
+    border-radius: 10px;
+    overflow: hidden;
+    width: 100%;
+    border: 1px solid #ddd;
 `;
 
 const ButtonCounter = styled.button`
     border: none;
     outline: none;
-    font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
-    background-color: var(--White);
-    height: 1.4em;
-    width: 1.4em;
-    padding: 0.2em;
+    background-color: #f5f5f5;
+    width: 40px;
+    height: 100%;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    
+    &:hover {
+        background-color: #eaeaea;
+    }
+    
     &:focus {
         outline: none;
     }
-    svg {
-        color: var(--Gray6);
-    }
-
+    
     &:disabled {
         opacity: 0.5;
         cursor: not-allowed;
@@ -117,15 +121,33 @@ const ButtonCounter = styled.button`
 `;
 
 const CounterDisplay = styled.input`
-    border: 1px solid rgba(0, 0, 0, 0);
-    width: 100%;
+    border: none;
+    width: 34px;
+    height: 100%;
     text-align: center;
-    font-size: 17px;
+    font-size: 14px;
+    font-weight: 500;
     outline: none;
-    background-color: transparent;
+    background-color: white;
+    color: #333;
+    
     &::-webkit-inner-spin-button,
     &::-webkit-outer-spin-button {
         -webkit-appearance: none;
         margin: 0;
     }
+`;
+
+const MinusIcon = styled.span`
+    font-size: 16px;
+    line-height: 1;
+    color: #555;
+    user-select: none;
+`;
+
+const PlusIcon = styled.span`
+    font-size: 16px;
+    line-height: 1;
+    color: #555;
+    user-select: none;
 `;

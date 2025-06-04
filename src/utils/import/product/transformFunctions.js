@@ -1,7 +1,4 @@
-import { transform } from "framer-motion";
 import { warrantyOptions } from "../../../views/component/modals/ProductForm/components/sections/WarrantyInfo";
-import { initTaxes } from "../../../views/component/modals/UpdateProduct/InitializeData";
-
 
 export const transformConfig = [
     {
@@ -17,30 +14,72 @@ export const transformConfig = [
         transform: (value) => value || ''
     },
     {
-        field: 'pricing.cost', // Nuevo
-        transform: (value) => parseFloat(value) || 0
+        field: 'pricing.cost',
+        transform: (value) => {
+            if (value === null || value === undefined || value === '') return 0;
+            // Eliminar símbolos de moneda y espacios
+            const cleanValue = typeof value === 'string' 
+                ? value.replace(/[$€£¥₩₹₽]/g, '').replace(/\s/g, '')
+                : value;
+            const numValue = parseFloat(cleanValue);
+            return isNaN(numValue) ? 0 : numValue;
+        }
     },
     {
         field: 'pricing.price',
-        // source: 'pricing.listPrice',
-        transform: (value) => value || 0
+        transform: (value) => {
+            if (value === null || value === undefined || value === '') return 0;
+            // Eliminar símbolos de moneda y espacios
+            const cleanValue = typeof value === 'string' 
+                ? value.replace(/[$€£¥₩₹₽]/g, '').replace(/\s/g, '')
+                : value;
+            const numValue = parseFloat(cleanValue);
+            return isNaN(numValue) ? 0 : numValue;
+        }
     },
     {
-        field: 'pricing.listPrice', // Nuevo
-        transform: (value) => parseFloat(value) || 0
+        field: 'pricing.listPrice',
+        transform: (value) => {
+            if (value === null || value === undefined || value === '') return 0;
+            // Eliminar símbolos de moneda y espacios
+            const cleanValue = typeof value === 'string' 
+                ? value.replace(/[$€£¥₩₹₽]/g, '').replace(/\s/g, '')
+                : value;
+            const numValue = parseFloat(cleanValue);
+            return isNaN(numValue) ? 0 : numValue;
+        }
     },
     {
-        field: 'pricing.avgPrice', // Nuevo
-        transform: (value) => parseFloat(value) || 0
+        field: 'pricing.avgPrice',
+        transform: (value) => {
+            if (value === null || value === undefined || value === '') return 0;
+            // Eliminar símbolos de moneda y espacios
+            const cleanValue = typeof value === 'string' 
+                ? value.replace(/[$€£¥₩₹₽]/g, '').replace(/\s/g, '')
+                : value;
+            const numValue = parseFloat(cleanValue);
+            return isNaN(numValue) ? 0 : numValue;
+        }
     },
     {
-        field: 'pricing.minPrice', // Nuevo
-        transform: (value) => parseFloat(value) || 0
+        field: 'pricing.minPrice',
+        transform: (value) => {
+            if (value === null || value === undefined || value === '') return 0;
+            // Eliminar símbolos de moneda y espacios
+            const cleanValue = typeof value === 'string' 
+                ? value.replace(/[$€£¥₩₹₽]/g, '').replace(/\s/g, '')
+                : value;
+            const numValue = parseFloat(cleanValue);
+            return isNaN(numValue) ? 0 : numValue;
+        }
     },
     {
         field: 'pricing.tax', // Nuevo
         transform: (value) => {
-            const tax = value * 100 || 0
+            if (value === null || value === undefined || value === '') return '0';
+            const numValue = typeof value === 'string' ? parseFloat(value) : value;
+            if(isNaN(numValue)) return 0;
+            const tax = numValue < 1 ? numValue * 100 : numValue;
             return `${tax}`;
         } // Usa el valor por defecto de initTaxes
     },
@@ -54,7 +93,15 @@ export const transformConfig = [
     },
     {
         field: 'promotions.discount',
-        transform: (value) => parseFloat(value) || 0
+        transform: (value) => {
+            if (value === null || value === undefined || value === '') return 0;
+            // Eliminar símbolos de moneda y espacios
+            const cleanValue = typeof value === 'string' 
+                ? value.replace(/[$€£¥₩₹₽%]/g, '').replace(/\s/g, '')
+                : value;
+            const numValue = parseFloat(cleanValue);
+            return isNaN(numValue) ? 0 : numValue;
+        }
     },
     {
         field: 'promotions.isActive',
@@ -66,7 +113,15 @@ export const transformConfig = [
     },
     {
         field: 'weightDetail.weight',
-        transform: (value) => parseFloat(value) || 0
+        transform: (value) => {
+            if (value === null || value === undefined || value === '') return 0;
+            // Eliminar símbolos y espacios
+            const cleanValue = typeof value === 'string' 
+                ? value.replace(/[$€£¥₩₹₽]/g, '').replace(/\s/g, '')
+                : value;
+            const numValue = parseFloat(cleanValue);
+            return isNaN(numValue) ? 0 : numValue;
+        }
     },
     {
         field: 'weightDetail.weightUnit',

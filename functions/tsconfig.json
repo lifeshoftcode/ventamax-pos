@@ -1,16 +1,20 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
+    "target": "ES2020",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "outDir": "lib",
+    "rootDir": "src",
+    "allowJs": true,                    // Para incluir y copiar archivos .js
+    "checkJs": false,   
+    "esModuleInterop": true,
     "sourceMap": true,
     "strict": true,
-    "target": "es2017",
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
     "skipLibCheck": true,
     "types": [],
-    "esModuleInterop": true
   },
   "compileOnSave": true,
-  "include": ["src"]
+  "include": ["src/**/*"]
 }

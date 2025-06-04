@@ -141,9 +141,7 @@ export const InventoryTable = ({ currentNode, searchTerm, setSearchTerm, setDate
   const handleViewProductStock = (productId) => {
     navigate(`/inventory/warehouses/products-stock/${productId}`);
   };
-
   const handleDeleteBatch = (record) => {
-    console.log(record)
     dispatch(openDeleteModal({
       productStockId: record.id,
       batchId: record.batchId,

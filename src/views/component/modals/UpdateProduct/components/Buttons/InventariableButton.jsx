@@ -1,6 +1,5 @@
-
-import React, { useEffect, useState } from 'react'
-import { MdRadioButtonChecked, MdRadioButtonUnchecked } from 'react-icons/md'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faCircleDot, faCircle } from '@fortawesome/free-solid-svg-icons'
 import { useDispatch } from 'react-redux'
 import { Button } from '../../../../../templates/system/Button/Button'
 
@@ -17,9 +16,8 @@ export const InventariableButton = ({ product, setProduct }) => {
             borderRadius={'normal'}
             alignText={'left'}
             title={'Invetariable'}
-            isActivated={product?.trackInventory}
-            iconOn={<MdRadioButtonChecked />}
-            iconOff={<MdRadioButtonUnchecked />}
+            isActivated={product?.trackInventory}            iconOn={<FontAwesomeIcon icon={faCircleDot} />}
+            iconOff={<FontAwesomeIcon icon={faCircle} />}
             onClick={handleToggle}
         />
     )

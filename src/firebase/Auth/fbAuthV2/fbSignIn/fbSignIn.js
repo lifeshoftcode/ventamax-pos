@@ -18,10 +18,11 @@ function generateSessionToken(user) {
 
 async function getUserFromFirestore(user) {
     const userRef = collection(db, "users");
+    console.log(user);
     const q = query(userRef, where("user.name", "==", user.name));
     const userSnapshot = await getDocs(q);
 
-    if (userSnapshot.empty) { throw new Error('Error: No se encontró el usuario')}
+    if (userSnapshot.empty) { throw new Error('Error: No se encontró el usuario') }
 
     return userSnapshot.docs[0];
 }
@@ -35,10 +36,9 @@ async function checkLock(userData, currentTime) {
 async function checkPassword(user, userData) {
     const correctPassword = await compare(user.password, userData.password);
 
-    if (!correctPassword) {
-        throw new Error('Error: Contraseña incorrecta')
-    }
-    
+    if (!correctPassword)
+        throw new Error('Error: Contraseña incorrecta');
+
     return correctPassword;
 }
 
@@ -59,7 +59,7 @@ async function cleanupOldTokens(userId) {
         const tokensRef = collection(db, 'sessionTokens');
         const q = query(tokensRef, where("userId", "==", userId));
         const tokenSnapshots = await getDocs(q);
-        
+
         const cleanupDate = Timestamp.fromMillis(Timestamp.now().toMillis() - TOKEN_CLEANUP_AGE);
 
         const deletePromises = tokenSnapshots.docs
@@ -79,29 +79,28 @@ async function storeSessionToken(user, userDoc) {
     const currentTime = Timestamp.now();
     const expiresAt = Timestamp.fromMillis(currentTime.toMillis() + SESSION_DURATION);
     const token = `${user.name}_${currentTime.toMillis()}`;
-    
+
     await cleanupOldTokens(userDoc.id);
-    
-    await setDoc(doc(db, 'sessionTokens', token), { 
+
+    await setDoc(doc(db, 'sessionTokens', token), {
         userId: userDoc.id,
         expiresAt,
         createdAt: serverTimestamp(),
         lastActivity: serverTimestamp()
     });
-    
+
     localStorage.setItem('sessionToken', token);
     localStorage.setItem('sessionExpires', expiresAt.toMillis().toString());
 }
 
-async function updateAppState(dispatch, userData, userDoc) {
+export function updateAppState(dispatch, userData) {
     dispatch(login({
-        uid: userDoc.id,
+        uid: userData.id,
         displayName: userData.name,
-
     }));
 }
 
-export const fbSignIn = async (user, dispatch, navigate, homePath) => {
+export const fbSignIn = async (user) => {
     try {
         const userDoc = await getUserFromFirestore(user);
         const userData = userDoc.data().user;
@@ -115,9 +114,7 @@ export const fbSignIn = async (user, dispatch, navigate, homePath) => {
 
         await storeSessionToken(user, userDoc);
 
-        await updateAppState(dispatch, userData, userDoc);
-
-        navigate(homePath);
+        return userData;
 
     } catch (error) {
         throw new Error(error.message);

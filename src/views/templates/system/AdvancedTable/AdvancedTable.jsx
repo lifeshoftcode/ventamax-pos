@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { memo, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { ColumnMenu } from './components/ColumnMenu/ColumnMenu';
 import { filterData } from '../../../../hooks/search/useSearch';
@@ -25,6 +25,7 @@ import { useWindowWidth } from '../../../../hooks/useWindowWidth';
  * - tableName: Una cadena de texto que se utiliza como el nombre de la tabla.
  * - onRowClick: Una función que se ejecuta cuando se hace clic en una fila de la tabla. Esta función recibe los datos de la fila en la que se hizo clic.
  */
+
 const groupDataByField = (data, field) => {
   return data.reduce((acc, item) => {
     (acc[item[field]] = acc[item[field]] || []).push(item);
@@ -47,37 +48,48 @@ const useWideLayout = () => {
   return isWide;
 };
 
-export const AdvancedTable = ({
+export const AdvancedTable = memo(({
+  // Behaviour
   groupBy,
-  elementName,
+  numberOfElementsPerPage = 30,
+  loading = false,
+
+  // Custom UI hooks
   headerComponent,
-  filterConfig = [],
-  emptyText = 'No hay datos para mostrar',
-  columns = [],
-  data = [],
   filterUI,
   datePicker = false,
+  footerLeftSide,
+  footerRightSide,
+
+  // Data / config
+  columns = [],
+  data = [],
+  filterConfig = [],
+  searchTerm = '',
+  elementName,
+  tableName,
+
+  // Date filter
   dateRange,
   defaultDate,
   setDateRange,
-  tableName,
-  searchTerm = '',
-  onRowClick,
-  footerLeftSide,
-  footerRightSide,
-  numberOfElementsPerPage = 30, 
-  loading = false,
-  title // Add this new prop
-}) => {
-  //Usuarios y referencias
-  const user = useSelector(selectUser)
-  const wrapperRef = useRef(null);
 
-  const [dates, setDates] = useState(dateRange || {});
+  //Misc
+  emptyText = 'No hay datos para mostrar',
+  onRowClick,
+  title 
+}) => {
+
+  const wrapperRef = useRef(null);
+  const user = useSelector(selectUser)
 
   //Reordenamiento de Columnas
   const [isReorderMenuOpen, setIsReorderMenuOpen] = useState(false);
-  const [columnOrder, setColumnOrder, resetColumnOrder] = useColumnOrder(columns, tableName, user.uid);
+  const [columnOrder, setColumnOrder, resetColumnOrder] = useColumnOrder(
+    columns, 
+    tableName, 
+    user?.uid
+  );
 
   //Funciones UI
   const toggleReorderMenu = () => { setIsReorderMenuOpen(!isReorderMenuOpen); };
@@ -86,10 +98,6 @@ export const AdvancedTable = ({
   const [filter, setFilter, setDefaultFilter, defaultFilter, filteredData] = useTableFiltering(filterConfig, data);
 
   const dynamicFilterConfig = useDynamicFilterConfig(filterConfig, data);
-
-  //Filtrado por fechas
- 
- // const filteredDataByDateRange =  datesEmpty ? filterByDateRange(filteredData, dates?.startDate, dates?.endDate, datesKeyConfig) : filteredData;
 
   // Filtrado de término de búsqueda
   const searchTermFilteredData = searchTerm ? filterData(filteredData, searchTerm) : filteredData;
@@ -114,7 +122,7 @@ export const AdvancedTable = ({
       headerComponent={filterUI || headerComponent}
       datesFilter={setDateRange}
       title={title}
-      >
+    >
       {title && <TableTitle>{title}</TableTitle>}
       {(filterUI || dateRange ?
         (
@@ -191,7 +199,7 @@ export const AdvancedTable = ({
       </TableContainer>
     </Container>
   )
-};
+});
 const FilterBar = styled.div`
 display: flex;
 align-items: center;
@@ -209,16 +217,16 @@ const Container = styled.div`
   /* Auto-fit grid template rows based on content presence */
   grid-template-rows: ${props => {
     const rows = [];
-    
+
     // Add title row if present
     if (props.title) rows.push('min-content');
-    
+
     // Add header row if present
     if (props.headerComponent || props.datesFilter) rows.push('min-content');
-    
+
     // Always add main content
     rows.push('1fr');
-    
+
     return rows.join(' ');
   }};
 `;
@@ -280,7 +288,7 @@ export const Row = styled.div`
       }).join(' ');
     }
     // Comportamiento original para pantallas más pequeñas
-    return props.columns.map(col => 
+    return props.columns.map(col =>
       `minmax(${col.minWidth || '100px'}, ${col.maxWidth || '1fr'})`
     ).join(' ');
   }};

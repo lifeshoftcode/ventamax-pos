@@ -5,7 +5,8 @@ import styled from 'styled-components'
 import { Button } from 'antd'
 import { useDispatch } from 'react-redux'
 import routesName from '../../../../../routes/routesName'
-import { CgMathPlus } from 'react-icons/cg'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { ButtonGroup } from '../../../..'
 import { togglePurchaseChartModal } from '../../../../../features/purchase/purchaseUISlice'
 
@@ -32,7 +33,7 @@ export const PurchaseToolbar = ({ side = 'left' }) => {
                                 Reporte
                             </Button>
                             <Button
-                                icon={<CgMathPlus />}
+                                icon={<FontAwesomeIcon icon={faPlus} />}
                                 onClick={openModal}
                             >
                                 Comprar

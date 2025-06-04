@@ -1,13 +1,11 @@
-
-import React, { useState } from 'react'
-import { FaSearch } from 'react-icons/fa'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faSearch } from '@fortawesome/free-solid-svg-icons'
 import { useDispatch } from 'react-redux'
 import styled from 'styled-components'
 import { OPERATION_MODES } from '../../../../constants/modes'
 import { toggleClientModal } from '../../../../features/modals/modalSlice'
 import { Button } from '../../../templates/system/Button/Button'
 import { InputV4 } from '../../../templates/system/Inputs/GeneralInput/InputV4'
-import { OrderFilter } from './components/OrderFilter/OrderFilter'
 
 export const ToolBar = ({ searchTerm, setSearchTerm }) => {
     const createMode = OPERATION_MODES.CREATE.id
@@ -17,10 +15,9 @@ export const ToolBar = ({ searchTerm, setSearchTerm }) => {
 
     return (
         <Container>
-            <Wrapper>
-                <InputV4
+            <Wrapper>                <InputV4
                     placeholder={'Buscar Cliente ...'}
-                    deleteBtn icon={<FaSearch />}
+                    deleteBtn icon={<FontAwesomeIcon icon={faSearch} />}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />

@@ -4,6 +4,11 @@ export function limit(value) {
   return asInt / 100;
 }
 
+export const roundDecimals = (n, dec = 2) => {
+  const factor = Math.pow(10, dec);
+  return Math.round((Number(n) + Number.EPSILON) * factor) / factor;
+};
+
 function isValidNumber(value) {
   return !isNaN(parseFloat(value)) && isFinite(value);
 }
@@ -95,7 +100,19 @@ function getPriceTotalByType(product, priceType = 'price', taxReceiptEnabled = t
 export function getTotal(product, useAmountToBuy = true) {
   const { price, amountToBuy } = getPricingDetails(product, useAmountToBuy);
   const quantity = useAmountToBuy ? amountToBuy : 1;
-  return  price * quantity;
+  
+  // Aplicar descuento individual si existe
+  let finalPrice = price * quantity;
+  if (product.discount && product.discount.value > 0) {
+    if (product.discount.type === 'percentage') {
+      finalPrice = finalPrice * (1 - product.discount.value / 100);
+    } else {
+      // Para monto fijo, se aplica al total sin impuestos
+      finalPrice = Math.max(0, finalPrice - product.discount.value);
+    }
+  }
+  
+  return finalPrice;
 }
 
 export function getListPriceTotal(product, taxReceiptEnabled = true) {
@@ -118,7 +135,19 @@ export function getProductsPrice(products = []) {
   return products.reduce((acc, product) => {
     const { isSoldByWeight, weight, amountToBuy, price } = getPricingDetails(product);
     const quantity = isSoldByWeight ? weight : amountToBuy;
-    return acc + (price * quantity);
+    
+    // Aplicar descuento individual si existe
+    let finalPrice = price * quantity;
+    if (product.discount && product.discount.value > 0) {
+      if (product.discount.type === 'percentage') {
+        finalPrice = finalPrice * (1 - product.discount.value / 100);
+      } else {
+        // Para monto fijo, se aplica al total sin impuestos
+        finalPrice = Math.max(0, finalPrice - product.discount.value);
+      }
+    }
+    
+    return acc + finalPrice;
   }, 0);
 }
 
@@ -130,6 +159,41 @@ export function getProductsDiscount(products) {
   return products.reduce((acc, product) => acc + getDiscount(product), 0);
 }
 
+export function getProductsIndividualDiscounts(products = []) {
+  return products.reduce((acc, product) => {
+    if (!product.discount || product.discount.value <= 0) return acc;
+    
+    const { price, isSoldByWeight, weight, amountToBuy } = getPricingDetails(product);
+    const quantity = isSoldByWeight ? weight : amountToBuy;
+    const subtotalBeforeDiscount = price * quantity;
+    
+    let discountAmount = 0;
+    if (product.discount.type === 'percentage') {
+      discountAmount = subtotalBeforeDiscount * (product.discount.value / 100);
+    } else {
+      // Para monto fijo
+      discountAmount = Math.min(product.discount.value, subtotalBeforeDiscount);
+    }
+    
+    return acc + discountAmount;
+  }, 0);
+}
+
+export function getProductIndividualDiscount(product) {
+  if (!product.discount || product.discount.value <= 0) return 0;
+  
+  const { price, isSoldByWeight, weight, amountToBuy } = getPricingDetails(product);
+  const quantity = isSoldByWeight ? weight : amountToBuy;
+  const subtotalBeforeDiscount = price * quantity;
+  
+  if (product.discount.type === 'percentage') {
+    return subtotalBeforeDiscount * (product.discount.value / 100);
+  } else {
+    // Para monto fijo
+    return Math.min(product.discount.value, subtotalBeforeDiscount);
+  }
+}
+
 export function getTotalItems(products) {
   return products.reduce((acc, product) => acc + product?.amountToBuy || 1, 0);
 }
@@ -138,12 +202,19 @@ export function getProductsTotalPrice(products, totalDiscountPercentage = 0, tot
   if (!isValidNumber(totalDelivery)) {
     totalDelivery = 0;
   }
+  
+  // Verificar si hay productos con descuentos individuales
+  const hasIndividualDiscounts = products.some(product => 
+    product.discount && product.discount.value > 0
+  );
+  
   let subtotal = getProductsPrice(products);
   let itbis = getProductsTax(products, taxReceiptEnabled);
   let productsDiscount = getProductsDiscount(products)
   let totalBeforeDiscount = subtotal - productsDiscount;
 
-  let totalDiscount = getTotalDiscount(totalBeforeDiscount, totalDiscountPercentage);
+  // Solo aplicar descuento general si no hay descuentos individuales
+  let totalDiscount = hasIndividualDiscounts ? 0 : getTotalDiscount(totalBeforeDiscount, totalDiscountPercentage);
 
   let total = (totalBeforeDiscount - totalDiscount + totalDelivery + itbis)
 
@@ -200,4 +271,23 @@ export const setNumPrecision = (value, precision = 2) => {
     return 0;
   }
   return Number(num.toFixed(precision));
+}
+
+export function getInsuranceExtra(product) {
+  const ins = product.insurance || { mode: null, value: 0 };
+  if (!ins.value) return 0;
+  // Use getPricingDetails to obtain price and quantity.
+  const { price, isSoldByWeight, weight, amountToBuy } = getPricingDetails(product);
+  const quantity = isSoldByWeight ? weight : amountToBuy;
+  return ins.mode === 'porcentaje'
+      ? price * quantity * (ins.value / 100)
+      : ins.value * quantity;
+}
+
+export function getProductsInsuranceExtra(products = []) {
+  return products.reduce((acc, product) => acc + getInsuranceExtra(product), 0);
+}
+
+export function getChange(total, payment) {
+  return payment - total;
 }

@@ -13,10 +13,8 @@ export const Login = () => {
    const [form] = Form.useForm();
    const [loading, setLoading] = useState(false);
    const [loadingTip, setLoadingTip] = useState('Cargando...');
-   const homePath = '/home';
-
-   useEffect(() => {
-      console.log('loading', loading)
+   const homePath = '/home';   useEffect(() => {
+      // Loading state change effect
    }, [loading])
    const onFinish = async () => {
       setLoading(true); // Iniciar la animación de carga

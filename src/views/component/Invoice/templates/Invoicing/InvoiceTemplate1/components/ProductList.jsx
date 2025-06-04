@@ -3,16 +3,18 @@ import styled from 'styled-components'
 import { separator } from '../../../../../../../hooks/separator'
 import { Col } from './Table/Col'
 import { Row } from './Table/Row'
-import { getPriceTotal, getTax, getTotal, getTotalPrice, resetAmountToBuyForProduct } from '../../../../../../../utils/pricing'
+import { getPriceTotal, getTax, getTotal, getTotalPrice, resetAmountToBuyForProduct, getProductIndividualDiscount } from '../../../../../../../utils/pricing'
 import { useFormatPrice } from '../../../../../../../hooks/useFormatPrice'
 import { useDispatch, useSelector } from 'react-redux'
-import {  SelectSettingCart } from '../../../../../../../features/cart/cartSlice'
+import { SelectSettingCart, selectInsuranceEnabled } from '../../../../../../../features/cart/cartSlice'
 import { convertTimeToSpanish } from '../../../../../../component/modals/ProductForm/components/sections/WarrantyInfo'
+import useInsuranceEnabled from '../../../../../../../hooks/useInsuranceEnabled'
 
 export const ProductList = ({ data }) => {
     const { products, NCF } = data
-    const {taxReceipt} = useSelector(SelectSettingCart)
-    const getFullProductName = ({ name, measurement, footer }) => 
+    const { taxReceipt } = useSelector(SelectSettingCart)
+    const insuranceEnabled = data.insuranceEnabled;
+    const getFullProductName = ({ name, measurement, footer }) =>
         `${name}${measurement ? ` Medida: [${measurement}]` : ''}${footer ? ` Pie: [${footer}]` : ''}`;
     return (
         <Container>
@@ -27,7 +29,7 @@ export const ProductList = ({ data }) => {
                                             product?.weightDetail?.isSoldByWeight ? (
                                                 <div>
                                                     {product?.weightDetail?.weight} {product?.weightDetail?.weightUnit} X {useFormatPrice(getTotalPrice(resetAmountToBuyForProduct(product), taxReceipt?.enabled))}
-                                           </div>
+                                                </div>
                                             ) : (
                                                 <div>
                                                     {product?.amountToBuy || 0} x {separator(getTotalPrice(resetAmountToBuyForProduct(product), taxReceipt?.enabled))}
@@ -49,6 +51,33 @@ export const ProductList = ({ data }) => {
                                     product?.warranty?.status && (
                                         <Row>
                                             {convertTimeToSpanish(product?.warranty?.quantity, product?.warranty?.unit)} de Garantía
+                                        </Row>
+                                    )
+                                }
+                                {
+                                    insuranceEnabled && product?.insurance?.mode && (
+                                        <Row>
+                                            <InsuranceCoverage>
+                                                Cobertura de seguro: {product.insurance.mode} - {useFormatPrice(product.insurance.value)}
+                                            </InsuranceCoverage>
+                                        </Row>
+                                    )                                }
+                                {
+                                    product?.discount && product?.discount?.value > 0 && (
+                                        <Row>
+                                            <ProductDiscount>
+                                                Descuento: -{useFormatPrice(getProductIndividualDiscount(product))} 
+                                                ({product.discount.type === 'percentage' ? `${product.discount.value}%` : 'Monto fijo'})
+                                            </ProductDiscount>
+                                        </Row>
+                                    )
+                                }
+                                {
+                                    product?.comment && (
+                                        <Row>
+                                            <ProductComment>
+                                                {product.comment}
+                                            </ProductComment>
                                         </Row>
                                     )
                                 }
@@ -94,4 +123,29 @@ const ProductName = styled.div`
         //white-space: nowrap;
         text-overflow: ellipsis;
         overflow: hidden;
+`
+
+const InsuranceCoverage = styled.div`
+    font-size: 1em;
+    font-style: italic;
+`
+
+const ProductComment = styled.div`
+    font-size: 0.9em;
+    font-style: italic;
+    color: #444;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    padding-left: 8px;
+    border-left: 1px dotted #888;
+    margin: 2px 0;
+`
+
+const ProductDiscount = styled.div`
+    font-size: 0.9em;
+    font-weight: 600;
+    color: #52c41a;
+    padding-left: 8px;
+    border-left: 2px solid #52c41a;
+    margin: 2px 0;
 `

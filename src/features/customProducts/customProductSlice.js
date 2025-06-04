@@ -26,14 +26,11 @@ const customProductSlice = createSlice({
                 state.ingredient.push(action.payload);
             }
         },
-        deleteIngredient: (state, action) => {
-            const checkingID = state.ingredient.find(({ id }) => id === action.payload.id)
+        deleteIngredient: (state, action) => {            const checkingID = state.ingredient.find(({ id }) => id === action.payload.id)
             if (checkingID) {
                 state.ingredient.splice(state.ingredient.indexOf(checkingID), 1)
-                console.log('quitando 1')
-
             } else {
-                console.log('quitando 2')
+                // Ingredient not found
             }
 
         },

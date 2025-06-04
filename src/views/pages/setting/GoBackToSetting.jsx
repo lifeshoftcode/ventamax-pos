@@ -1,6 +1,7 @@
 import React from 'react';
 import styled, { keyframes } from 'styled-components';
-import { FaArrowLeft } from 'react-icons/fa';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 
 const pulse = keyframes`

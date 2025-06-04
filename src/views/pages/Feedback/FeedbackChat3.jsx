@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { FiSend, FiX } from "react-icons/fi";
 
 const Container = styled.div`
   position: fixed;

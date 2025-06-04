@@ -79,9 +79,7 @@ const ImageManager = ({ hideImageManager }) => {
   const [fileList, setFileList] = useState([]);
   const {product} = useSelector(selectUpdateProductData);
   const productImg = product?.productImageURL;
-  const dispatch = useDispatch();
-  const updateFileListWithProgress = (file, progress) => {
-    console.log(file)
+  const dispatch = useDispatch();  const updateFileListWithProgress = (file, progress) => {
     setFileList(prevFileList => prevFileList.map(f => {
       if (f.uid === file.uid) {
         return { ...f, percent: progress, name: file.name, status: 'uploading' };
@@ -118,13 +116,8 @@ const ImageManager = ({ hideImageManager }) => {
         setFileList([]);
       }
     },
-
   };
  
-      
-      
-  console.log(fileList)
-
   useEffect(() => { fbGetProductsImg(user, setImages) }, [user])
   const uploadProgress = fileList.length > 0 ? fileList[0].percent : 0;
   return (

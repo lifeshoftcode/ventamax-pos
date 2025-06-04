@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { FiSend } from "react-icons/fi";
 import { generateResponse } from "./generateResponse";
 import { useNavigate } from "react-router-dom";
 

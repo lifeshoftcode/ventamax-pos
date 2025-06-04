@@ -1,48 +1,48 @@
-import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
-import { SaleReportTable } from '../../../Registro/SaleReportTable/SaleReportTable'
-import { tableData } from './tableConfig'
-import { useSelector } from 'react-redux'
-import { selectCashCount } from '../../../../../features/cashCount/cashCountManagementSlice'
-import { fbLoadInvoicesForCashCount } from '../../../../../firebase/cashCount/fbLoadInvoicesForCashCount'
-import { selectUser } from '../../../../../features/auth/userSlice'
-import { useNavigate } from 'react-router-dom'
-import { Header } from './components/Header/Header'
+// import { SaleReportTable } from '../../../Registro/SaleReportTable/SaleReportTable'
+import { ExportInvoice } from './components/Header/ExportInvoice'
+import { Drawer } from 'antd'
+import { Suspense, useMemo, lazy, memo } from 'react'
 
-export const CashupInvoicesOverview = ({ bills }) => {
-    const { id } = useSelector(selectCashCount)
-    const user = useSelector(selectUser)
-    const [invoices, setInvoices] = useState([])
-    const navigate = useNavigate()
-    useEffect(() => {
-        if (id) {
-            const fetchData = async () => {
-                const invoicesData = await fbLoadInvoicesForCashCount(user, id, 'invoices')
-                setInvoices(invoicesData)
-            }
-            fetchData()
-        } else {
-            navigate('/cash-reconciliation')
-        }
-    }, [id])
-    const total = invoices ? () => invoices?.reduce((total, { data }) => total + data.totalPurchase.value, 0)
-        : 0
+const SaleReportTable = lazy(() => import('../../../Registro/SaleReportTable/SaleReportTable'));
+
+const Spinner = () => (
+    <div style={{ padding: '2em', textAlign: 'center' }}>Cargando...</div>
+)
+
+export const CashupInvoicesOverview = memo(({ invoices = [], isOpen, onClose }) => {
     return (
-        <Container>
-            <Header invoices={invoices} />
-            <SaleReportTable
-                data={tableData}
-                bills={invoices}
-                total={total}
-            />
-        </Container>
+        <Drawer
+            open={isOpen}
+            onClose={onClose}
+            width={'100%'}
+            height={'100%'}
+            placement="bottom"
+            extra={<ExportInvoice invoices={invoices} />}
+            styles={{
+                header: {
+                    paddingBlock: 0,
+                },
+                body: {
+                    padding: 0,
+                },
+            }}
+        >
+            <Suspense fallback={<Spinner />}>
+
+                <Container>
+                    <SaleReportTable
+                        bills={invoices}
+                    />
+                </Container>
+            </Suspense>
+        </Drawer>
     )
-}
+})
 const Container = styled.div`
-    height: 100vh;
-    max-height: 100vh;
+    height: 100%;
     width: 100%;
     display: grid;
-    grid-template-rows: min-content 1fr;
+    grid-template-rows: 1fr;
     background-color: var(--color2);
 `

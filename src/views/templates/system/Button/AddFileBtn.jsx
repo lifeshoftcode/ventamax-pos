@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { CgSpinner } from 'react-icons/cg'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch, useSelector } from 'react-redux'
 import styled from 'styled-components'
 import { toggleImageViewer } from '../../../../features/imageViewer/imageViewerSlice'
@@ -31,7 +32,7 @@ export const AddFileBtn = ({ title, startIcon, endIcon, id, fn }) => {
         if (progress > 0 && progress < 100) {
             dispatch(toggleLoader({ show: true, message: `cargando... ${(progress.toFixed(1))}%` }))
             setTitleBtn(`cargando...`)
-            setStartIconBtn(<CgSpinner />)
+            setStartIconBtn(<FontAwesomeIcon icon={faSpinner} spin />)
             endIcon = null
         }
         if (progress === 100) {

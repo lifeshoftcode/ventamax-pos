@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { MdClose, MdPersonAdd, MdContentCopy, MdFilterList } from 'react-icons/md'
+import { faTimes, faUserPlus, faCopy, faFilter } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import styled, { createGlobalStyle } from 'styled-components'
-
 import { Client } from '../../../templates/system/client/Client'
 import { useDispatch, useSelector } from 'react-redux'
 import { selectClient, selectClientMode, selectClientSearchTerm, selectIsOpen, setClientMode, setIsOpen } from '../../../../features/clientCart/clientCartSlice'
@@ -13,7 +13,7 @@ import { toggleClientModal } from '../../../../features/modals/modalSlice'
 import { OPERATION_MODES } from '../../../../constants/modes'
 import { fbDeleteClient } from '../../../../firebase/client/fbDeleteClient'
 import { selectUser } from '../../../../features/auth/userSlice'
-const { Text, Title } = Typography
+const { Title } = Typography
 const GlobalStyle = createGlobalStyle`
   .ant-dropdown {
     z-index: 10000001 !important;
@@ -42,12 +42,8 @@ export const ClientSelector = ({ }) => {
     const [pageSize, setPageSize] = useState(20);
     const containerRef = useRef(null);
 
-    console.log(clients[0])
-
-    const handleClose = () => {
-        dispatch(setIsOpen(false))
-    }
-
+    const handleClose = () => dispatch(setIsOpen(false));
+    
     const getDuplicateClients = (clients) => {
         const namesCount = clients.reduce((acc, { client }) => {
             acc[client.name?.toLowerCase()] = (acc[client.name?.toLowerCase()] || 0) + 1;
@@ -59,9 +55,7 @@ export const ClientSelector = ({ }) => {
         );
     };
 
-    const getClientsWithoutNames = (clients) => {
-        return clients.filter(({ client }) => !client.name);
-    };
+    const getClientsWithoutNames = (clients) =>  clients.filter(({ client }) => !client.name);
 
     const duplicateClients = getDuplicateClients(clients);
     const clientsWithoutNames = getClientsWithoutNames(clients);
@@ -71,7 +65,6 @@ export const ClientSelector = ({ }) => {
         dispatch(toggleClientModal({ mode: OPERATION_MODES.CREATE.id, data: null, addClientToCart: true }))
     }
     const openUpdateClientModal = (client) => {
-        console.log(client)
         dispatch(setIsOpen(false));
         updateClientMode();
         dispatch(toggleClientModal({ mode: OPERATION_MODES.UPDATE.id, data: client, addClientToCart: true }))
@@ -94,9 +87,7 @@ export const ClientSelector = ({ }) => {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [isOpen]);
-
-    const items = [
+    }, [isOpen]);    const items = [
         {
             key: 'all',
             label: 'Todos los clientes',
@@ -104,7 +95,7 @@ export const ClientSelector = ({ }) => {
         {
             key: 'duplicates',
             label: 'Clientes duplicados',
-            icon: <MdContentCopy />,
+            icon: <FontAwesomeIcon icon={faCopy} />,
         },
         // {
         //     key: 'noName',
@@ -139,13 +130,12 @@ export const ClientSelector = ({ }) => {
             <Container isOpen={isOpen}>
                 <Header>
                     <Title level={5} style={{ margin: 0 }}>Seleccionar Cliente</Title>
-                    <ButtonGroup>
-                        <Tooltip title="Filtrar clientes">
+                    <ButtonGroup>                        <Tooltip title="Filtrar clientes">
                             <Dropdown menu={{ items, onClick: handleMenuClick }}>
 
                                 <Badge count={filter === 'all' ? 0 : filteredClientsToShow.length} size="small" >
                                     <Button
-                                        icon={<MdFilterList />}
+                                        icon={<FontAwesomeIcon icon={faFilter} />}
                                     >
                                         <ButtonText> Filtrar</ButtonText>
                                     </Button>
@@ -153,12 +143,12 @@ export const ClientSelector = ({ }) => {
                             </Dropdown>
                         </Tooltip>
                         <Tooltip title="Crear cliente">
-                            <Button onClick={openAddClientModal} icon={<MdPersonAdd />}>
+                            <Button onClick={openAddClientModal} icon={<FontAwesomeIcon icon={faUserPlus} />}>
                                 <ButtonText> Crear Cliente</ButtonText>
                             </Button>
                         </Tooltip>
                         <Tooltip title="Cerrar">
-                            <Button onClick={() => dispatch(setIsOpen(false))} icon={<MdClose />}>
+                            <Button onClick={() => dispatch(setIsOpen(false))} icon={<FontAwesomeIcon icon={faTimes} />}>
 
                                 <ButtonText> Cerrar</ButtonText>
                             </Button>

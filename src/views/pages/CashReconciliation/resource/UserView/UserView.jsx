@@ -1,32 +1,57 @@
 import React from 'react'
 import styled from 'styled-components'
-import { InputV4 } from '../../../../templates/system/Inputs/GeneralInput/InputV4'
+import { Input, Form } from 'antd'
 import { icons } from '../../../../../constants/icons/icons'
 import { FormattedValue } from '../../../../templates/system/FormattedValue/FormattedValue'
-export const UserView = ({user, user2, label='Entregado por', label2='', title}, ) => {
-  return (
-    <Container>
-      {title && <FormattedValue value={title} size={'small'} type={'title'} />}
-        <Group>
-            <InputV4 disabled label={label} value={user?.name} />
-            <Icon>
-                {icons.user.userCheck}
-            </Icon>
-        </Group>
-{
-    user2 && (
-        <Group>
-            <InputV4 disabled label={label2} value={user2?.name} />
-            <Icon>
-                {icons.user.userCheck}
-            </Icon>
-        </Group>
+
+export const UserView = ({ user, user2, label = 'Entregado por', label2 = '', title },) => {
+    return (
+        <Container>
+            {title && <FormattedValue value={title} size={'small'} type={'title'} />}
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                }}
+            >
+
+            <Group>
+                <FormItemStyled
+                    label={label}
+                    colon={false}
+                    labelCol={{ span: 24 }}
+                    wrapperCol={{ span: 24 }}
+                >
+                    <Input readOnly value={user?.name} />
+                </FormItemStyled>
+                <Icon>
+                    {icons.user.userCheck}
+                </Icon>
+            </Group>
+            {
+                user2 && (
+                    <Group>
+                        <FormItemStyled
+                            label={label2}
+                            colon={false}
+                            labelCol={{ span: 24 }}
+                            wrapperCol={{ span: 24 }}
+                        >
+                            <Input readOnly value={user2?.name} />
+                        </FormItemStyled>
+                        <Icon>
+                            {icons.user.userCheck}
+                        </Icon>
+                    </Group>
+                )
+            }
+            </div>
+        </Container>
     )
 }
-    </Container>
-  )
-}
- const Container = styled.div`
+
+const Container = styled.div`
     padding: 0.4em;
     background-color: white;
     border-radius: var(--border-radius);
@@ -35,13 +60,36 @@ export const UserView = ({user, user2, label='Entregado por', label2='', title},
     gap: 0.4em;
 
  `
- 
- const Group = styled.div`
+
+const Group = styled.div`
     display: grid;
     grid-template-columns: 1fr min-content;
     gap: 0.4em;
  `
- const Icon = styled.div`
+
+const FormItemStyled = styled(Form.Item)`
+    margin: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    
+    .ant-form-item-label {
+        text-align: left;
+        padding: 0;
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .ant-form-item-label > label {
+        height: auto;
+    }
+
+    .ant-form-item-control {
+        width: 100%;
+    }
+ `
+
+const Icon = styled.div`
     width: 2em;
     height: 2em;
     align-self: end;

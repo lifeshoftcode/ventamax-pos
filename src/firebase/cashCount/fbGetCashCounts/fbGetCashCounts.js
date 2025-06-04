@@ -1,143 +1,114 @@
-import { collection, doc, getDoc, onSnapshot, orderBy, query, where } from "firebase/firestore"
+import { collection, doc, getDoc, onSnapshot, orderBy, query, QueryConstraint, where } from "firebase/firestore"
 import { db } from "../../firebaseconfig"
 import { DateTime } from "luxon"
 import { getEmployeeData } from "./getEmployeeData"
 import DateUtils from "../../../utils/date/dateUtils"
+import { toMillis } from "../../../utils/firebase/toTimestamp"
 
-export const fbGetCashCounts = async (user, setCashCounts, dateRange) => {
-    if (!user || !user?.businessID) { return }
-    const cashCountsRef = collection(db, 'businesses', user?.businessID, 'cashCounts')
+export const buildQueryConstraints = (({
+    startDate = null,
+    endDate = null,
+    status,
+    sortField = 'cashCount.createdAt',
+    userRef = null,
+    sortAsc = true,
+} = {}) => {
+    const constraints = [];
+    if (startDate) constraints.push(where(sortField, '>=', startDate));
+    if (endDate) constraints.push(where(sortField, '<=', endDate));
+    if (status) constraints.push(where('cashCount.state', '==', status));
+    if (userRef) constraints.push(where('cashCount.opening.employee', '==', userRef));
+    constraints.push(orderBy(sortField, sortAsc ? 'asc' : 'desc'));
+    return constraints;
+})
 
-    const userId = user?.uid
-    const userRef = userId ? doc(db, "users", userId) : null
-    const startDate = dateRange?.startDate ? DateTime.fromMillis(dateRange.startDate).toJSDate() : null;
-    const endDate = dateRange?.endDate ? DateTime.fromMillis(dateRange.endDate).toJSDate() : null;
+const transformCashCount = async (raw) => {
+    const [
+        opener,
+        openerApproval,
+        closer,
+        closerApproval
+    ] = await Promise.all([
+        getEmployeeData(raw.opening.employee),
+        getEmployeeData(raw.opening.approvalEmployee),
+        getEmployeeData(raw.closing.employee),
+        getEmployeeData(raw.closing.approvalEmployee)
+    ]);
 
-    let conditions = [];
+    if (raw.opening.date) { raw.opening.date = toMillis(raw.opening.date) }
 
-    if (startDate !== null || endDate !== null) {
-        conditions.push(where('cashCount.opening.date', '>=', startDate))
-        conditions.push(where('cashCount.opening.date', '<=', endDate))
+    return {
+        ...raw,
+        updatedAt: toMillis(raw.updatedAt),
+        createdAt: toMillis(raw.createdAt),
+        opening: {
+            ...raw.opening,
+            employee: opener,
+            approvalEmployee: openerApproval,
+        },
+        closing: {
+            ...raw.closing,
+            date: toMillis(raw.closing.date),
+            employee: closer,
+            approvalEmployee: closerApproval
+        },
+        sales: []
     }
-
-    // Añade condiciones específicas basadas en el rol del usuario
-    if (user.role === "cashier" && userRef) {
-        conditions.push(where('cashCount.opening.employee', '==', userRef));
-    }
-
-    // Construye la consulta final a partir del array de condiciones
-    const q = query(cashCountsRef, ...conditions, orderBy('cashCount.opening.date', 'desc'));
-
-    onSnapshot(q, (snapshot) => {
-        const cashCountsArray = snapshot.docs.map(async doc => {
-            let { cashCount } = doc.data()
-            let data = cashCount
-
-            const employeeData = await getEmployeeData(data.opening.employee);
-            const approvalEmployeeData = await getEmployeeData(data.opening.approvalEmployee);
-            const closingEmployeeData = await getEmployeeData(data.closing.employee);
-            const closingApprovalEmployeeData = await getEmployeeData(data.closing.approvalEmployee);
-
-            if (data.opening.date) { data.opening.date = DateUtils.convertTimestampToMillis(data.opening.date) }
-            delete data.sales
-            delete data.stateHistory
-
-            data = {
-                ...data,
-                updatedAt: DateUtils.convertTimestampToMillis(data.updatedAt),
-                createdAt: DateUtils.convertTimestampToMillis(data.createdAt),
-                opening: {
-                    ...data.opening,
-                    employee: employeeData,
-                    approvalEmployee: approvalEmployeeData,
-
-                },
-                closing: {
-                    ...data.closing,
-                    date: data.closing.date ? DateUtils.convertTimestampToMillis(data.closing.date) : null,
-                    employee: closingEmployeeData,
-                    approvalEmployee: closingApprovalEmployeeData
-                },
-                sales: []
-            }
-            return data
-        })
-
-        Promise.all(cashCountsArray)
-            .then((cashCounts) => {
-                setCashCounts(cashCounts)
-            }).catch((error) => {
-            })
-    })
 }
 
-export const fbGetCashCountsDefault = async (user, setCashCounts) => {
-    if (!user || !user?.businessID) { return }
-    const cashCountsRef = collection(db, 'businesses', user?.businessID, 'cashCounts')
+const convertToJSDate = (ms) => ms ? DateTime.fromMillis(ms).toJSDate() : null;
 
-    const userId = user?.uid
-    const userRef = userId ? doc(db, "users", userId) : null
-    // const startDate = DateTime.now().startOf('day').toJSDate();
-    // const endDate = DateTime.now().endOf('day').toJSDate();
+export const fbListenCashCounts = (
+    user,
+    setCashCounts,
+    dateRange,
+    filterState,
+    searchTerm
+) => {
+    if (!user?.businessID) return () => { };
+    const ref = collection(db, 'businesses', user.businessID, 'cashCounts');
 
-    let conditions = [];
+    const startDateJS = convertToJSDate(dateRange?.startDate);
+    const endDateJS = convertToJSDate(dateRange?.endDate);
 
 
-    // conditions.push(where('cashCount.opening.date', '>=', startDate))
-    // conditions.push(where('cashCount.opening.date', '<=', endDate))
+    const userDocRef = filterState.filters.user ? doc(db, "users", filterState.filters.user) : null;
+    const constraints = buildQueryConstraints({ 
+        startDate: startDateJS, 
+        endDate: endDateJS, 
+        status: filterState.filters.status,
+        userRef: userDocRef,
+        sortAsc: filterState.isAscending,
+    });
+    const q = query(ref, ...constraints);
 
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+        if (snapshot.empty) {
+            setCashCounts([]);
+            return;
+        }
+        const cashCountsArray = snapshot.docs.map(async d => {
+            return transformCashCount(d.data().cashCount);
+        });
+        const parsed = await Promise.all(cashCountsArray);
 
-    // Añade condiciones específicas basadas en el rol del usuario
+        if (searchTerm && searchTerm.trim() !== "") {
+            const lowerSearchTerm = searchTerm.toLowerCase();
+            const searched = parsed.filter(cc => {
+                return (
+                    cc.incrementNumber?.toString().toLowerCase().includes(lowerSearchTerm) ||
+                    cc.opening?.employee?.name?.toLowerCase().includes(lowerSearchTerm) ||
+                    cc.state?.toLowerCase().includes(lowerSearchTerm)
+                );
+            });
+            setCashCounts(searched);
+        } else {
+            setCashCounts(parsed);
+        }
+    }, (error) => {
+        console.error("Error listening to cash counts:", error);
+        setCashCounts([]);
+    });
 
-    if (user.role === "cashier" && userRef) {
-        conditions.push(where('cashCount.opening.employee', '==', userRef));
-    }
-    conditions.push(where('cashCount.state', '==', 'open'))
-
-    // Construye la consulta final a partir del array de condiciones
-    const q = query(cashCountsRef, ...conditions, orderBy('cashCount.opening.date', 'desc'));
-
-    onSnapshot(q, (snapshot) => {
-        const cashCountsArray = snapshot.docs.map(async doc => {
-            let { cashCount } = doc.data()
-            let data = cashCount
-
-            const employeeData = await getEmployeeData(data.opening.employee);
-            const approvalEmployeeData = await getEmployeeData(data.opening.approvalEmployee);
-            const closingEmployeeData = await getEmployeeData(data.closing.employee);
-            const closingApprovalEmployeeData = await getEmployeeData(data.closing.approvalEmployee);
-
-            if (data.opening.date) { data.opening.date = DateUtils.convertTimestampToMillis(data.opening.date) }
-            delete data.sales
-            delete data.stateHistory
-
-            data = {
-                ...data,
-                updatedAt: DateUtils.convertTimestampToMillis(data.updatedAt),
-                createdAt: DateUtils.convertTimestampToMillis(data.createdAt),
-                opening: {
-                    ...data.opening,
-                    employee: employeeData,
-                    approvalEmployee: approvalEmployeeData,
-
-                },
-                closing: {
-                    ...data.closing,
-                    date: data.closing.date ? DateUtils.convertTimestampToMillis(data.closing.date) : null,
-                    employee: closingEmployeeData,
-                    approvalEmployee: closingApprovalEmployeeData
-                },
-                sales: []
-            }
-            return data
-        })
-
-        Promise.all(cashCountsArray)
-            .then((cashCounts) => {
-                setCashCounts(cashCounts)
-            }).catch((error) => {
-                console.error(error)
-            })
-
-    })
+    return unsubscribe;
 }

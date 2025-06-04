@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit'
 import { increaseSequence } from './increaseSequence'
 import { fbUpdateTaxReceipt } from '../../firebase/taxReceipt/fbUpdateTaxReceipt'
+import { serializeFirestoreData } from '../../utils/serialization/serializeFirestoreData'
 
 export const updateComprobante = (state, name) => {
     const comprobante = state.data.find((item) => item.data.name === name);
@@ -50,24 +51,37 @@ const initialState = {
     data: [],
     ncfCode: null,
     ncfType: "",
+    availableTypes: [] // Lista de tipos de comprobantes disponibles
 }
 
 export const taxReceiptSlice = createSlice({
     name: 'taxReceipt',
     initialState,
-    reducers: {
-        getTaxReceiptData: (state, action) => {
-            state.data = action.payload
+    reducers: {        getTaxReceiptData: (state, action) => {
+            // Serialize the payload to ensure no Firestore timestamps remain
+            const serializedPayload = serializeFirestoreData(action.payload);
+            state.data = serializedPayload;
+            // Actualizar la lista de tipos de comprobantes disponibles
+            state.availableTypes = serializedPayload.map(item => item.data.name);
         },
         IncreaseEndConsumer: (state, action) => {
-            const name = action.payload;
             if (state.settings.taxReceiptEnabled) {
-                updateComprobante(state, 'CONSUMIDOR FINAL');
+                // Si se proporciona un nombre específico del comprobante, usar ese
+                const name = action.payload || 'CONSUMIDOR FINAL';
+                updateComprobante(state, name);
             }
         },
-        IncreaseTaxCredit: (state) => {
+        IncreaseTaxCredit: (state, action) => {
             if (state.settings.taxReceiptEnabled) {
-                updateComprobante(state, 'CREDITO FISCAL');
+                // Si se proporciona un nombre específico del comprobante, usar ese
+                const name = action.payload || 'CREDITO FISCAL';
+                updateComprobante(state, name);
+            }
+        },
+        // Nuevo action para aumentar cualquier comprobante por su nombre
+        IncreaseSpecificReceipt: (state, action) => {
+            if (state.settings.taxReceiptEnabled && action.payload) {
+                updateComprobante(state, action.payload);
             }
         },
         toggleTaxReceiptSettings: (state, action) => {
@@ -87,7 +101,16 @@ export const taxReceiptSlice = createSlice({
     }
 })
 
-export const { getTaxReceiptData, clearTaxReceiptData, IncreaseEndConsumer, IncreaseTaxCredit, selectTaxReceiptType, updateTaxCreditInFirebase, toggleTaxReceiptSettings } = taxReceiptSlice.actions;
+export const { 
+    getTaxReceiptData, 
+    clearTaxReceiptData, 
+    IncreaseEndConsumer, 
+    IncreaseTaxCredit,
+    IncreaseSpecificReceipt, 
+    selectTaxReceiptType, 
+    updateTaxCreditInFirebase, 
+    toggleTaxReceiptSettings 
+} = taxReceiptSlice.actions;
 
 //selectors
 export default taxReceiptSlice.reducer
@@ -97,3 +120,4 @@ export const selectNcfType = (state) => state.taxReceipt.ncfType;
 export const selectNcfCode = (state) => state.taxReceipt.ncfCode;
 export const selectTaxReceiptEnabled = (state) => state.taxReceipt.settings.taxReceiptEnabled;
 export const selectTaxReceipt = (state) => state.taxReceipt;
+export const selectAvailableReceiptTypes = (state) => state.taxReceipt.availableTypes;

@@ -6,11 +6,12 @@ const initialState = {
         description: '',
         amount: 0,
         dates: {
-            expenseDate: '',
+            expenseDate: Date.now(),
             createdAt: '',
         },
         receiptImageUrl: '',
-        category: "",
+        category: "",      // Nombre de la categoría
+        categoryId: "",    // ID de la categoría
     },
 };
 
@@ -18,8 +19,16 @@ export const expenseManagementSlice = createSlice({
     name: 'expenseManagement',
     initialState,
     reducers: {
-        setExpense: (state, action) => {
-            state.expense = { ...state.expense, ...action.payload };
+        setExpense: (state, { payload }) => {
+            state.expense = {
+                ...state.expense,
+                ...payload,
+                dates: { ...state.expense.dates, ...payload.dates },
+                invoice: { ...state.expense.invoice, ...payload.invoice },
+                payment: { ...state.expense.payment, ...payload.payment },
+                attachments:
+                    payload.attachments ?? state.expense.attachments,
+            };
         },
         resetExpense: state => {
             state.expense = initialState.expense;
@@ -31,7 +40,7 @@ export const expenseManagementSlice = createSlice({
     }
 });
 
-export const { setExpense,  resetExpense, setExpenseMode } = expenseManagementSlice.actions;
+export const { setExpense, resetExpense, setExpenseMode } = expenseManagementSlice.actions;
 export default expenseManagementSlice.reducer;
 
 export const selectExpense = state => state.expenseManagement;

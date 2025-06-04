@@ -1,38 +1,13 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { initialState, defaultDelivery } from "./default/default";
 import { GenericClient } from "../clientCart/clientCartSlice";
-import { getProductsPrice, getProductsTax, getProductsTotalPrice, getTax, getTotalItems } from "../../utils/pricing";
+import { roundDecimals } from "../../utils/pricing";
 import { nanoid } from "nanoid";
-
-const limitTwoDecimal = (number) => {
-    return Number(number.toFixed(2))
-}
+import { updateAllTotals } from "./utils/updateAllTotals";
 
 const calculateChange = (payment, totalPurchase) => (payment - totalPurchase);
 
-// Función agrupadora para actualizar todos los totales
-const updateAllTotals = (state, paymentValue = null) => {
-    const taxReceiptEnabled = state.settings.taxReceipt.enabled;
-    const products = state.data.products;
-    const discountPercentage = state?.data?.discount?.value;
-    const delivery = state?.data?.delivery?.value;
-    state.data.totalPurchase.value = getProductsTotalPrice(products, discountPercentage, delivery, taxReceiptEnabled);
-    state.data.totalTaxes.value = getProductsTax(products, taxReceiptEnabled);
-    state.data.totalShoppingItems.value = getTotalItems(products);
-    state.data.totalPurchaseWithoutTaxes.value = getProductsPrice(products);
-    const cashPaymentMethod = state.data.paymentMethod
-        .findIndex((method) => method.method === 'cash' && method.status === true);
-
-    if (cashPaymentMethod !== -1) {
-        state.data.paymentMethod[cashPaymentMethod].value = state.data.totalPurchase.value;
-    }
-
-    state.data.payment.value = paymentValue !== null ? paymentValue : state.data.totalPurchase.value;
-    state.data.change.value = calculateChange(state.data.payment.value, state.data.totalPurchase.value);
-};
-
-
-const cartSlice = createSlice({
+export const cartSlice = createSlice({
     name: 'factura',
     initialState,
     reducers: {
@@ -40,14 +15,14 @@ const cartSlice = createSlice({
             const isOpen = state.isOpen;
             state.isOpen = !isOpen;
         },
-        setCart: (state, actions) => {
+        loadCart: (state, actions) => {
             const cart = actions.payload;
             if (cart?.id) {
                 state.data = cart;
             }
-            updateAllTotals(state)
+
         },
-        getClient: (state, actions) => {
+        setClient: (state, actions) => {
             const client = actions.payload;
             if (client?.id) {
                 state.data.client = client;
@@ -57,12 +32,12 @@ const cartSlice = createSlice({
             } else {
                 state.data.delivery = defaultDelivery
             }
-            updateAllTotals(state)
+
         },
         setDefaultClient: (state) => {
             state.data.client = GenericClient
         },
-        addPaymentValue: (state, actions) => {
+        setPaymentAmount: (state, actions) => {
             const paymentValue = actions.payload
             const isPreOrderEnabled = state.settings.isPreOrderEnabled;
 
@@ -75,11 +50,21 @@ const cartSlice = createSlice({
                 state.data.payment.value = Number(paymentValue)
                 paymentMethod.value = Number(paymentValue)
             }
-            updateAllTotals(state, paymentValue)
+
         },
         changePaymentValue: (state, actions) => {
             const paymentValue = actions.payload
             state.data.payment.value = Number(paymentValue)
+        },
+        updateProductFields: (state, action) => {
+            const { id, data } = action.payload;
+            const product = state.data.products.find(
+                p => p.id === id || p.cid === id
+            );
+            if (product) {
+                Object.assign(product, data);
+            }
+
         },
         addTaxReceiptInState: (state, actions) => {
             state.data.NCF = actions.payload
@@ -100,21 +85,27 @@ const cartSlice = createSlice({
         addPaymentMethod: (state, actions) => {
             const data = actions.payload
             state.data.paymentMethod = data
-        },
-        setPaymentMethod: (state, actions) => {
-            const paymentMethod = actions.payload
-            const index = state.data.paymentMethod.findIndex((method) => method.method === paymentMethod.method);
-            if (index !== -1) {
-                state.data.paymentMethod[index] = paymentMethod;
+        },        setPaymentMethod: (state, actions) => {
+            try {
+                const paymentMethod = actions.payload;
+                // Asegurarse de que paymentMethod tenga un value numérico
+                if (paymentMethod.value !== undefined) {
+                    paymentMethod.value = Number(paymentMethod.value) || 0;
+                }
+                
+                const index = state.data.paymentMethod.findIndex(
+                    (method) => method.method === paymentMethod.method
+                );
+                
+                if (index !== -1) {
+                    state.data.paymentMethod[index] = paymentMethod;
+                }
+                
+                // Los totales se calcularán a través del middleware cartTotalsListener
+                // que llama a recalcTotals() después de cada cambio en setPaymentMethod
+            } catch (error) {
+                console.error("Error in setPaymentMethod:", error);
             }
-            const paymentMethods = state.data.paymentMethod;
-            const getActivePaymentMethods = () => paymentMethods
-                .filter((method) => method.status === true)
-                .reduce((acc, method) => acc + method.value, 0);
-
-            state.data.payment.value = getActivePaymentMethods();
-            const setChange = calculateChange(state.data.payment.value, state.data.totalPurchase.value);
-            state.data.change.value = setChange;
         },
         toggleReceivableStatus: (state, actions) => {
             const value = actions.payload
@@ -142,7 +133,6 @@ const cartSlice = createSlice({
                     product.pricing.price = price
                 }
             }
-            updateAllTotals(state)
         },
         changePaymentMethod: (state) => {
             const paymentMethod = state.data.paymentMethod
@@ -161,31 +151,31 @@ const cartSlice = createSlice({
             const products = state.data.products;
 
             if (checkingID) {
-                if(checkingID?.weightDetail?.isSoldByWeight){
+                if (checkingID?.weightDetail?.isSoldByWeight) {
                     const productData = {
                         ...product,
                         cid: nanoid(8)
                     }
                     state.data.products = [...products, productData]
-                }else{
-                    
+                } else {
+
                     // Object.assign(checkingID, product);
                     checkingID.productStockId = product.productStockId;
                     checkingID.batchId = product.batchId;
                     checkingID.stock = product.stock;
-                    checkingID.amountToBuy +=  1;
+                    checkingID.amountToBuy += 1;
                 }
-              
-            } else { 
+
+            } else {
                 const productData = {
                     ...product,
                     cid: checkingID?.weightDetail?.isSoldByWeight
                         ? nanoid(8)
                         : product.id,
+                    insurance: product.insurance || { mode: null, value: 0 }
                 }
                 state.data.products = [...products, productData]
             }
-            updateAllTotals(state)
         },
         deleteProduct: (state, action) => {
             const productFound = state.data.products.find((product) => product.cid === action.payload)
@@ -196,7 +186,6 @@ const cartSlice = createSlice({
                 state.data.id = null
                 state.data.products = []
             }
-            updateAllTotals(state)
         },
         onChangeValueAmountToProduct: (state, action) => {
             const { id, value } = action.payload
@@ -204,7 +193,6 @@ const cartSlice = createSlice({
             if (productFound) {
                 productFound.amountToBuy = Number(value)
             }
-            updateAllTotals(state)
         },
         addAmountToProduct: (state, action) => {
             const { id } = action.payload
@@ -212,7 +200,6 @@ const cartSlice = createSlice({
             if (productFound) {
                 productFound.amountToBuy = productFound.amountToBuy + 1;
             }
-            updateAllTotals(state)
         },
         diminishAmountToProduct: (state, action) => {
             const { id } = action.payload
@@ -223,38 +210,43 @@ const cartSlice = createSlice({
                     state.data.products.splice(state.data.products.indexOf(productFound), 1)
                 }
             }
-            updateAllTotals(state)
         },
-        // CancelShipping: (state) => state = initialState,
-        CancelShipping: (state) => {
-            return {
-                ...initialState,
-                settings: {
-                    ...initialState.settings,
-                    ...state.settings,
-                    billing: {
-                        ...state.settings.billing
-                    }
-                }
+         setCashPaymentToTotal: (state) => {
+            const total = state.data.totalPurchase.value;
+            // Ajustar array de métodos de pago
+            state.data.paymentMethod = state.data.paymentMethod.map(m => ({
+                ...m,
+                value: m.method === 'cash' ? total : 0,
+                status: m.method === 'cash'
+            }));
+            // También actualizar payment.value y change
+            state.data.payment.value = total;
+            state.data.change.value  = 0;
+        },
+        resetCart: (state) => ({
+
+            ...initialState,
+            settings: {
+                ...initialState.settings,
+                ...state.settings,
+                billing: { ...state.settings.billing }
             }
-        },
+        }),
         changeProductWeight: (state, action) => {
             const { id, weight } = action.payload
             const product = state.data.products.find((product) => product.cid === id)
             if (product) {
                 product.weightDetail.weight = weight
             }
-            updateAllTotals(state)
         },
         totalPurchaseWithoutTaxes: (state) => {
             const ProductsSelected = state.data.products;
             const result = ProductsSelected.reduce((total, product) => total + product.cost.total, 0);
-            state.data.totalPurchaseWithoutTaxes.value = limitTwoDecimal(result);
+            state.data.totalPurchaseWithoutTaxes.value = roundDecimals(result);
         },
         addDiscount: (state, action) => {
             const value = action.payload;
             state.data.discount.value = Number(value);
-            updateAllTotals(state)
         },
         addSourceOfPurchase: (state, actions) => {
             const source = actions.payload
@@ -276,14 +268,50 @@ const cartSlice = createSlice({
             state.settings.billing.isLoading = isLoading;
             state.settings.billing.isError = isError;
         },
+        updateProductInsurance: (state, action) => {
+            const { id, mode, value } = action.payload;
+            const product = state.data.products.find(p => p.id === id || p.cid === id);
+            if (product) {
+                product.insurance = { mode, value };
+            }
+        },
+        updateInsuranceStatus: (state, action) => {
+            state.data.insuranceEnabled = action.payload;
+
+            if (!action.payload) {
+                state.data.products.forEach(product => {
+                    if (product.insurance) {
+                        product.insurance = { mode: null, value: 0 };
+                    }
+                });
+            }
+        },        recalcTotals: (state, action) => {
+            const paymentValue = action.payload !== undefined ? Number(action.payload) : null;
+            updateAllTotals(state, paymentValue);
+        },        addInvoiceComment: (state, action) => {
+            state.data.invoiceComment = action.payload;
+        },
+        deleteInvoiceComment: (state) => {
+            state.data.invoiceComment = '';
+        },
+        updateProductDiscount: (state, action) => {
+            const { id, discount } = action.payload;
+            const product = state.data.products.find(p => p.id === id || p.cid === id);
+            if (product) {
+                product.discount = discount;
+                // Recalcular totales
+                updateAllTotals(state);
+            }
+        },
+
     }
 })
 
 export const {
     addAmountToProduct,
     setCartId,
-    getClient,
-    addPaymentValue,
+    setClient,
+    setPaymentAmount,
     addPaymentMethod,
     addDiscount,
     addPaymentMethodAutoValue,
@@ -291,9 +319,10 @@ export const {
     addProduct,
     addSourceOfPurchase,
     addTaxReceiptInState,
-    CancelShipping,
+    resetCart,
     changeProductPrice,
     changeProductWeight,
+    setCashPaymentToTotal,
     deleteProduct,
     setPaymentMethod,
     toggleReceivableStatus,
@@ -301,12 +330,13 @@ export const {
     onChangeValueAmountToProduct,
     selectClientInState,
     setChange,
-    setCart,
+    loadCart,
     toggleInvoicePanelOpen,
     totalPurchase,
     totalPurchaseWithoutTaxes,
     totalShoppingItems,
     setTaxReceiptEnabled,
+    updateProductFields,
     totalTaxes,
     updateClientInState,
     saveBillInFirebase,
@@ -315,6 +345,12 @@ export const {
     toggleInvoicePanel,
     setDefaultClient,
     setBillingSettings,
+    updateProductInsurance,
+    recalcTotals,
+    updateInsuranceStatus,
+    addInvoiceComment,
+    deleteInvoiceComment,
+    updateProductDiscount
 } = cartSlice.actions
 
 export const SelectProduct = (state) => state.cart.data.products;
@@ -333,31 +369,41 @@ export const SelectNCF = (state) => state.cart.data.NCF;
 export const SelectCartPermission = () => state.cart.permission
 export const SelectCartIsOpen = (state) => state.cart.isOpen
 export const SelectCartData = (state) => state.cart.data
+export const SelectInvoiceComment = (state) => state.cart.data.invoiceComment
 export const SelectSettingCart = (state) => state.cart.settings
 export const selectCart = (state) => state.cart
+export const selectInsuranceEnabled = (state) => state.cart.data.insuranceEnabled;
+export const selectProductsWithIndividualDiscounts = (state) => 
+    state.cart.data.products.filter(product => product.discount && product.discount.value > 0);
+export const selectTotalIndividualDiscounts = (state) => {
+    const products = state.cart.data.products;
+    const taxReceiptEnabled = state.taxReceipt?.enabled ?? true;
+    
+    return products.reduce((total, product) => {
+        if (product.discount && product.discount.value > 0) {
+            const productPrice = product.pricing?.price || product.price || 0;
+            const taxPercentage = Number(product.pricing?.tax) || 0;
+            const quantity = product.amountToBuy || 1;
+            
+            // Precio unitario con impuestos
+            const unitPriceWithTax = taxReceiptEnabled ? 
+                productPrice * (1 + taxPercentage / 100) : 
+                productPrice;
+            const totalPriceWithTax = unitPriceWithTax * quantity;
+            
+            let discountAmount = 0;
+            
+            if (product.discount.type === 'percentage') {
+                discountAmount = totalPriceWithTax * (product.discount.value / 100);
+            } else {
+                // Para monto fijo, el descuento ya considera impuestos
+                discountAmount = product.discount.value;
+            }
+            
+            return total + discountAmount;
+        }
+        return total;
+    }, 0);
+};
 
 export default cartSlice.reducer
-
-
-
-
-
-
-// const timestamp = new Date().toISOString();
-
-// state.data.history.push({
-//     status: newStatus,
-//     timestamp
-// });
-// state.data.status = newStatus;
-
-// if (newStatus === 'preorder') {
-//     state.data.isPreOrder = true;
-//     state.data.preOrderDate = new Date().toISOString();
-// } else if (newStatus === 'completed') {
-//     state.data.isPreOrder = false;
-//     state.data.preOrderDate = null;
-// } else if (newStatus === 'canceled' || newStatus === 'deleted') {
-//     state.data.isPreOrder = false;
-//     state.data.preOrderDate = null;
-// }

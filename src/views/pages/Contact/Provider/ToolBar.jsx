@@ -1,7 +1,8 @@
 
 
 import React from 'react'
-import { CgMathPlus } from 'react-icons/cg'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import { useDispatch } from 'react-redux'
 import styled from 'styled-components'
 import { OPERATION_MODES } from '../../../../constants/modes'
@@ -19,11 +20,10 @@ export const ToolBar = () => {
     return (
         <Container>
             <Wrapper>   
-                <OrderFilter></OrderFilter>
-                <Button
+                <OrderFilter></OrderFilter>                <Button
                     borderRadius='normal'
                     bgcolor='primary'
-                    startIcon={<CgMathPlus/>}
+                    startIcon={<FontAwesomeIcon icon={faPlus}/>}
                     title={` Proveedores`}
                     onClick={openModal}
                 />

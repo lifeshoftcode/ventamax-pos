@@ -3,7 +3,7 @@ import { DateTime } from "luxon";
 // Calcular el total de ventas por mes
 export const getTotalSalesPerMonth = (invoices) => {
   const salesPerMonth = {};
-  console.log(invoices)
+  
   invoices.forEach(invoice => {
     const date = DateTime.fromMillis(invoice.data.date.seconds * 1000);
     const monthYearStr = date.toFormat('yyyy-MM');

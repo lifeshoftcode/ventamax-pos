@@ -1,5 +1,6 @@
 import React from 'react'
-import { MdClose } from 'react-icons/md'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faTimes } from '@fortawesome/free-solid-svg-icons'
 import styled from 'styled-components'
 import { Button } from '../../../templates/system/Button/Button'
 
@@ -7,7 +8,7 @@ export const Header = () => {
   return (
   <Container>
     <Title>Detalle de la orden</Title>
-    <Button title={<MdClose/>} />
+    <Button title={<FontAwesomeIcon icon={faTimes}/>} />
   </Container>
   )
 }

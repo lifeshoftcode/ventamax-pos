@@ -16,7 +16,7 @@ export const LeftSide = ({ calculationIsOpen, setCalculationIsOpen }) => {
   return (
     <Container>
       <CashDenominationCalculator
-        inputDisabled
+        readOnly
         banknotes={banknotes}
         setBanknotes={handleChangesBanknotes}
         title={'Apertura'}
@@ -43,9 +43,10 @@ export const LeftSide = ({ calculationIsOpen, setCalculationIsOpen }) => {
         ) : null
       }
       <Comments
-        label='Comentarios de apertura'
+        label='Comentario de apertura'
         placeholder='Escribe aquí ...'
-        disabled
+        readOnly
+        rows={6}
         value={CashReconciliation.opening.comments}
       />
 

@@ -7,10 +7,9 @@ import { EditButton } from '../../Button/EditButton'
 
 export const IngredientCard = ({item}) => {
     const DeleteIngredient = (item) => {
-        deleteIngredientTypePizza(item)
-    }
+        deleteIngredientTypePizza(item)    }
     return (
-        <Item onClick={()=> console.log(item)}>
+        <Item>
             <span>{item.name}</span>
             <span>{item.cost}</span>
             <ButtonGroup>

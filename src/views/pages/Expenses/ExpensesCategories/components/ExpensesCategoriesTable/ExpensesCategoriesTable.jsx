@@ -7,10 +7,8 @@ import { filterData } from '../../../../../../hooks/search/useSearch';
 // import { filterData } from '../../../../../hooks/search/useSearch'
 
 export const ExpensesCategoriesTable = ({ searchTerm }) => {
-
   const { categories } = useFbGetExpensesCategories();
   const filterCategories = filterData(categories, searchTerm);
-  console.log(categories)
   return (
     <Container>
       <Body>

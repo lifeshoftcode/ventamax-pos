@@ -1,115 +1,135 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import * as antd from 'antd';
-const {
-  Card,
-  Tabs,
-  Radio,
-  Button,
-  Modal,
-  Menu,
-  Dropdown,
-} = antd;
+import { useState, useEffect } from 'react'; // Removed useRef
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  CreditCardOutlined,
-  DownOutlined,
-} from '@ant-design/icons';
-import BillingConfig from './configs/BillingConfig'; // Import the new InvoiceConfig component
-import { Header } from './components/Header/Header';
-import { useNavigate } from 'react-router-dom';
+  faCreditCard,
+  faBuilding,
+  faFileInvoice,
+  faUsers,
+  faInfoCircle,
+  faQuestionCircle // Add icon for Help/Other group
+} from '@fortawesome/free-solid-svg-icons';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux'; // Import useSelector
+import { Nav } from '../../templates/system/Nav/Nav';
+import { MenuApp } from '../../templates/MenuApp/MenuApp';
+import ROUTES_NAME from '../../../routes/routesName';
+// Import the factory instead of the direct selector
+import { makeSelectPreviousRelevantRoute } from '../../../features/navigation/navigationSlice';
 
-const StyledCard = styled(Card)`
-  max-width: 800px;
-  margin: 20px auto;
-`;
-
-const StyledTabs = styled(Tabs)`
-  .ant-tabs-nav {
-    justify-content: center;
-  }
-`;
-
-const TabContent = styled.div`
-  margin-top: 16px;
-`;
-
-const tabItems = [
-  {
-    key: 'billing',
-    icon: <CreditCardOutlined />,
-    label: 'Ventas y Facturación',
-    content: <BillingConfig />,
-  },
-];
+// Create a specific selector instance using the factory
+const selectPreviousRouteIgnoringConfig = makeSelectPreviousRelevantRoute('/general-config');
 
 export default function GeneralConfig() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const currentPath = location.pathname;
   const [activeTab, setActiveTab] = useState('billing');
-  const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
-  const [isModalVisible, setIsModalVisible] = useState(false); // Definir isModalVisible
-  const navigate = useNavigate(); // Inicializar navigate
+  const previousRelevantRoute = useSelector(selectPreviousRouteIgnoringConfig);
 
+  // Effect to determine the active tab based on current path
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobileView(window.innerWidth < 768);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    if (currentPath.includes('billing')) {
+      setActiveTab('billing');
+    } else if (currentPath.includes('business')) {
+      setActiveTab('business');
+    } else if (currentPath.includes('tax-receipt')) {
+      setActiveTab('taxReceipt');
+    } else if (currentPath.includes('users')) {
+      setActiveTab('users');
+    } else if (currentPath.includes('app-info')) {
+      setActiveTab('appInfo');
+    } else if (currentPath.includes('/general-config')) { // Default case if directly on /general-config
+      setActiveTab('billing');
+      navigate(ROUTES_NAME.SETTING_TERM.GENERAL_CONFIG_BILLING, { replace: true });
+    }
+  }, [currentPath, navigate]);
 
-  const handleBack = () => {
-    navigate(-1);
+  // Updated handleBackClick to use the route from Redux state
+  const handleBackClick = () => {
+    const targetPath = previousRelevantRoute?.pathname || '/home'; // Use pathname from selector or default to /home
+    navigate(targetPath);
   };
 
-  const menu = (
-    <Menu
-      onClick={(e) => {
-        setActiveTab(e.key);
-        setIsModalVisible(true); // Abrir modal al seleccionar una pestaña
-      }}
-      items={tabItems.map(item => ({
-        key: item.key,
-        icon: item.icon,
-        label: item.label,
-      }))} />
-  );
+  const handleTabChange = (key) => {
+    switch (key) {
+      case 'billing':
+        navigate(ROUTES_NAME.SETTING_TERM.GENERAL_CONFIG_BILLING);
+        break;
+      case 'business':
+        navigate(ROUTES_NAME.SETTING_TERM.GENERAL_CONFIG_BUSINESS);
+        break;
+      case 'taxReceipt':
+        navigate(ROUTES_NAME.SETTING_TERM.GENERAL_CONFIG_TAX_RECEIPT);
+        break;
+      case 'users':
+        navigate(ROUTES_NAME.SETTING_TERM.GENERAL_CONFIG_USERS);
+        break;
+      case 'appInfo':
+        navigate(ROUTES_NAME.SETTING_TERM.GENERAL_CONFIG_APP_INFO);
+        break;
+      default:
+        navigate(ROUTES_NAME.SETTING_TERM.GENERAL_CONFIG_BILLING);
+    }
+  };
 
-  const handleSave = () => {
-    message.success('Configuración guardada con éxito');
-  }
+
+  // Update menuItems: change group for appInfo and remove its groupType
+  const menuItems = [
+    {
+      key: 'business',
+      icon: <FontAwesomeIcon icon={faBuilding} />,
+      label: 'Datos de la Empresa',
+    },
+    {
+      key: 'billing',
+      icon: <FontAwesomeIcon icon={faCreditCard} />,
+      label: 'Ventas y Facturación',
+      group: 'basic',
+      groupLabel: 'Configuración Básica',
+      groupType: 'labelled'
+    },
+    {
+      key: 'taxReceipt',
+      icon: <FontAwesomeIcon icon={faFileInvoice} />,
+      label: 'Comprobante Fiscal',
+      group: 'basic',
+      groupLabel: 'Configuración Básica',
+      groupType: 'labelled'
+    },
+    {
+      key: 'users',
+      icon: <FontAwesomeIcon icon={faUsers} />,
+      label: 'Administración de Usuarios',
+      group: 'advanced', // Keep group key distinct if needed, or merge if desired
+      groupLabel: 'Configuración Avanzada',
+      groupType: 'labelled'
+    },
+    // Change group for appInfo
+    {
+      key: 'appInfo',
+      icon: <FontAwesomeIcon icon={faInfoCircle} />,
+      label: 'Info de la Aplicación',
+      group: 'help', // New group key
+      groupLabel: 'Sistema', // New group label
+      groupIcon: <FontAwesomeIcon icon={faQuestionCircle} />, // Add icon for collapsible header
+      groupType: 'labelled' // Explicitly set or remove to use default collapsible
+    },
+  ];
+
 
   return (
-    <StyledCard bordered={false}>
-      {/* Header con controles de navegación */}
-      <Header
-        onBack={handleBack}
-        title="Configuración General"
-      />
-
-    {/* Contenido principal */}
- 
-        <>
-          <StyledTabs activeKey={activeTab} onChange={setActiveTab} centered>
-            {tabItems.map((item) => (
-              <Tabs.TabPane
-                tab={
-                  <span>
-                    {item.icon}
-                    {item.label}
-                  </span>
-                }
-                key={item.key}
-              />
-            ))}
-          </StyledTabs>
-          <TabContent>
-            {tabItems.find((item) => item.key === activeTab)?.content}
-          </TabContent>
-          {/* <Button type="primary" onClick={handleSave} style={{ marginTop: '16px' }}>
-            Guardar Configuración
-          </Button> */}
-        </>
-    
-    </StyledCard>
+    <Nav
+      menuItems={menuItems}
+      activeTab={activeTab}
+      onTabChange={handleTabChange}
+      header={
+        <MenuApp
+          onBackClick={handleBackClick} // Uses the updated logic
+          sectionName="Configuración General"
+        />
+      }
+    >
+      <Outlet />
+    </Nav>
   );
 }
-

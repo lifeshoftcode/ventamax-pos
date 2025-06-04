@@ -76,10 +76,8 @@ export const InvoiceForm = ({ }) => {
 
     if (key === 'client') {
       dispatch(changeClientInvoiceForm(value))
-      return
-    }
+      return    }
     if (key === 'discount') {
-      console.log(key)
       dispatch(changeValueInvoiceForm({ invoice: { [key]: { value: Number(value.discount.value) } } }));
       return
     }
@@ -93,7 +91,7 @@ export const InvoiceForm = ({ }) => {
       open={modal.isOpen}
       width={800}
       onCancel={handleCancel}
-      destroyOnClose
+      destroyOnHidden
       footer={[
         <div key="1" style={{
           float: 'left',

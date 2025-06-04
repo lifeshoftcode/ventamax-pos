@@ -1,13 +1,14 @@
 import { Button } from 'antd'
 import React from 'react'
-import { IoIosArrowBack } from 'react-icons/io'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import styled from 'styled-components'
 
 export const Header = () => {
     return (
         <Container>
             <Button
-                startIcon={<IoIosArrowBack />}
+                startIcon={<FontAwesomeIcon icon={faArrowLeft} />}
                 title='atrás'
                 variant='contained'
               

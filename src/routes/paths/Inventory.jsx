@@ -1,8 +1,7 @@
 import { Inventory, CategoryAdmin, MultimediaManager } from "../../views";
-import validateRouteAccess from "../requiereAuthProvider";
 import ROUTES_NAME from "../routesName";
 import { ProductOutflow } from "../../views/pages/Inventario/pages/ProductOutflow/ProductOutflow";
-import { ProductForm } from "../../views/pages/Inventario/pages/ProductForm/ProductForm";
+// import { ProductForm } from "../../views/pages/Inventario/pages/ProductForm/ProductForm";
 import { Warehouse } from "../../views/pages/Inventory/components/Warehouse/Warehouse";
 import ProductView from "../../views/component/modals/Product/ProductView";
 import DetailView from "../../views/pages/Inventory/components/Warehouse/components/DetailView/DetailView";
@@ -28,23 +27,23 @@ const {
 const Routes = [
     {
         path: INVENTORY_ITEMS,
-        element: validateRouteAccess(<Inventory />),
+        element: <Inventory />,
     },
     {
         path: PRODUCT,
-        element: validateRouteAccess(<ProductView />),
+        element: <ProductView />,
     },
     {
         path: CATEGORIES,
-        element: validateRouteAccess(<CategoryAdmin />),
+        element: <CategoryAdmin />,
     },
     {
         path: PRODUCT_IMAGES_MANAGER,
-        element: validateRouteAccess(<MultimediaManager />),
+        element: <MultimediaManager />,
     },
     {
         path: WAREHOUSES,
-        element: validateRouteAccess(<Warehouse />),
+        element: <Warehouse />,
         children: [
             { path: WAREHOUSE, element: <DetailView /> },
             
@@ -52,21 +51,21 @@ const Routes = [
             { path: SHELF, element: <DetailView /> },
             { path: ROW, element: <DetailView /> },
             { path: SEGMENT, element: <DetailView /> },
-            { path: PRODUCTS_STOCK, element: validateRouteAccess(<ProductStockOverview />) },
-            { path: PRODUCT_STOCK, element: validateRouteAccess(<ProductStockOverview />) },
+            { path: PRODUCTS_STOCK, element: <ProductStockOverview /> },
+            { path: PRODUCT_STOCK, element: <ProductStockOverview /> },
         ]
     },
     {
         path: INVENTORY_SERVICES,
-        element: validateRouteAccess(<Inventory />),
+        element: <Inventory />,
     },
     {
         path: PRODUCT_OUTFLOW,
-        element: validateRouteAccess(<ProductOutflow />),
+        element: <ProductOutflow />,
     },
     {
         path: CREATE_PRODUCT,
-        element: validateRouteAccess(<ProductForm />),
+        // element: <ProductForm />,
     }
 ]
 

@@ -1,48 +1,8 @@
 import { useFormatPrice } from "../../../../../hooks/useFormatPrice"
 import { CashCountStateIndicator } from "../../resource/CashCountStatusIndicator/CashCountStateIndicator"
 import { CashCountMetaData } from "../../page/CashRegisterClosure/components/Body/RightSide/CashCountMetaData"
-import * as antd from 'antd'
-import { fbLoadInvoicesForCashCount } from "../../../../../firebase/cashCount/fbLoadInvoicesForCashCount"
-import { useSelector } from "react-redux"
-import { selectUser } from "../../../../../features/auth/userSlice"
-import { fbUpdateCashCountTotals } from "../../../../../firebase/cashCount/fbUpdateCashCountTotals"
+import { Tag } from 'antd'
 import DateUtils from "../../../../../utils/date/dateUtils";
-const { Tag, Dropdown, Button } = antd
-import { MoreOutlined } from '@ant-design/icons';
-
-const ActionButtons = ({ data }) => {
-  const user = useSelector(selectUser)
-  const isOpen = data?.state === 'open' || data?.state === 'closing';
-  const id = data?.id;
-  const handleReCalculate = async () => {
-    const { invoices } = await fbLoadInvoicesForCashCount(user, id, 'all')
-    const cashCountMetaData = CashCountMetaData(data, invoices)
-    await fbUpdateCashCountTotals(user, id, cashCountMetaData)
-    antd.notification.success({ 
-      message: 'Totales Recalculados',
-      description: 'Los totales de la caja han sido recalculados con éxito',
-     })
-  }
-  const menu = {
-    items: [
-      {
-        label: "Recalcular Totales",
-        key: 1,
-        //icon: <EditOutlined />,
-        onClick: () => handleReCalculate()
-      },
-    ]
-  }
-
-  if (isOpen) {
-    return 
-  }
-  return (
-    <Dropdown menu={menu}>
-      <Button icon={<MoreOutlined />} />
-    </Dropdown>
-  )
-}
 
 export const tableConfig = () => {
   let columns = [
@@ -122,21 +82,20 @@ export const tableConfig = () => {
         )
       }
     },
-    {
-      accessor: 'action',
-      Header: 'Acción',
-      align: 'right',
-      maxWidth: '0.4fr',
-      minWidth: '100px',
-      clickable: false,
-      cell: ({ value }) => <ActionButtons data={value} />
-    }
+    // {
+    //   accessor: 'action',
+    //   Header: 'Acción',
+    //   align: 'right',
+    //   maxWidth: '0.4fr',
+    //   minWidth: '100px',
+    //   clickable: false,
+    //   cell: ({ value }) => <ActionButtons data={value} />
+    // }
   ]
   return columns
 }
 
 const GetTotalValue = ({ cashCount }) => {
-  console.log('cashCount----', cashCount)
   const { totalSystem, totalDiscrepancy } = CashCountMetaData(cashCount, cashCount?.invoices);
   return useFormatPrice(totalSystem)
 }

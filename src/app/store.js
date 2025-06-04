@@ -1,4 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
+
+import { totalsListener } from "./middleware/cartTotalsListener";
+
 import userReducer from '../features/auth/userSlice';
 import searchReducer from '../features/search/searchSlice';
 import cartReducer from '../features/cart/cartSlice';
@@ -14,6 +17,7 @@ import settingReducer from '../features/setting/settingSlice';
 import taxReceiptReducer from '../features/taxReceipt/taxReceiptSlice';
 import themeReducer from "../features/theme/themeSlice";
 import notificationReducer from "../features/notification/notificationSlice";
+import notificationCenterReducer from "../features/notification/notificationCenterSlice";
 import navReducer from "../features/nav/navSlice";
 import appReducer from "../features/appModes/appModeSlice";
 import loaderReducer from "../features/loader/loaderSlice";
@@ -49,6 +53,11 @@ import activeIngredientsReducer from "../features/activeIngredients/activeIngred
 import fileReducer from '../features/files/fileSlice';
 import productStockSimpleReducer from '../features/productStock/productStockSimpleSlice';
 import deleteProductStockReducer from '../features/productStock/deleteProductStockSlice';
+import insuranceReducer from '../features/insurance/insuranceSlice';
+import insuranceConfigModalReducer from '../features/insurance/insuranceConfigModalSlice';
+import insuranceAuthReducer from '../features/insurance/insuranceAuthSlice';
+import insuranceAccountsReceivableReducer from '../features/insurance/insuranceAccountsReceivableSlice';
+import navigationReducer from '../features/navigation/navigationSlice'
 
 export const store = configureStore({
   reducer: {
@@ -57,6 +66,7 @@ export const store = configureStore({
     nav: navReducer,
     loader: loaderReducer,
     alert: alertReducer,
+    navigation: navigationReducer,
     
     // Auth & Users
     user: userReducer,
@@ -65,10 +75,10 @@ export const store = configureStore({
     usersManagement: usersManagementSlice,
     
     // UI Components
-    modal: modalReducer,
-    theme: themeReducer,
+    modal: modalReducer,    theme: themeReducer,
     setting: settingReducer,
     notification: notificationReducer,
+    notificationCenter: notificationCenterReducer,
     userNotification: UserNotificationReducer,
     imageViewer: viewerImageReducer,
     uploadImg: uploadImgReducer,
@@ -95,6 +105,7 @@ export const store = configureStore({
     cashCountState: cashCountState,
     accountsReceivable: accountsReceivableReducer,
     accountsReceivablePayment: accountsReceivablePaymentReducer,
+    insuranceAccountsReceivable: insuranceAccountsReceivableReducer,
     ...expenseSlices,
     ...purchaseSlices,
     
@@ -119,7 +130,12 @@ export const store = configureStore({
     barcodePrintModal: barcodePrintModalReducer,
     productWeightEntryModalSlice: productWeightEntryModalSlice,
     files: fileReducer,
-  }
+    insurance: insuranceReducer,
+    insuranceConfigModal: insuranceConfigModalReducer,
+    insuranceAuth: insuranceAuthReducer,
+  },
+  middleware: (getDefault) => getDefault().prepend(totalsListener.middleware),
+  devTools: process.env.NODE_ENV !== "production",
 })
 
 export default store;

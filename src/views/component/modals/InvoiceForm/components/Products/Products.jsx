@@ -13,9 +13,8 @@ import { getTotalPrice } from '../../../../../../utils/pricing'
 export const Products = ({ invoice }) => {
     const dispatch = useDispatch()
     const [isProductListModalVisible, setProductListModalVisible] = useState(false)
-  
-   const {products} = useGetProducts()
-   console.log(products, "............")
+    const {products} = useGetProducts()
+   
     const columns = [
         {
             title: 'Producto',

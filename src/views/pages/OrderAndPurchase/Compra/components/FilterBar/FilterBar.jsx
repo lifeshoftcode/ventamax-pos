@@ -1,107 +1,112 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, useEffect, memo } from 'react'
 import styled from 'styled-components'
 import { Button, Tooltip, Input, Drawer } from 'antd'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { 
+import {
   faFilterCircleXmark,
-  faArrowUpAZ, 
+  faArrowUpAZ,
   faArrowDownAZ,
-  faMoneyBill,
 } from '@fortawesome/free-solid-svg-icons'
 import { StatusSelector } from './components/StatusSelector'
 import { useFilterBar } from './hooks/useFilterBar'
 import { Selector } from '../../../../../../components/common/Selector/Selector';
 
-export const FilterBar = React.memo(({ config = {}, onChange, searchTerm, onSearchTermChange, dataConfig = {} }) => {
+export const FilterBar = memo(({
+  config = {},
+  onChange,
+  searchTerm,
+  onSearchTermChange,
+  dataConfig = {}
+}) => {
   const { state, setFilters, setSorting, resetAll } = useFilterBar(
     config.defaultValues,
     config.defaultSort
   );
+
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
 
   // When component mounts, notify parent of initial state
-  React.useEffect(() => {
+  useEffect(() => {
     onChange?.(state)
   }, [])
 
-  const handleFiltersChange = useCallback((newFilters) => {
-    setFilters(newFilters)
-    onChange?.({ ...state, filters: newFilters })
-  }, [state, onChange, setFilters])
+  const handleFiltersChange = useCallback(
+    (newFilters) => {
+      setFilters(newFilters);
+      onChange?.({ ...state, filters: newFilters });
+    },
+    [state, onChange, setFilters]
+  );
 
-  const handleSortingChange = useCallback((ascending) => {
-    setSorting(ascending)
-    // Asegurarnos de que el estado actual se propaga correctamente
-    onChange?.({
+  const handleSortingChange = useCallback(
+    (ascending) => {
+      setSorting(ascending)
+      onChange?.({
         filters: state.filters,
         isAscending: ascending
-    });
-  }, [state.filters, onChange, setSorting])
+      });
+    },
+    [state.filters, onChange, setSorting]
+  );
 
   const handleReset = useCallback(() => {
     resetAll();
-    onChange?.({ 
-      filters: config.defaultValues || {}, 
-      isAscending: config.defaultSort?.isAscending ?? false 
+    onChange?.({
+      filters: config.defaultValues || {},
+      isAscending: config.defaultSort?.isAscending ?? false
     });
   }, [config.defaultValues, config.defaultSort, onChange, resetAll]);
 
   const updateFilter = (key, value) => {
-    const newFilters = { ...state.filters, [key]: value }
-    handleFiltersChange(newFilters)
+    const newFilters = { ...state.filters, [key]: value };
+    handleFiltersChange(newFilters);
   }
 
   const renderFilter = useCallback((filterConfig, isInDrawer) => {
-    if (filterConfig.type === 'search') {
-        return null;
-    }
+    if (filterConfig.type === 'search') return null;
 
-    // Primero verificamos si hay datos dinámicos para este filtro
     let finalOptions = filterConfig.options || [];
     if (dataConfig[filterConfig.key]) {
-        const { data, accessor } = dataConfig[filterConfig.key];
-        finalOptions = data.map(accessor);
+      const { data, accessor } = dataConfig[filterConfig.key];
+      finalOptions = data.map(accessor);
     }
 
     switch (filterConfig.type) {
-        case 'status':
-            return (
-                <FilterGroup key="status">
-                    <StatusSelector
-                        value={state.filters[filterConfig.key]}
-                        onChange={(value) => updateFilter(filterConfig.key, value)}
-                        visibleStatus={filterConfig.visibleStatus}
-                        placeholder={filterConfig.placeholder}
-                        clearText={filterConfig.clearText}
-                        allowClear={true}
-                        width={isInDrawer ? '100%' : undefined}
-                    />
-                </FilterGroup>
-            )
-
-        case 'select':
-            return (
-                <FilterGroup key={filterConfig.key}>
-                    <Selector
-                        value={state.filters[filterConfig.key]}
-                        onChange={(value) => updateFilter(filterConfig.key, value)}
-                        options={finalOptions}
-                        placeholder={filterConfig.placeholder}
-                        clearText={filterConfig.clearText}
-                        icon={filterConfig.icon}
-                        showSearch={filterConfig.showSearch}
-                        allowClear={true}
-                        width={isInDrawer ? '100%' : undefined}
-                    />
-                </FilterGroup>
-            )
-
-        default:
-            return null
+      case 'status':
+        return (
+          <FilterGroup key="status">
+            <StatusSelector
+              value={state.filters[filterConfig.key]}
+              onChange={(value) => updateFilter(filterConfig.key, value)}
+              visibleStatus={filterConfig.visibleStatus}
+              placeholder={filterConfig.placeholder}
+              clearText={filterConfig.clearText}
+              allowClear={true}
+              width={isInDrawer ? '100%' : undefined}
+            />
+          </FilterGroup>
+        );
+      case 'select':
+        return (
+          <FilterGroup key={filterConfig.key}>
+            <Selector
+              value={state.filters[filterConfig.key]}
+              onChange={(value) => updateFilter(filterConfig.key, value)}
+              options={finalOptions}
+              placeholder={filterConfig.placeholder}
+              clearText={filterConfig.clearText}
+              icon={filterConfig.icon}
+              showSearch={filterConfig.showSearch}
+              allowClear={true}
+              width={isInDrawer ? '100%' : undefined}
+            />
+          </FilterGroup>
+        );
+      default:
+        return null
     }
-}, [state.filters, dataConfig])
+  }, [state.filters, dataConfig])
 
-  // Separate the search input
   const searchInput = (
     <FilterGroup key="search">
       <Input
@@ -114,7 +119,7 @@ export const FilterBar = React.memo(({ config = {}, onChange, searchTerm, onSear
     </FilterGroup>
   );
 
-  const filters = useMemo(() => 
+  const filters = useMemo(() =>
     config.filters?.map(filterConfig => renderFilter(filterConfig, false)),
     [config.filters, renderFilter]
   );
@@ -126,7 +131,7 @@ export const FilterBar = React.memo(({ config = {}, onChange, searchTerm, onSear
       {config.showSortButton && (
         <ButtonGroup>
           <Tooltip title={state.isAscending ? "Ordenar descendente" : "Ordenar ascendente"}>
-            <Button 
+            <Button
               onClick={() => handleSortingChange(!state.isAscending)}
               icon={<FontAwesomeIcon icon={state.isAscending ? faArrowUpAZ : faArrowDownAZ} />}
               type="default"
@@ -152,34 +157,7 @@ export const FilterBar = React.memo(({ config = {}, onChange, searchTerm, onSear
   return (
     <FilterContainer>
       <DesktopWrapper>
-        <FilterWrapper>
-          {searchInput}
-          {config.filters?.map(filterConfig => renderFilter(filterConfig, false))}
-          {/* Añadir los botones de ordenar y reset */}
-          {config.showSortButton && (
-            <ButtonGroup>
-              <Tooltip title={state.isAscending ? "Ordenar descendente" : "Ordenar ascendente"}>
-                <Button 
-                  onClick={() => handleSortingChange(!state.isAscending)}
-                  icon={<FontAwesomeIcon icon={state.isAscending ? faArrowUpAZ : faArrowDownAZ} />}
-                  type="default"
-                />
-              </Tooltip>
-            </ButtonGroup>
-          )}
-          {config.showResetButton && (
-            <ButtonGroup>
-              <Tooltip title="Restablecer filtros">
-                <Button
-                  onClick={handleReset}
-                  icon={<FontAwesomeIcon icon={faFilterCircleXmark} />}
-                  type="default"
-                  danger
-                />
-              </Tooltip>
-            </ButtonGroup>
-          )}
-        </FilterWrapper>
+        <FilterWrapper>{filterContent}</FilterWrapper>
       </DesktopWrapper>
 
       <MobileWrapper>
@@ -210,7 +188,7 @@ export const FilterBar = React.memo(({ config = {}, onChange, searchTerm, onSear
             {config.filters?.map(filterConfig => renderFilter(filterConfig, true))}
             <DrawerFooter>
               {config.showSortButton && (
-                <Button 
+                <Button
                   onClick={() => handleSortingChange(!state.isAscending)}
                   icon={<FontAwesomeIcon icon={state.isAscending ? faArrowUpAZ : faArrowDownAZ} />}
                   type="default"

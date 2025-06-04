@@ -1,18 +1,11 @@
 
-import styled from 'styled-components'
-import { Button } from '../../../../../templates/system/Button/Button'
+import { Button } from 'antd'
 
 export const Footer = ({onSubmit, onCancel}) => {
   return (
-    <Component>
-        <Button title={'Cancelar'} onClick={onCancel}/>
-        <Button title={'Guardar'} bgcolor={'primary'} onClick={onSubmit}/>
-    </Component>
+    <div style={{ display: 'flex', justifyContent: 'end', gap: '0.4em' }}>
+      <Button onClick={onCancel}>Cancelar</Button>
+      <Button type='primary' onClick={onSubmit}>Guardar</Button>
+    </div>
   )
 }
-const Component = styled.div`
-    display: flex;
-    justify-content: end;
-    gap: 0.4em;
-   
-`

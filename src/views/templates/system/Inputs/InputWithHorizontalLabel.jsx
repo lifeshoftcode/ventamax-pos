@@ -1,7 +1,6 @@
-import React from 'react'
 import styled from 'styled-components'
-import { InputV4 } from './GeneralInput/InputV4'
 import { FormattedValue } from '../FormattedValue/FormattedValue'
+import { InputNumber } from 'antd'
 
 export const InputWithHorizontalLabel = ({ label = null, ...props }) => {
     return (
@@ -10,11 +9,12 @@ export const InputWithHorizontalLabel = ({ label = null, ...props }) => {
                 size={'small'}
                 type={'title'}
                 {...props}
-                // align={'right'}
                 value={label}
             />}
-            <InputV4
+            <InputNumber
+            addonBefore={"$"}
                 {...props}
+                style={{width: '100%'}}
             />
         </Container>
     )
@@ -26,7 +26,7 @@ const Container = styled.div`
     padding: 0 0.4em ;
     gap: 1em;
     ${label => label && `
-        grid-template-columns: 8em 1fr;
+        grid-template-columns: 10em 1fr;
     `}
    
 `

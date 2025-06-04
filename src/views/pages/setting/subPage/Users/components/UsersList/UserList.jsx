@@ -66,13 +66,14 @@ const columns = [
 
 export const UserList = () => {
   const [users, setUsers] = useState([])
-  const userActual = useSelector(selectUser)
-  const { abilities } = userAccess();
-  const navigate = useNavigate();
+  const currentUser = useSelector(selectUser)
   const dispatch = useDispatch();
+  const { abilities } = userAccess()
+  
   useEffect(() => {
-    fbGetUsers(setUsers, userActual)
-  }, [userActual])
+    fbGetUsers(currentUser, setUsers)
+  }, [currentUser])
+  
   const data = users.map(({ user }, index) => {
     return {
       number: user.number,
@@ -83,24 +84,28 @@ export const UserList = () => {
       user: user
     }
   })
+  
   const handleEditUser = (user) => {
-    dispatch(updateUser(user))
-    dispatch(toggleSignUpUser({ isOpen: true, data: user }))
-    // navigate('/users/update-user/' + user.id)
+    // Solo permitir editar si tiene permisos
+    if (abilities.can('manage', 'User')) {
+      dispatch(updateUser(user))
+      dispatch(toggleSignUpUser({ isOpen: true, data: user }))
+    }
+  }
+
+  // Solo mostrar la tabla si tiene permisos para ver usuarios
+  if (!abilities.can('read', 'User') && !abilities.can('manage', 'User')) {
+    return <div>No tienes permisos para ver la lista de usuarios.</div>
   }
 
   return (
-   
- 
-        <AdvancedTable
-          tableName={'Usuarios'}
-          data={data}
-          columns={columns}
-          pagination={true}
-          onRowClick={(row) => handleEditUser(row.user)}
-        />
-   
-  
+    <AdvancedTable
+      tableName={'Usuarios'}
+      data={data}
+      columns={columns}
+      pagination={true}
+      onRowClick={abilities.can('manage', 'User') ? (row) => handleEditUser(row.user) : undefined}
+    />
   )
 }
 

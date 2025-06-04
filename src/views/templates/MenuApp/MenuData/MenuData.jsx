@@ -9,19 +9,17 @@ import contacts from './items/contacts'
 import changelogs from './items/changelogs'
 import utility from './items/utility'
 import accountsReceivable from './items/accountsReceivable'
-import { userAccess } from '../../../../hooks/abilities/useAbilities'
+import insurance from './items/insurance'
+import { filterMenuItemsByAccess } from '../../../../utils/menuAccess'
 
 export const ChevronRight = <FontAwesomeIcon icon={faChevronRight} />
 export const ChevronLeft = <FontAwesomeIcon icon={faChevronLeft} />
 
 export const getMenuData = () => {
-    const { abilities } = userAccess()
-
-    const filterSubmenu = (submenu) => submenu.filter(subItem => abilities.can('access', subItem.route));
-
     const allMenuItems = [
         ...basic,
         ...sales,
+        ...insurance,
         ...inventory,
         ...accountsReceivable,
         ...financialManagement,
@@ -31,18 +29,5 @@ export const getMenuData = () => {
         ...changelogs,
     ]
 
-    const accessibleMenuItems = allMenuItems.map(item => {
-        if (item.submenu && item.submenu.length > 0) {
-            const filteredSubmenu = filterSubmenu(item.submenu);
-            if (filteredSubmenu.length > 0) {
-                return { ...item, submenu: filteredSubmenu };
-            } else {
-                return null;
-            }
-        } else {
-            return abilities.can('access', item.route) ? item : null;
-        }
-    }).filter(item => item !== null);
-
-    return accessibleMenuItems
+    return filterMenuItemsByAccess(allMenuItems, true);
 }

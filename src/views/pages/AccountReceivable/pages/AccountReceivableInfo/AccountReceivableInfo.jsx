@@ -37,12 +37,9 @@ const AccountReceivableInfo = () => {
     if (isLoading) return <div>Loading...</div>;
     if (error) return <div>Error: {error.message} </div>;
     if (!data) return <div>No data available</div>;
-
     const { ar, installments, payments, installmentPayments } = data;
 
     const formatDate = (timestamp) =>  DateTime.fromMillis(timestamp?.seconds * 1000).toFormat('dd/MM/yyyy HH:mm');
-
-    console.log(data)
 
     const accountInfo = [
         { label: 'Nombre del Cliente:', value: ar.clientId },

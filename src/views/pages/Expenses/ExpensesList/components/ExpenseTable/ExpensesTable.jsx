@@ -5,7 +5,7 @@
  * @since 0.1.0
  */
 
-import React, { useState } from 'react'
+import { useState, useCallback } from 'react'
 import styled from 'styled-components'
 import { AdvancedTable } from '../../../../../templates/system/AdvancedTable/AdvancedTable'
 import { truncateString } from '../../../../../../utils/text/truncateString'
@@ -16,39 +16,147 @@ import { convertMillisToDate } from '../../../../../../hooks/useFormatTime'
 import { EditDelBtns } from '../../../../../templates/system/Button/EditDelBtns/EditDelBtns'
 import { useFormatPrice } from '../../../../../../hooks/useFormatPrice'
 import { setExpense, setExpenseMode } from '../../../../../../features/expense/expenseManagementSlice'
+import { openExpenseFormModal } from '../../../../../../features/expense/expenseUISlice'
 import { useNavigate } from 'react-router-dom'
 import { DateTime } from 'luxon'
 import { fbDeleteExpense } from '../../../../../../firebase/expenses/Items/fbDeleteExpense'
 import { selectUser } from '../../../../../../features/auth/userSlice'
-import { useTranslation, initReactI18next } from "react-i18next";
+import { useTranslation } from "react-i18next"
 import { ExpenseChart } from '../ExpenseReport/ExpenseReport'
+import { message } from 'antd'
+import { FilterBar } from '../../../../../component/FilterBar/FilterBar'
+import { useFbGetExpenses } from '../../../../../../firebase/expenses/Items/useFbGetExpenses'
+
 /**
  * @function ExpensesTable
  * @desc A component that renders a table of expenses.
  * @returns {JSX.Element} The ExpensesTable component
  */
-export const ExpensesTable = ({ searchTerm, expenses, dateRange, setDateRange }) => {
-    const { t } = useTranslation('status');
+export const ExpensesTable = ({ }) => {
     const user = useSelector(selectUser);
     const dispatch = useDispatch();
-    const navigate = useNavigate();
- 
+
+    const [searchTerm, setSearchTerm] = useState('');
+    const [dateRange, setDateRange] = useState({
+        startDate: null,
+        endDate: null
+    });
+    const { expenses } = useFbGetExpenses(dateRange);
+
     const [reportIsOpen, setReportIsOpen] = useState(false);
     const handleReportOpen = () => setReportIsOpen(!reportIsOpen);
+
+    const [filters, setFilters] = useState({});
+
+    const handleFilterChange = useCallback((newFilterState) => {
+        setFilters(newFilterState.filters);
+
+        if (newFilterState.filters.dateRange) {
+            try {
+                const startDate = newFilterState.filters.dateRange.startDate ?
+                    (typeof newFilterState.filters.dateRange.startDate === 'number' ?
+                        newFilterState.filters.dateRange.startDate :
+                        new Date(newFilterState.filters.dateRange.startDate).getTime()) :
+                    null;
+
+                const endDate = newFilterState.filters.dateRange.endDate ?
+                    (typeof newFilterState.filters.dateRange.endDate === 'number' ?
+                        newFilterState.filters.dateRange.endDate :
+                        new Date(newFilterState.filters.dateRange.endDate).getTime()) :
+                    null;
+
+                if (startDate !== dateRange?.startDate || endDate !== dateRange?.endDate) {
+                    setDateRange({
+                        startDate,
+                        endDate
+                    });
+                }
+            } catch (error) {
+                console.error('Error processing date range:', error);
+            }
+        }
+    }, [setDateRange, dateRange]);
+
+    const categories = [...new Set(expenses.map(({ expense }) => expense.category))].filter(Boolean);
+    const categoryOptions = categories.map(category => ({ label: category, value: category }));    // Filter config for FilterBar
+    const filterConfig = {
+        filters: [
+            {
+                key: 'category',
+                type: 'select',
+                placeholder: 'Categoría',
+                options: categoryOptions
+            },
+            {
+                key: 'status',
+                type: 'status',
+                placeholder: 'Estado',
+                visibleStatus: ['active', 'canceled', 'completed', 'pending']
+            },
+        ],
+        showSortButton: true,
+        showResetButton: true,
+        defaultValues: {
+            dateRange: dateRange?.startDate && dateRange?.endDate ? {
+                startDate: dateRange.startDate,
+                endDate: dateRange.endDate
+            } : null,
+            status: 'active'
+        },
+        defaultSort: {
+            isAscending: false
+        }
+    };
+
     const data = expenses
         .map(({ expense }) => {
+            // Extraer la URL real si es un objeto complejo
+            
+            let receiptImageUrl = null;
+            if (expense.attachments?.length > 0) {
+                const firstAttachment = expense.attachments[0];
+                if (firstAttachment.url && typeof firstAttachment.url === 'object' && firstAttachment.url.url) {
+                    receiptImageUrl = firstAttachment.url.url;
+                } else if (typeof firstAttachment.url === 'string') {
+                    receiptImageUrl = firstAttachment.url;
+                }
+            } else if (expense.receiptImageUrl) {
+                receiptImageUrl = expense.receiptImageUrl;
+            }
+
             return {
                 number: expense.numberId,
                 category: expense.category,
                 description: expense.description,
                 dateExpense: expense?.dates?.expenseDate,
                 amount: expense.amount,
-                receiptImg: expense.receiptImageUrl,
+                receiptImg: receiptImageUrl,
+                attachments: expense.attachments || [],
                 action: expense,
                 status: expense.status,
                 createdAt: expense.dates.createdAt,
                 dateGroup: DateTime.fromMillis(expense.dates.createdAt).toLocaleString(DateTime.DATE_FULL)
             }
+        })
+
+        .filter(item => {
+            if (filters.category && item.category !== filters.category) return false;
+
+            if (filters.status && item.status !== filters.status) return false;
+
+            if (searchTerm && searchTerm.trim() !== '') {
+                const searchLower = searchTerm.toLowerCase();
+                const matchesSearch =
+                    (item.category && item.category.toLowerCase().includes(searchLower)) ||
+                    (item.description && item.description.toLowerCase().includes(searchLower)) ||
+                    String(item.number).includes(searchLower) ||
+                    String(item.amount).includes(searchLower);
+                if (!matchesSearch) {
+                    return false;
+                }
+            }
+
+            return true;
         })
         .sort((a, b) => b.number - a.number)
 
@@ -61,18 +169,18 @@ export const ExpensesTable = ({ searchTerm, expenses, dateRange, setDateRange })
             reorderable: false,
             sortable: true,
         },
-        {
-            Header: 'Categoría',
-            accessor: 'category',
-            minWidth: '50px',
-            maxWidth: '1fr',
-        },
-        {
+            {
             Header: "Descripción",
             accessor: 'description',
             minWidth: '60px',
             maxWidth: '1fr',
             cell: ({ value }) => truncateString(value, 18)
+        },
+        {
+            Header: 'Categoría',
+            accessor: 'category',
+            minWidth: '50px',
+            maxWidth: '1fr',
         },
         {
             Header: 'Fecha de Gasto',
@@ -93,9 +201,13 @@ export const ExpensesTable = ({ searchTerm, expenses, dateRange, setDateRange })
             accessor: 'receiptImg',
             minWidth: '70px',
             maxWidth: '70px',
-            cell: ({ value }) => {
+            cell: ({ value, row }) => {
                 const handleClick = () => {
-                    dispatch(toggleImageViewer({ show: true, url: value }))
+                    if (value) {
+                        dispatch(toggleImageViewer({ show: true, url: value }));
+                    } else {
+                        message.warning('Este gasto no tiene imágenes adjuntas');
+                    }
                 }
                 return (
                     <Button title='Ver' onClick={handleClick} />
@@ -113,7 +225,7 @@ export const ExpensesTable = ({ searchTerm, expenses, dateRange, setDateRange })
                 const handleUpdate = async () => {
                     dispatch(setExpense(value));
                     dispatch(setExpenseMode('update'));
-                    navigate('/expenses/new');
+                    dispatch(openExpenseFormModal());
                 }
                 const handleDelete = async () => {
                     await fbDeleteExpense(user, value);
@@ -127,42 +239,38 @@ export const ExpensesTable = ({ searchTerm, expenses, dateRange, setDateRange })
             }
         }
     ]
-  
-
     return (
         <Container>
+            <FilterBar
+                config={filterConfig}
+                onChange={handleFilterChange}
+                searchTerm={searchTerm}
+                onSearchTermChange={setSearchTerm ? (value) => setSearchTerm(value) : undefined}
+                dataConfig={{
+                    category: {
+                        data: categoryOptions,
+                        accessor: (item) => item
+                    }
+                }}
+            />
             <AdvancedTable
                 columns={columns}
                 data={data}
                 elementName={'Gasto'}
-                datePicker
-                filterUI
-                searchTerm={searchTerm}
-                dateRange={dateRange}
-                setDateRange={setDateRange}
                 groupBy={'dateGroup'}
                 defaultDate={'today'}
                 datesKeyConfig='dateGroup'
-                filterConfig={[
-                    {
-                        label: 'Categoría',
-                        accessor: 'category',
-                    },
-                    {
-                        label: 'Estado',
-                        accessor: 'status',
-                        defaultValue: 'active',
-                        format: (value) => t(value)
-                    }
-                ]}
             />
-             <ExpenseChart expenses={expenses} isOpen={reportIsOpen} onOpen={handleReportOpen} />
+            <ExpenseChart expenses={expenses} isOpen={reportIsOpen} onOpen={handleReportOpen} />
         </Container>
     )
 }
 
 const Container = styled.div`
-    height: calc(100vh - 2.75em);
+    height: 100%;
     width: 100%;
-    display: grid;    
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 `

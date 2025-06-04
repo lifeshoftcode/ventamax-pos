@@ -1,55 +1,121 @@
-import React, { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import styled from 'styled-components'
 import { CashDenominationCalculator } from '../../../../../resource/CashDenominationCalculator/CashDenominationCalculator'
 import { TransactionSummary } from './components/TransactionSummary/TransactionSummary'
 import { CashBoxClosureDetails } from './components/CashBoxClosureDetails/CashBoxClosureDetails'
-import { TextareaV2 } from '../../../Comments/TextareaV2'
 import { ViewInvoice } from './components/ViewInvoive/ViewInvoice'
+import { ViewExpenses } from './components/ViewExpenses/ViewExpenses'
 import { Comments } from '../../../Comments/Comments'
 import { addPropertiesToCashCount, selectCashCount, setCashCountClosingBanknotes, setCashCountClosingComments, updateCashCountTotals, } from '../../../../../../../../features/cashCount/cashCountManagementSlice'
-import { useDispatch, useSelector } from 'react-redux'
+import { shallowEqual, useDispatch, useSelector } from 'react-redux'
 import { DateSection } from '../../Header/DateSection'
-import { selectUser } from '../../../../../../../../features/auth/userSlice'
-import { fbLoadInvoicesForCashCount } from '../../../../../../../../firebase/cashCount/fbLoadInvoicesForCashCount'
 import { CashCountMetaData } from './CashCountMetaData'
-import loaderSlice from '../../../../../../../../features/loader/loaderSlice'
+import { useInvoicesForCashCount } from '../../../../../../../../hooks/cashCount/useInvoicesForCashCount'
+import { useExpensesForCashCount } from '../../../../../../../../hooks/expense/useExpensesForCashCount'
+import { isArrayEmpty } from '../../../../../../../../utils/array/ensureArray'
 
-export const RightSide = ({ calculationIsOpen, setCalculationIsOpen, date }) => {
-  const CashReconciliation = useSelector(selectCashCount)
-  const { sales, id, state } = CashReconciliation
-  const { banknotes, comments } = CashReconciliation.closing;
+function useExpenseComments(expenses) {
+  const formatter = useMemo(
+    () => new Intl.NumberFormat('es-DO', {
+      style: 'currency',
+      currency: 'DOP',
+      minimumFractionDigits: 2,
+    }),
+    []
+  )
 
-  const [invoices, setInvoices] = useState({
-    count: '',
-    invoices: [],
-    loading: false
-  })
-  const dispatch = useDispatch()
-  const user = useSelector(selectUser)
-  const handleChangesComments = (comments) => {
-    dispatch(setCashCountClosingComments(comments))
-  }
+const generate = useCallback(() => {
+    if (isArrayEmpty(expenses)) return '';
 
-  const handleChangesBanknotes = (banknotes) => {
-    dispatch(setCashCountClosingBanknotes(banknotes))
-  }
+    const pad = (label) => label.padEnd(14, ' '); // ancho uniforme
+    const header = 'GASTOS (detalle)';
+    const detailLines = [];
+    let total = 0;
+
+    expenses
+      .filter((e) => e?.payment?.comment?.trim()) // solo gastos relevantes
+      .forEach(({ description = '—', amount = 0, payment }) => {
+        total += Number(amount);
+
+        detailLines.push(
+          '',
+          `• ${pad('Concepto:')} ${description.trim()}`,
+          `  ${pad('Importe:')} ${formatter.format(amount)}`,
+          `  ${pad('Observaciones:')} ${payment.comment.trim()}`,
+        );
+      });
+
+    if (!detailLines.length) return '';
+
+    const totalLine = `\nTOTAL GASTOS: ${formatter.format(total)}`;
+
+    // Resultado sin líneas en blanco extra
+    return [header, ...detailLines, totalLine].join('\n');
+  }, [expenses, formatter]);
+
+  return useMemo(generate, [generate]);
+}
+
+export const RightSide = ({ calculationIsOpen, setCalculationIsOpen }) => {
+  const dispatch = useDispatch();
+  const cashReconciliation = useSelector(selectCashCount, shallowEqual);
+  const { id, state } = cashReconciliation;
+  const { banknotes, comments } = cashReconciliation.closing;
+
+   const didInitComments = useRef(false);
+
+  const {
+    data: invoices,
+    loading: invoicesLoading,
+    count: invoicesCount,
+  } = useInvoicesForCashCount(id);
+
+  const {
+    data: expenses,
+    loading: expensesLoading,
+    count: expensesCount,
+  } = useExpensesForCashCount(id);
+
+  const mergeExpenseComments = useCallback(
+    (expenseBlock) => {
+      const existing = cashReconciliation.closing.comments || '';
+      const base = existing.replace(/\n\nGASTOS.*$/s, '').trim();
+      const combined = base + (expenseBlock ? `${expenseBlock}` : '')
+      dispatch(setCashCountClosingComments(combined))
+    },
+    [dispatch, cashReconciliation.closing.comments]
+  );
+
+  const expenseBlock = useExpenseComments(expenses, mergeExpenseComments);
+
+  const handleCommentsInput = useCallback(
+    (text) => {
+      dispatch(setCashCountClosingComments(text))
+    },
+    [dispatch, expenseBlock]
+  )
+
+  const handleChangesBanknotes = useCallback(
+    (bn) => dispatch(setCashCountClosingBanknotes(bn)),
+    [dispatch]
+  );
+
+  const metaData = useMemo(
+    () => CashCountMetaData(cashReconciliation, invoices, expenses),
+    [cashReconciliation, invoices, expenses]
+  );
+
   useEffect(() => {
-    const fetchData = async () => {
-      setInvoices({ ...invoices, loading: true })
-      const invoicesData = await fbLoadInvoicesForCashCount(user, id, 'all')
-      setInvoices(invoicesData)
+    dispatch(updateCashCountTotals(metaData))
+    dispatch(addPropertiesToCashCount(metaData))
+  }, [dispatch, metaData]);
+
+ useEffect(() => {
+  if (!didInitComments.current && expenseBlock) {
+      mergeExpenseComments(expenseBlock); // agrega el bloque GASTOS
+      didInitComments.current = true;     // marcamos que ya se hizo
     }
-    fetchData()
-  }, [])
-
-  const cashCountMetaData = CashCountMetaData(CashReconciliation, invoices.invoices)
-  useEffect(() => {
-    dispatch(updateCashCountTotals(cashCountMetaData))
-  }, [CashReconciliation, invoices, banknotes])
-
-  useEffect(() => {
-    dispatch(addPropertiesToCashCount(cashCountMetaData))
-  }, [banknotes])
+}, [expenseBlock, mergeExpenseComments]);
 
   return (
     <Container>
@@ -57,29 +123,42 @@ export const RightSide = ({ calculationIsOpen, setCalculationIsOpen, date }) => 
         banknotes={banknotes}
         setBanknotes={handleChangesBanknotes}
         title={'Cierre'}
-        datetime={<DateSection date={CashReconciliation.closing.date} />}
+        datetime={<DateSection date={cashReconciliation.closing.date} />}
         isExpanded={calculationIsOpen}
         setIsExpanded={setCalculationIsOpen}
-        inputDisabled={state === 'closed'}
+        readOnly={state === 'closed'}
       />
-      <TransactionSummary 
-        invoices={invoices.invoices} 
-        loading={invoices.loading}
+
+      <TransactionSummary
+        invoices={invoices}
+        loading={invoicesLoading}
       />
-      <ViewInvoice
-        invoices={invoices.count}
-        loading={invoices.loading}
-      />
+
+      <Row>
+        <ViewInvoice
+          invoices={invoices}
+          invoicesCount={invoicesCount}
+          loading={invoicesLoading}
+        />
+        <ViewExpenses
+          cashCountId={id}
+          expenses={expenses}
+          loading={expensesLoading}
+        />
+      </Row>
       <CashBoxClosureDetails
-        loading={invoices.loading}
-        invoices={invoices.invoices}
+        loading={invoicesLoading || expensesLoading}
+        invoices={invoices}
+        expenses={expenses}
       />
       <Comments
-        label='Comentarios de cierre'
+        label='Comentario de cierre'
         placeholder='Escribe aquí ...'
-        disabled={state === 'closed'}
+        readOnly={state === 'closed'}
         value={comments}
-        onChange={e => handleChangesComments(e.target.value)}
+        
+        rows={6}
+        onChange={e => handleCommentsInput(e.target.value)}
       />
     </Container>
   )
@@ -89,5 +168,9 @@ const Container = styled.div`
   align-items: start;
   align-content: start;
   gap: 0.4em;
- 
+`
+
+const Row = styled.div`
+  display: flex;
+  gap: 0.4em;
 `

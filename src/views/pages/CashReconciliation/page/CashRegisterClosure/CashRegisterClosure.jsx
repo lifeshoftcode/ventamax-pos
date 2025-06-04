@@ -59,9 +59,8 @@ export const CashRegisterClosure = () => {
 
   const handleSubmit = async (approvalEmployee) => {
     try {
-      await fbCashCountClosed(actualUser, cashCount, actualUser.uid, approvalEmployee.uid, closingDate.toMillis())
-    } catch (error) {
-      console.log(error)
+      await fbCashCountClosed(actualUser, cashCount, actualUser.uid, approvalEmployee.uid, closingDate.toMillis())    } catch (error) {
+      // Handle error appropriately
     }
   }
 
@@ -89,7 +88,7 @@ export const CashRegisterClosure = () => {
 const Backdrop = styled.div`
 width: 100%;
 height: 100vh;
-background-color: var(--color2);
+background-color: #f0f0f0;
 overflow-y: scroll;
 `
 const Container = styled.div`
