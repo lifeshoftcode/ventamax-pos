@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faExclamationCircle, faCheckCircle, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
-import { removeNotification, selectCurrentNotification } from '../../../../features/notification/NotificationSlice';
+import { removeNotification, selectCurrentNotification } from '../../../../features/notification/notificationSlice';
 import { motion } from 'framer-motion';
 import { Button } from '../Button/Button';
 import { icons } from '../../../../constants/icons/icons';

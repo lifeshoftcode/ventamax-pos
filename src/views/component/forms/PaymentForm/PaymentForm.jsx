@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { closePaymentModal, fetchLastInstallmentAmount, selectAccountsReceivablePayment, setPaymentDetails, setPaymentOption } from "../../../../features/accountsReceivable/accountsReceivablePaymentSlice";
 import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
-import { ShowcaseList } from "../../../templates/system/Showcase/ShowcaseList";
+import { ShowcaseList } from "../../../templates/system/ShowCase/ShowcaseList";
 import { Modal, modalStyles } from "../../cart/components/InvoicePanel/InvoicePanel";
 import { PaymentFields } from "./components/PaymentFields";
 import { PAYMENT_OPTIONS, PAYMENT_SCOPE } from "../../../../utils/accountsReceivable/accountsReceivable";

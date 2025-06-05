@@ -3,7 +3,7 @@ import { UploadImgLoading, UploadProgress } from "../../features/uploadImg/uploa
 import { db, storage } from "../firebaseconfig"
 import { getDownloadURL } from "firebase/storage"
 import { SaveImg } from "../../features/uploadImg/uploadImageSlice"
-import { addNotification } from "../../features/notification/NotificationSlice"
+import { addNotification } from "../../features/notification/notificationSlice"
 import { nanoid } from "nanoid"
 import { doc, updateDoc } from "firebase/firestore"
 import { update } from "lodash"

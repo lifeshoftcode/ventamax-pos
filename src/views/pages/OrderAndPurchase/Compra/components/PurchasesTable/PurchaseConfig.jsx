@@ -1,5 +1,6 @@
 import { useDispatch } from "react-redux"
-import { getPendingPurchaseFromDB } from "../../../../../features/Purchase/purchaseSlice"
+import { useMemo } from "react"
+import { getPendingPurchaseFromDB } from "../../../../../features/purchase/addPurchaseSlice"
 
 export const SetPendingPurchaseInState = (purchase) => {
     const dispatch = useDispatch()

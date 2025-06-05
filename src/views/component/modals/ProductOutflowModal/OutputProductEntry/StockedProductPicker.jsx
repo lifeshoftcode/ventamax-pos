@@ -9,7 +9,7 @@ import { useDispatch } from 'react-redux'
 import { Button } from '../../templates/system/Button/Button'
 import { Tooltip } from '../../templates/system/Button/Tooltip'
 import { useEffect } from 'react'
-import { addNotification } from '../../../features/notification/NotificationSlice'
+import { addNotification } from '../../../features/notification/notificationSlice'
 import { useFormatPrice } from '../../../hooks/useFormatPrice'
 /**
 * Este componente recibe la funcion de agregar el producto y devuelve el componente.

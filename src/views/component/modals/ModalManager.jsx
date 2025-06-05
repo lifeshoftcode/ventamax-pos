@@ -1,6 +1,6 @@
 import { Fragment } from "react"
 import { AddClientModal } from "./addClient/AddClientModal"
-import { SetCustomProduct } from "./CustomProduct/SetCustomProduct/SetCustomProduct"
+import { SetCustomProduct } from "./CustomProduct/setCustomProduct/SetCustomProduct"
 import { useSelector } from "react-redux"
 import {
   SelectAddClientModal,
