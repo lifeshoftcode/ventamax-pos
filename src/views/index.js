@@ -30,7 +30,7 @@ export { MultiDisplayControl } from './component/MultiDisplayControl/MultiDispla
 export { RequireAuth } from './component/RequireAuth'
 export { ClientControl } from './component/contact/ClientControl/ClienteControl'
 // export { ProductModal } from './component/modals/Product/ProductModal'
-export { AddClientModal } from './component/modals/AddClient/AddClientModal'
+export { AddClientModal } from './component/modals/addClient/AddClientModal'
 export { Modal } from './component/modals/Modal'
 export { ModalManager } from './component/modals/ModalManager'
 
