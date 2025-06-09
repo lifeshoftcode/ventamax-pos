@@ -49,7 +49,7 @@ export const productHeaderMappings = {
     "Descuento": "promotions.discount",
     "Inicio de Promoción": "promotions.start",
     "Imagen": "image",
-    "Es Visible": "isVisible",
+    "Es Visible": "isVisible",//Facturable
     "Orden": "order",
     "Pie de Página": "footer",
     "Tipo": "type",
@@ -64,7 +64,7 @@ export const productHeaderMappings = {
     "Cantidad de Garantía": "warranty.quantity",
     "Unidad de Garantía": "warranty.unit",
     "Cantidad a Comprar": "amountToBuy",
-    "Rastreo de Inventario": "trackInventory",
+    "Rastreo de Inventario": "trackInventory",//Inventariable
     "Código de Barras": "barcode",
     "Principio Activo": "activeIngredients" 
   }

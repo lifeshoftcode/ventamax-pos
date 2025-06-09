@@ -11,21 +11,20 @@ import { clear, selectUserManager, setErrors, updateUser } from '../../../../../
 import { ChangePassword } from './ChangePassword/ChangePassword'
 import { Select } from '../../../../../../templates/system/Select/Select'
 import { fbUpdateUser } from '../../../../../../../firebase/Auth/fbAuthV2/fbUpdateUser'
+import DynamicPermissionsManager from '../DynamicPermissionsManager'
+import { userAccess } from '../../../../../../../hooks/abilities/useAbilities'
 
 const formIcon = icons.forms
 
 const getRol = (id) => {
-    switch (id) {
-        case 'admin':
+    switch (id) {        case 'admin':
             return 'Administrador'
         case 'manager':
             return 'Gerente'
         case 'cashier':
+        case 'specialCashier1': // Migración: mostrar como Cajero
+        case 'specialCashier2': // Migración: mostrar como Cajero
             return 'Cajero'
-        case 'specialCashier1':
-            return 'Cajero - Especial 1'
-        case 'specialCashier2':
-            return 'Cajero - Especial 2'
         case 'buyer':
             return 'Comprador'
         default:
@@ -36,18 +35,28 @@ const EditUser = () => {
     const dispatch = useDispatch()
     const navigate = useNavigate()
     const [isOpenChangePassword, setIsOpenChangePassword] = useState(false)
+    const [isOpenPermissions, setIsOpenPermissions] = useState(false)
     const { user, errors } = useSelector(selectUserManager)
+    const { abilities } = userAccess()
 
     const handleIsOpenChangePassWord = () => {
         setIsOpenChangePassword(!isOpenChangePassword)
     }
 
+    const handleIsOpenPermissions = () => {
+        setIsOpenPermissions(!isOpenPermissions)
+    }
+
+    // Verificar si el usuario actual puede gestionar permisos dinámicos
+    const canManagePermissions = abilities.can('manage', 'users')
+
     const rolOptions = [
         { id: 'admin', label: 'Admin' },
         { id: 'manager', label: 'Gerente' },
         { id: 'cashier', label: 'Cajero' },
-        { id: 'specialCashier1', label: 'Cajero - Especial 1' },
-        { id: 'specialCashier2', label: 'Cajero - Especial 2' },
+        // MIGRACIÓN: specialCashier1 y specialCashier2 ahora usan cashier + permisos dinámicos
+        // { id: 'specialCashier1', label: 'Cajero - Especial 1' },
+        // { id: 'specialCashier2', label: 'Cajero - Especial 2' },
         { id: 'buyer', label: 'Comprador' },
     ]
 
@@ -153,8 +162,7 @@ const EditUser = () => {
                             />
                         }
                         label={'Estado del usuario ' + (user.active ? 'activo' : 'inactivo')}
-                    />
-                    <ElemLabel
+                    />                    <ElemLabel
                         children={
                             <Button
                                 title={'Cambiar Contraseña'}
@@ -165,6 +173,20 @@ const EditUser = () => {
                         }
                         label={'Cambiar Contraseña'}
                     />
+
+                    {canManagePermissions && (
+                        <ElemLabel
+                            children={
+                                <Button
+                                    title={'Gestionar Permisos'}
+                                    bgcolor={'primary'}
+                                    borderRadius={'light'}
+                                    onClick={handleIsOpenPermissions}
+                                />
+                            }
+                            label={'Permisos Dinámicos'}
+                        />
+                    )}
 
                     <ErrorComponent errors={errors.firebase}></ErrorComponent>
 
@@ -186,13 +208,21 @@ const EditUser = () => {
                     </ButtonGroup>
                 </Footer>
 
-            </Container>
-            <ChangePassword
+            </Container>            <ChangePassword
                 isOpen={isOpenChangePassword}
                 setIsOpen={setIsOpenChangePassword}
                 user={user}
                 onClose={handleIsOpenChangePassWord}
             />
+              {canManagePermissions && (
+                <DynamicPermissionsManager
+                    userId={user.id}
+                    userName={user.name}
+                    userRole={user.rol}
+                    isOpen={isOpenPermissions}
+                    onClose={handleIsOpenPermissions}
+                />
+            )}
         </Fragment>
 
     )

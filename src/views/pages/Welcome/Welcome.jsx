@@ -10,7 +10,6 @@ import Header from './components/Header'
 import ROUTES_PATH from '../../../routes/routesName'
 import { Footer } from './components/Footer/Footer'
 import ErrorBoundary from './components/ErrorBoundary'
-import { ChangerPasswordModal } from '../../controlPanel/AllUsersControl/components/Users/ChangerPasswordModal'
 
 // Lazy loading de componentes
 const Body = React.lazy(() => import('./components/Body/Body'))

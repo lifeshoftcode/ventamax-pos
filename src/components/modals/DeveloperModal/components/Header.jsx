@@ -13,7 +13,7 @@ export const Header = ({ title, subtitle }) => {
 
 const HeaderContainer = styled.div`
     background: #2a2a2a;
-    padding: 16px 20px;
+    padding: 12px 20px;
     border-bottom: 1px solid #333;
     display: flex;
     align-items: center;

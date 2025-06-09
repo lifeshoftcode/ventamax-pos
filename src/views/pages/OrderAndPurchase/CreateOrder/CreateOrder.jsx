@@ -22,7 +22,7 @@
 //     updateProduct
 // } from '../../../../features/addOrder/addOrderSlice'
 // import { OrderDetails } from './OrderDetails/OrderDetails'
-// import { addNotification } from '../../../../features/notification/NotificationSlice'
+// import { addNotification } from '../../../../features/notification/notificationSlice'
 // import { toggleProviderModal } from '../../../../features/modals/modalSlice'
 // import { useNavigate } from 'react-router-dom'
 // import ROUTES_PATH from '../../../../routes/routesName'

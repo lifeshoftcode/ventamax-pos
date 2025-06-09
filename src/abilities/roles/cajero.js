@@ -49,23 +49,12 @@ export function defineAbilitiesForCashier(user) {
   const { can, rules } = new AbilityBuilder(PureAbility);
   defineBaseAbilities(can);
 
-  return rules
-}
-
-export function defineAbilitiesForSpecialCashier1(user) {
-  const { can, rules } = new AbilityBuilder(PureAbility);
-  defineBaseAbilities(can);
-
-  can('read', 'PriceList')
-  return rules
-}
-
-export function defineAbilitiesForSpecialCashier2(user) {
-  const { can, rules } = new AbilityBuilder(PureAbility);
-
-  defineBaseAbilities(can);
-  can('read', 'PriceList')
-  can('modify', 'Price')
-
+  // Permisos adicionales que pueden ser habilitados dinámicamente
+  // Estos eran los permisos de specialCashier1 y specialCashier2
+  // Ahora se manejarán via sistema dinámico de permisos
+  
+  // specialCashier1 tenía: can('read', 'PriceList')
+  // specialCashier2 tenía: can('read', 'PriceList') + can('modify', 'Price')
+  
   return rules
 }

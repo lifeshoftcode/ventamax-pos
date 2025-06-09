@@ -15,19 +15,17 @@ import useFilter from '../../../hooks/search/useSearch' // Cambiar importación
 import { addProduct, resetCart, toggleCart } from '../../../features/cart/cartSlice'
 import { useBarcodeScanner } from '../../../hooks/barcode/useBarcodeScanner'
 import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
 import { ProductControlEfficient } from './components/ProductControl.jsx/ProductControlEfficient.jsx'
 import { extractProductInfo, extractWeightInfo, formatWeight } from '../../../utils/barcode.js'
-import * as antd from 'antd'
+import { notification } from 'antd'
 import { InvoicePanel } from '../../component/cart/components/InvoicePanel/InvoicePanel.jsx'
 import useViewportWidth from '../../../hooks/windows/useViewportWidth.jsx'
 import { clearTaxReceiptData } from '../../../features/taxReceipt/taxReceiptSlice.js'
 import { deleteClient } from '../../../features/clientCart/clientCartSlice.js'
-import { Helmet } from 'react-helmet-async'
-import { ClientSelector } from '../../component/contact/ClientControl/ClientSelector.jsx'
+
 import { ProductBatchModal } from '../Inventory/components/Warehouse/components/ProductBatchModal/ProductBatchModal.jsx'
-import { backfillUserNumbers } from '../../../firebase/Auth/fbBackfillUserNumbers.js'
 import { selectUser } from '../../../features/auth/userSlice.js'
+import { ClientSelector } from '../../component/contact/ClientControl/ClientSelector/ClientSelector.jsx'
 
 export const Sales = () => {
   const [searchData, setSearchData] = useState('');
@@ -40,7 +38,7 @@ export const Sales = () => {
 
   const checkBarcode = (products, barcode) => {
     if (products.length <= 0) {
-      antd.notification.error({
+      notification.error({
         message: 'Error al escanear',
         description: `Error al cargar los productos, por favor intente de nuevo.`,
         placement: 'top'
@@ -51,7 +49,7 @@ export const Sales = () => {
     const product = products.find((p) => p?.barcode === barcode || p?.barcode === extractProductInfo(barcode));
 
     if (!product) {
-      antd.notification.error({
+      notification.error({
         message: 'Producto no encontrado',
         description: `El producto con el código de barras ${barcode} no existe.`,
         placement: 'top'
@@ -72,7 +70,7 @@ export const Sales = () => {
           weight: weight
         }
       };
-      antd.notification.success({
+      notification.success({
         message: 'Producto agregado',
         description: `${productData.name} ${productData.weightDetail.weight}`,
         placement: 'top',

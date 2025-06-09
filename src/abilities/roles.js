@@ -2,8 +2,9 @@ export const userRoles = [
     { id: 'admin', label: 'Admin', primaryColor: '#9750DD', secondaryColor: '#f5ebff' },
     { id: 'manager', label: 'Gerente', primaryColor: '#F31260', secondaryColor: '#ffe3ec' },
     { id: 'cashier', label: 'Cajero', primaryColor: '#F5A524', secondaryColor: '#fff8ec' },
-    { id: 'specialCashier1', label: 'Cajero - Especial 1', primaryColor: '#F5A524', secondaryColor: '#fff8ec' },
-    { id: 'specialCashier2', label: 'Cajero - Especial 2', primaryColor: '#F5A524', secondaryColor: '#fff8ec' },
+    // MIGRACIÓN: specialCashier1 y specialCashier2 ahora usan cashier base + permisos dinámicos
+    // { id: 'specialCashier1', label: 'Cajero - Especial 1', primaryColor: '#F5A524', secondaryColor: '#fff8ec' },
+    // { id: 'specialCashier2', label: 'Cajero - Especial 2', primaryColor: '#F5A524', secondaryColor: '#fff8ec' },
     { id: 'buyer', label: 'Comprador', primaryColor: '#17C964', secondaryColor: '#e3ffef' },
     { id: 'dev', label: 'Desarrollador', primaryColor: '#f312bb', secondaryColor: '#ffebfd' },
 ];
@@ -36,16 +37,13 @@ export const getAvailableRoles = (user) => {
         case 'admin':
             // Los admins pueden cambiar a todos los roles excepto dev
             return userRoles.filter(role => role.id !== 'admin' && role.id !== 'dev');
-            
-        case 'manager':
+              case 'manager':
             // Los gerentes pueden cambiar a roles de nivel inferior
             return userRoles.filter(role => 
-                ['cashier', 'specialCashier1', 'specialCashier2', 'buyer'].includes(role.id)
+                ['cashier', 'buyer'].includes(role.id)
             );
             
         case 'cashier':
-        case 'specialCashier1':
-        case 'specialCashier2':
             // Los cajeros solo pueden ver su propio rol (no pueden cambiar)
             return userRoles.filter(role => role.id === currentRole);
             
@@ -70,9 +68,8 @@ export const canChangeRoles = (user) => {
     }
     
     const availableRoles = getAvailableRoles(user);
-    
-    // Para cajeros y compradores que solo ven su propio rol, no pueden "cambiar"
-    if (['cashier', 'specialCashier1', 'specialCashier2', 'buyer'].includes(user.role)) {
+      // Para cajeros y compradores que solo ven su propio rol, no pueden "cambiar"
+    if (['cashier', 'buyer'].includes(user.role)) {
         return availableRoles.length > 0 && availableRoles[0].id !== user.role;
     }
     
@@ -103,11 +100,10 @@ export const getAssignableRoles = (user) => {
             // Los admins pueden asignar todos los roles excepto dev
             assignableRoles = userRoles.filter(role => role.id !== 'dev');
             break;
-            
-        case 'manager':
+              case 'manager':
             // Los gerentes pueden asignar roles de nivel inferior
             assignableRoles = userRoles.filter(role => 
-                ['cashier', 'specialCashier1', 'specialCashier2', 'buyer'].includes(role.id)
+                ['cashier', 'buyer'].includes(role.id)
             );
             break;
             

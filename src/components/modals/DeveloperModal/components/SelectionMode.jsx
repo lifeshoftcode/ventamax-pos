@@ -37,10 +37,9 @@ const SelectionMode = ({
 ${items.map((item, index) => {
   const isSelected = index === selectedIndex;
   const itemClass = isSelected ? 'selection-active' : 'selection-inactive';
-  const icon = isSelected ? '🔹' : '▫️';  // Hacer cada elemento clicable 
+  const icon = isSelected ? '🔹' : '▫️';  // Hacer cada elemento clicable - ahora solo requiere un clic para confirmar si ya está seleccionado
   return `<div style="padding:4px 0;cursor:pointer;margin-bottom:2px;" 
       onclick="window.selectItem(${index}, event)" 
-      ondblclick="window.confirmSelection(${index}, event)"
       data-index="${index}" 
       class="selectable-item ${isSelected ? 'selected' : ''}">
       <span class="${itemClass}">${icon} ${item.display || item.name || item}</span>
@@ -48,7 +47,9 @@ ${items.map((item, index) => {
 }).join('')}
 </div>
 <div style="color:#888;font-size:12px;margin-top:5px;border-top:1px solid #333;padding-top:8px;">
-Haga clic para seleccionar, doble clic para confirmar, o presione ESC para cancelar.
+🔸 <strong>Filtrar:</strong> Escribe en la consola para filtrar opciones<br/>
+🔸 <strong>Navegación:</strong> ESC para cancelar<br/>
+🔸 <strong>Clic:</strong> Una vez para seleccionar, dos veces en el mismo para confirmar
 </div>`,
       type: 'selection',
       html: true,
@@ -57,16 +58,30 @@ Haga clic para seleccionar, doble clic para confirmar, o presione ESC para cance
     
     setConsoleOutput(prev => [...prev, selectionLine]);
     
-    
-    // Definir funciones globales para manejar los clics
+      // Definir funciones globales para manejar los clics
     window.selectItem = (index, event) => {
-      // Actualizar estado de selección en React
-      onSelectIndex?.(index);
       // Evitar que el evento burbujee y cause scroll indeseado
       if (event) {
         event.preventDefault();
         event.stopPropagation();
       }
+        // Si el elemento ya está seleccionado, confirmar la selección
+      if (index === selectedIndex) {
+        // Segundo clic en el mismo elemento = confirmar
+        // Primero eliminar la lista de selección de la consola
+        setConsoleOutput(prev => prev.filter(line => 
+          line.type !== 'selection' || 
+          (line.type === 'selection' && line.command !== command)
+        ));
+        
+        setTimeout(() => {
+          onSelectionConfirm();
+        }, 0);
+        return;
+      }
+      
+      // Primer clic en elemento diferente = seleccionar
+      onSelectIndex?.(index);
       
       // Crear nueva selección sin resetear el scroll
       const newLine = { ...selectionLine };
@@ -93,26 +108,11 @@ Haga clic para seleccionar, doble clic para confirmar, o presione ESC para cance
         newLine
       ]);
       
-    };    window.confirmSelection = (index, event) => {
-      // Evitar que el evento burbujee
-      if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-      
-      // Actualizar el selectedIndex al elemento en el que se hizo doble clic
-      onSelectIndex?.(index);
-      
-      // Usar setTimeout para asegurar que el estado se actualice antes de confirmar
-      setTimeout(() => {
-        onSelectionConfirm();
-      }, 0);
-    };
-  };
-
-  // Mostrar la lista de selección al montar el componente
-  useEffect(() => {
-    if (active) {
+    };    // Eliminar la función de confirmSelection ya que ahora se maneja en selectItem
+    window.confirmSelection = undefined;
+  };  // Mostrar la lista de selección al montar el componente
+  useEffect(() => {    if (active) {
+      console.log('SelectionMode - Rendering with items:', items);
       displaySelectionList();
     }
     
@@ -120,25 +120,11 @@ Haga clic para seleccionar, doble clic para confirmar, o presione ESC para cance
     return () => {
       window.selectItem = undefined;
       window.confirmSelection = undefined;
-    };
-  }, [active, selectedIndex]); // Re-renderizar cuando cambia el índice seleccionado
-
-  // Manejar eventos de teclado para cancelar (ESC)
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        onExitSelectionMode();
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onExitSelectionMode]);
-
-  return (
+    };  }, [active, selectedIndex, items]); // Re-renderizar cuando cambia el índice seleccionado o los items filtrados
+    return (
     <SelectionModeIndicator>
-      <span>MODO DE SELECCIÓN ACTIVO</span>
-      <span>Haga clic para seleccionar, doble clic para confirmar</span>
+      <span>🎯 MODO DE SELECCIÓN ACTIVO</span>
+      <span>Escribe para filtrar • Clic para seleccionar • ESC para cancelar</span>
     </SelectionModeIndicator>
   );
 };
@@ -147,24 +133,34 @@ Haga clic para seleccionar, doble clic para confirmar, o presione ESC para cance
 const SelectionModeIndicator = styled.div`
   position: sticky;
   top: 0;
-  background: #0066cc;
+  background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
   color: white;
-  padding: 6px 12px;
-  margin: -16px -16px 10px -16px; /* Compensar el padding del ConsoleTerminal */
+  padding: 8px 16px;
+  margin: -16px -16px 12px -16px; /* Compensar el padding del ConsoleTerminal */
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-family: 'Consolas', 'Lucida Console', 'Courier New', monospace;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: bold;
   z-index: 100;
-  border-bottom: 1px solid #0055aa;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  border-bottom: 2px solid #0055aa;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+  
+  span:first-child {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
   
   span:last-child {
     font-weight: normal;
-    font-size: 11px;
-    opacity: 0.9;
+    font-size: 12px;
+    opacity: 0.95;
+    background: rgba(255,255,255,0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.2);
   }
 `;
 

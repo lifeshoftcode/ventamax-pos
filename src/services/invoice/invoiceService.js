@@ -2,6 +2,7 @@ import { validateInvoiceCart } from "../../utils/invoiceValidation";
 import { getCashCountStrategy } from "../../notification/cashCountNotification/cashCountNotificacion";
 import { checkOpenCashReconciliation } from "../../firebase/cashCount/useIsOpenCashReconciliation";
 import { fbGetAndUpdateTaxReceipt } from "../../firebase/taxReceipt/fbGetAndUpdateTaxReceipt";
+import { fbRegisterNcfUsage, fbUpdateNcfUsageStatus } from "../../firebase/taxReceipt/fbRegisterNcfUsage";
 import { fbUpsertClient } from "../../firebase/client/fbUpsertClient";
 import { GenericClient } from "../../features/clientCart/clientCartSlice";
 import { fbUpdateProductsStock } from "../../firebase/products/fbUpdateProductsStock";
@@ -56,13 +57,12 @@ export async function processInvoice({
         }
 
         const { cashCount } = await validateCashReconciliation({ user, dispatch, });
-
         if (!cashCount) {
             throw new Error('No se puede procesar la factura sin cuadre de caja');
         }
 
         const [ncfCode, clientData] = await Promise.all([
-            handleTaxReceiptGeneration({ user, taxReceiptEnabled, ncfType }),
+            handleTaxReceiptGeneration({ user, taxReceiptEnabled, ncfType, client }),
             retrieveAndUpdateClientData({ user, client }),
         ]);
 
@@ -73,13 +73,9 @@ export async function processInvoice({
         await adjustProductInventory({ user, products: cart.products, invoice });
 
         // Procesar cuentas por cobrar normales si existen
-        console.log("cart?.isAddedToReceivables", cart?.isAddedToReceivables)
-        console.log("accountsReceivable?.totalInstallments", accountsReceivable?.totalInstallments)
         if (cart?.isAddedToReceivables && accountsReceivable?.totalInstallments) {
             await manageReceivableAccounts({ user, accountsReceivable, invoice });
-        }
-
-        // Procesar cuentas por cobrar de seguros médicos si existen
+        }        // Procesar cuentas por cobrar de seguros médicos si existen
         if (insuranceEnabled && insuranceAR?.totalInstallments) {
             const arData = {
                 ...insuranceAR,
@@ -95,7 +91,7 @@ export async function processInvoice({
 
     } catch (error) {
         throw error
-    } 
+    }
 }
 
 function checkIfHasDueDate({ cart, dueDate }) {

@@ -1,8 +1,7 @@
-import React from 'react'
-import { Button } from './../../index'
 import styled from 'styled-components'
 import { MenuConfig } from './MenuConfig'
 import { useDispatch } from 'react-redux'
+import { Button } from 'antd'
 
 export const MenuComponents = () => {
     const dispatch = useDispatch()
@@ -13,12 +12,11 @@ export const MenuComponents = () => {
                     return (
                         <Item key={index}>
                             <Button
-                                bgcolor={item?.bgcolor}
-                                startIcon={item.icon}
-                                title={item.title}
                                 icon={item.icon}
                                 onClick={() => item.onclick(dispatch)}
-                            />
+                            >
+                                {item.title}
+                            </Button>
                         </Item>
                     )
                 })}
@@ -45,7 +43,7 @@ const Items = styled.ul`
         list-style: none;
         justify-content: end;
         margin: 0;
-        padding: 0;
+        padding: 0.4em;
 `
 const Item = styled.li`
     ${props => props.align === 'right' ? 'justify-self: end;' : ''}

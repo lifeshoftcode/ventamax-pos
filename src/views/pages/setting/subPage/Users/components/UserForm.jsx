@@ -1,37 +1,43 @@
-import React, { Fragment, useEffect, useState } from 'react';
-import * as antd from 'antd';
+import { Fragment, useEffect, useState } from 'react';
+import { Modal, Form, Input, Button, Select, message, Alert, Spin, Typography, Switch } from 'antd';
 import { useSelector } from 'react-redux';
 import { selectUser } from '../../../../../../features/auth/userSlice';
-import { useNavigate } from 'react-router-dom';
 import { fbSignUp } from '../../../../../../firebase/Auth/fbAuthV2/fbSignUp';
 import { userAccess } from '../../../../../../hooks/abilities/useAbilities';
 import { SelectSignUpUserModal, toggleSignUpUser } from '../../../../../../features/modals/modalSlice';
 import { getAssignableRoles } from '../../../../../../abilities/roles';
-const { Modal, Form, Input, Button, Select, message, Alert, Spin, Typography, Switch } = antd;
-const { Option } = Select;
+import DynamicPermissionsManager from './DynamicPermissionsManager';
+import RoleDowngradeConfirmationModal from './RoleDowngradeConfirmationModal';
 import { useDispatch } from 'react-redux';
 import { ChangePassword } from './EditUser/ChangePassword/ChangePassword';
 import { fbUpdateUser } from '../../../../../../firebase/Auth/fbAuthV2/fbUpdateUser';
+
 export const SignUpModal = () => {
     const [form] = Form.useForm();
-    const user = useSelector(selectUser);
-    const [isOpenChangePassword, setIsOpenChangePassword] = useState(false)
+    const user = useSelector(selectUser);    const [isOpenChangePassword, setIsOpenChangePassword] = useState(false)
+    const [isOpenPermissions, setIsOpenPermissions] = useState(false)
+    const [showDowngradeModal, setShowDowngradeModal] = useState(false)
+    const [pendingFormValues, setPendingFormValues] = useState(null)
     const [loading, setLoading] = useState(false)
     const signUpModal = useSelector(SelectSignUpUserModal)
     const { isOpen, data } = signUpModal;    
     const [fbError, setFbError] = useState(null);
     const dispatch = useDispatch()
-    const { abilities } = userAccess()
-
-    // Verificar permisos para gestionar usuarios
+    const { abilities } = userAccess()    // Verificar permisos para gestionar usuarios
     const canManageUsers = abilities.can('manage', 'User')
     const canCreateUsers = abilities.can('create', 'User') || canManageUsers
     const canUpdateUsers = abilities.can('update', 'User') || canManageUsers
+    const canManagePermissions = abilities.can('manage', 'users') // Para permisos dinámicos
 
     // Obtener roles que el usuario actual puede asignar
     const assignableRoles = getAssignableRoles(user);
+    const handleIsOpenChangePassWord = () => {
+        setIsOpenChangePassword(!isOpenChangePassword);
+    };
 
-    const handleSubmit = async (values) => {
+    const handleIsOpenPermissions = () => {
+        setIsOpenPermissions(!isOpenPermissions);
+    };    const handleSubmit = async (values) => {
         // Verificar permisos antes de proceder
         if (data && !canUpdateUsers) {
             message.error('No tienes permisos para actualizar usuarios');
@@ -42,6 +48,18 @@ export const SignUpModal = () => {
             return;
         }
 
+        // Verificar si hay un downgrade de rol y solicitar confirmación
+        if (data && data.role && values.role && isRoleDowngrade(data.role, values.role)) {
+            setPendingFormValues(values);
+            setShowDowngradeModal(true);
+            return;
+        }
+
+        // Proceder con la actualización normal
+        await processUserUpdate(values);
+    };
+
+    const processUserUpdate = async (values) => {
         setLoading(true);
         const userData = {
             ...data,
@@ -68,27 +86,36 @@ export const SignUpModal = () => {
         } finally {
             setTimeout(() => {
                 setLoading(false);
-            }, 1000);        }
+            }, 1000);
+        }
+    };
+
+    // Handlers para el modal de confirmación de downgrade
+    const handleDowngradeConfirm = async () => {
+        setShowDowngradeModal(false);
+        if (pendingFormValues) {
+            await processUserUpdate(pendingFormValues);
+            setPendingFormValues(null);
+        }
+    };
+
+    const handleDowngradeCancel = () => {
+        setShowDowngradeModal(false);
+        setPendingFormValues(null);
     };
 
     useEffect(() => {
         form.resetFields();
         setFbError(null);
-    }, [isOpen]);
-
-    useEffect(() => {
+    }, [isOpen]);    useEffect(() => {
         if (data) {
             form.setFieldsValue(data)
             setFbError(null);
         }
-    }, [data])
-
+    }, [data]);
+    
     const handleClose = () => {
         dispatch(toggleSignUpUser({ isOpen: false }))
-    }
-    
-    const handleIsOpenChangePassWord = () => {
-        setIsOpenChangePassword(!isOpenChangePassword)
     }
 
     // Si no tiene permisos para gestionar usuarios, no mostrar el modal
@@ -190,13 +217,21 @@ export const SignUpModal = () => {
                                             unCheckedChildren="Inactivo"
                                             onChange={(checked) => form.setFieldsValue({ active: checked })}
                                         />
-                                    </Form.Item>
-
-                                    <Button
+                                    </Form.Item>                                    <Button
                                         onClick={handleIsOpenChangePassWord}
                                     >
                                         Cambiar Contraseña
                                     </Button>
+                                    
+                                    {canManagePermissions && (
+                                        <Button
+                                            type="default"
+                                            style={{ marginLeft: '8px' }}
+                                            onClick={handleIsOpenPermissions}
+                                        >
+                                            Gestionar Permisos
+                                        </Button>
+                                    )}
                                 </div>
                             )
                         }
@@ -217,8 +252,40 @@ export const SignUpModal = () => {
                 user={data}
                 onClose={handleIsOpenChangePassWord}
             />
+            {canManagePermissions && data && (
+                <DynamicPermissionsManager
+                    userId={data.id}
+                    userName={data.name}
+                    userRole={data.role}
+                    isOpen={isOpenPermissions}
+                    onClose={handleIsOpenPermissions}
+                />
+            )}
+            <RoleDowngradeConfirmationModal
+                isOpen={showDowngradeModal}
+                currentRole={data?.role}
+                newRole={pendingFormValues?.role}
+                userName={data?.name || data?.realName}
+                onConfirm={handleDowngradeConfirm}
+                onCancel={handleDowngradeCancel}
+            />
         </Fragment>
     );
 };
 
+// Jerarquía de roles (mayor a menor privilegio)
+const ROLE_HIERARCHY = {
+    'dev': 6,
+    'owner': 5,
+    'admin': 4,
+    'manager': 3,
+    'buyer': 2,
+    'cashier': 1
+};
 
+// Función para detectar si hay un downgrade de rol
+const isRoleDowngrade = (currentRole, newRole) => {
+    const currentLevel = ROLE_HIERARCHY[currentRole] || 0;
+    const newLevel = ROLE_HIERARCHY[newRole] || 0;
+    return currentLevel > newLevel;
+};

@@ -3,19 +3,24 @@
 // Constantes basadas en los estilos del PDF
 const STYLES = {
   title: { fontSize: 14, lineHeight: 1.15, marginBottom: 6 },
-  headerInfo: { fontSize: 10, lineHeight: 1.15, marginVertical: 1 },  default: { fontSize: 10, lineHeight: 1.15 },
+  headerInfo: { fontSize: 10, lineHeight: 1.15, marginVertical: 1 },
+  default: { fontSize: 10, lineHeight: 1.15 }, // Corrected: Added missing comma
   totalsValue: { fontSize: 10, lineHeight: 1.15, marginVertical: 1 }
 };
 
 const LAYOUT = {
-  pageWidth: 515, // A4 width minus margins (595 - 2*40)
+  pageWidth: 531, // A4 width (595.28) - horizontal margins (32*2) = 531.28. Adjusted for better accuracy.
   logoWidth: 120,
+  logoAllocatedHeight: 80, // Added: Assumed/allocated height for the logo. This MUST match how the logo is rendered/constrained in buildHeader.js
   logoMargin: 4,
   separatorMargin: 10, // top + bottom
   clientBlockMargin: 9, // top + bottom
   headerMargin: 12, // top margin
   footerSignatureHeight: 25, // línea + texto
-  paymentMethodSpacing: 4
+  paymentMethodSpacing: 4,
+  // Added: Approximate width for columns if business/invoice info are side-by-side.
+  // Adjust this based on your actual column definitions in buildHeader.js (e.g., considering spacing between columns).
+  headerColumnWidth: (531 - 10) / 2 // Example: (pageWidth - spacing) / 2
 };
 
 /**
@@ -60,7 +65,8 @@ export function calcHeaderHeight(biz, d) {
   
   // 1. Logo (si existe)
   if (biz.logoUrl) {
-    height += 80 + LAYOUT.logoMargin; // altura del logo + margen inferior
+    // Uses LAYOUT.logoAllocatedHeight. Ensure this matches the actual rendering height in buildHeader.js
+    height += LAYOUT.logoAllocatedHeight + LAYOUT.logoMargin; 
   }
   
   // 2. Información del negocio (columna izquierda)
@@ -68,7 +74,8 @@ export function calcHeaderHeight(biz, d) {
   
   // Título del negocio
   if (biz.name) {
-    businessInfoHeight += STYLES.title.fontSize * STYLES.title.lineHeight + STYLES.title.marginBottom;
+    // Assuming title might span full width or a specific width, adjust maxWidth if needed
+    businessInfoHeight += calculateTextHeight(biz.name, STYLES.title.fontSize, STYLES.title.lineHeight, LAYOUT.headerColumnWidth) + STYLES.title.marginBottom;
   }
   
   // Información adicional del negocio
@@ -80,7 +87,8 @@ export function calcHeaderHeight(biz, d) {
   ].filter(Boolean);
   
   businessFields.forEach(field => {
-    businessInfoHeight += calculateTextHeight(field, STYLES.headerInfo.fontSize) + (STYLES.headerInfo.marginVertical * 2);
+    // Use LAYOUT.headerColumnWidth for text constrained in a column
+    businessInfoHeight += calculateTextHeight(field, STYLES.headerInfo.fontSize, STYLES.headerInfo.lineHeight, LAYOUT.headerColumnWidth) + (STYLES.headerInfo.marginVertical * 2);
   });
   
   // 3. Información de la factura (columna derecha)
@@ -88,7 +96,8 @@ export function calcHeaderHeight(biz, d) {
   
   // Título del comprobante
   const comprobanteTitle = getComprobanteTitle(d.NCF || d.comprobante);
-  invoiceInfoHeight += STYLES.title.fontSize * STYLES.title.lineHeight + STYLES.title.marginBottom;
+  // Assuming title might span full width or a specific width, adjust maxWidth if needed
+  invoiceInfoHeight += calculateTextHeight(comprobanteTitle, STYLES.title.fontSize, STYLES.title.lineHeight, LAYOUT.headerColumnWidth) + STYLES.title.marginBottom;
   
   // Campos de la factura
   const invoiceFields = [
@@ -100,7 +109,8 @@ export function calcHeaderHeight(biz, d) {
   ].filter(Boolean);
   
   invoiceFields.forEach(field => {
-    invoiceInfoHeight += calculateTextHeight(field, STYLES.headerInfo.fontSize) + (STYLES.headerInfo.marginVertical * 2);
+    // Use LAYOUT.headerColumnWidth for text constrained in a column
+    invoiceInfoHeight += calculateTextHeight(field, STYLES.headerInfo.fontSize, STYLES.headerInfo.lineHeight, LAYOUT.headerColumnWidth) + (STYLES.headerInfo.marginVertical * 2);
   });
   
   // Tomar la altura mayor entre las dos columnas
@@ -219,7 +229,8 @@ function getPaymentMethodText(method) {
   const methodNames = {
     cash: 'Efectivo',
     transfer: 'Transferencia',
-    card: 'Tarjeta'
+    card: 'Tarjeta', // Added missing comma
+    credit: 'Crédito' // Example: if you have other methods
   };
   
   const methodName = methodNames[method.method?.toLowerCase()] || method.method;

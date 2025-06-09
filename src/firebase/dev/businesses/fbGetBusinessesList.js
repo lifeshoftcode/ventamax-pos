@@ -1,4 +1,4 @@
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import { db } from "../../firebaseconfig";
 
 /**
@@ -8,8 +8,9 @@ import { db } from "../../firebaseconfig";
 export const fbGetBusinessesList = async () => {
     try {
         const businessesRef = collection(db, "businesses");
-        const snapshot = await getDocs(businessesRef);
-        
+        const q = query(businessesRef, orderBy("business.name", "asc"));
+        const snapshot = await getDocs(q);
+
         const businesses = snapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data()

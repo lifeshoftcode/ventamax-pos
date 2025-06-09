@@ -86,7 +86,10 @@ export function buildHeader(biz, d, images) {
         image: 'logo',
         width: 120,
         margin: [0, 0, 0, 8],
-        colSpan: 2
+        colSpan: 2,
+        width: 200,
+        height: 80, // Altura fija
+        fit: [200, 80]
       },
       {}
       ]);

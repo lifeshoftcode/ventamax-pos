@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
+import AutoComplete from './AutoComplete';
 
 // Variantes de animación para los elementos de la consola
 const consoleLineVariants = {
@@ -19,36 +20,85 @@ const consoleLineVariants = {
 /**
  * Componente que muestra la salida de la consola y el prompt para entrada de comandos
  */
-const Console = ({ 
+const Console = ({
   consoleOutput,
   commandInput,
   setCommandInput,
   handleKeyDown,
   selectionMode,
-  welcomeText
+  welcomeText,
+  // Nuevas props para autocompletado
+  autoCompleteSuggestions = [],
+  showAutoComplete = false,
+  autoCompleteSelectedIndex = -1,
+  onAutoCompleteSuggestionSelect,
+  onAutoCompleteSelectedIndexChange,
+  // Nueva prop para filtrar selecciones
+  onFilterSelection
 }) => {
   const inputRef = useRef(null);
   const terminalRef = useRef(null);
 
-  // (Removed auto-scroll logic as requested)
-
-  // Enfocar el input cuando el componente se monta
+  // (Removed auto-scroll logic as requested)  // Enfocar el input cuando el componente se monta y asegurar que capture eventos de teclado
   useEffect(() => {
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 200);
-  }, []);
+    const focusInput = () => {
+      if (inputRef.current && !selectionMode.active) {
+        inputRef.current.focus();
+        // Asegurar que el input esté realmente enfocado
+        setTimeout(() => {
+          if (!selectionMode.active) {
+            inputRef.current?.focus();
+          }
+        }, 100);
+      }
+    };
 
-  // (Removed global terminal ref exposure)
+    focusInput();
+
+    // Re-enfocar cuando salgamos del modo selección
+    if (!selectionMode.active) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 50);
+    }
+  }, [selectionMode.active]);// Función para manejar el clic en la consola
+  const handleConsoleClick = (e) => {
+    // No enfocar si estamos en modo de selección, pero no prevenir otros eventos
+    if (selectionMode.active) {
+      return;
+    }
+
+    // No enfocar si el clic fue en el input mismo
+    if (e.target === inputRef.current) {
+      return;
+    }
+
+    // No enfocar si el clic fue en elementos interactivos
+    if (e.target.closest('.selectable-item') ||
+      e.target.closest('.autocomplete-container') ||
+      e.target.closest('button') ||
+      e.target.closest('a') ||
+      e.target.closest('[onclick]')) {
+      return;
+    }
+
+    // Enfocar el input
+    inputRef.current?.focus();
+  };
 
   return (
-    <>
-      <ConsoleTerminal ref={terminalRef} className="console-terminal">
+    <ConsoleContainer>
+      {/* Área de contenido scrolleable */}
+      <ConsoleTerminal
+        ref={terminalRef}
+        className="console-terminal"
+        onClick={handleConsoleClick}
+      >
         {/* Texto de bienvenida */}
         <WelcomeText>
           {welcomeText}
         </WelcomeText>
-        
+
         {/* Salida de la consola */}
         {consoleOutput.map((line) => (
           <motion.div
@@ -74,45 +124,73 @@ const Console = ({
             </ConsoleLine>
           </motion.div>
         ))}
-        
-        {/* Prompt de entrada de comandos */}
+      </ConsoleTerminal>
+
+      {/* Input fijo en la parte inferior */}
+      <FixedInputContainer>
+        <AutoComplete
+          inputValue={commandInput}
+          suggestions={autoCompleteSuggestions}
+          onSuggestionSelect={onAutoCompleteSuggestionSelect}
+          isVisible={showAutoComplete && !selectionMode.active}
+          selectedIndex={autoCompleteSelectedIndex}
+          onSelectedIndexChange={onAutoCompleteSelectedIndexChange}
+          inputElement={inputRef.current}
+        />
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <ConsolePrompt>C:\\VentaMax&gt;</ConsolePrompt>
           <ConsoleInput
             ref={inputRef}
-            value={selectionMode.active ? '' : commandInput}
-            onChange={(e) => !selectionMode.active && setCommandInput(e.target.value)}
+            value={commandInput}
+            onChange={(e) => {
+              setCommandInput(e.target.value);
+              // Si estamos en modo selección, filtrar las opciones
+              if (selectionMode.active && onFilterSelection) {
+                onFilterSelection(e.target.value);
+              }
+            }}
             onKeyDown={handleKeyDown}
-            placeholder={selectionMode.active ? 'Haga clic para seleccionar, doble clic para confirmar, ESC para cancelar' : ''}
+            placeholder={
+              selectionMode.active 
+                ? 'Escribe para filtrar las opciones...' 
+                : 'Escriba un comando...'
+            }
             autoFocus
-            disabled={selectionMode.active}
             style={{
-              opacity: selectionMode.active ? 0.6 : 1,
-              cursor: selectionMode.active ? 'not-allowed' : 'text'
+              opacity: 1,
+              cursor: 'text'
             }}
           />
         </div>
-      </ConsoleTerminal>
-    </>
+      </FixedInputContainer>
+    </ConsoleContainer>
   );
 };
 
 // Estilos del componente
+const ConsoleContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+`;
+
 const ConsoleTerminal = styled.div`
   background-color: #0c0c0c;
   color: #c0c0c0;
   font-family: 'Consolas', 'Lucida Console', 'Courier New', monospace;
   font-size: 14px;
   padding: 16px;
-  height: 100%;
+  flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
-  border-radius: 0 0 4px 4px;
+  cursor: text; /* Cursor de texto para indicar que es clickeable */
   
   /* Estilo para elementos seleccionables */
   .selectable-item {
     transition: background-color 0.1s ease;
+    cursor: pointer !important; /* Mantener cursor pointer para elementos seleccionables */
     
     &:hover {
       background-color: rgba(0, 102, 204, 0.15);
@@ -183,13 +261,13 @@ const ConsoleLine = styled.div`
   
   .content {
     color: ${props => {
-      switch (props.type) {
-        case 'command': return '#f5deb3'; // Color cremita para comandos del usuario
-        case 'error': return '#ff6b6b';   // Rojo suave para errores
-        case 'selection': return '#66d9ef'; // Azul claro para las selecciones interactivas
-        default: return '#c0c0c0';        // Classic CMD silver/light gray para respuestas del sistema
-      }
-    }};
+    switch (props.type) {
+      case 'command': return '#f5deb3'; // Color cremita para comandos del usuario
+      case 'error': return '#ff6b6b';   // Rojo suave para errores
+      case 'selection': return '#66d9ef'; // Azul claro para las selecciones interactivas
+      default: return '#c0c0c0';        // Classic CMD silver/light gray para respuestas del sistema
+    }
+  }};
   }
   
   .prompt {
@@ -242,6 +320,19 @@ const ConsoleInput = styled.input`
     background: #f5deb3;
     color: #000;
   }
+`;
+
+const InputContainer = styled.div`
+  position: relative;
+  width: 100%;
+`;
+
+const FixedInputContainer = styled.div`
+  position: relative;
+  background-color: #0c0c0c;
+  border-top: 1px solid #333;
+  padding: 12px 16px;
+  flex-shrink: 0;
 `;
 
 export default Console;

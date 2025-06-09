@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import { ShoppingItemsCounter } from '../ShoppingItemsCounter/ShoppingItemsCounter';
+import { StatusBar } from '../StatusBar/StatusBar';
 import { ProductCategoryBar } from '../../../../component/ProductCategoryBar/ProductCategoryBar';
 import { ProductList } from './components/ProductList';
 
@@ -8,7 +8,7 @@ export function ProductControlEfficient({ products, productsLoading }) {
     <Container>
       <ProductCategoryBar />
       <ProductList products={products} productsLoading={productsLoading} />
-      <ShoppingItemsCounter products={products} />
+      <StatusBar products={products} />
     </Container>
   );
 }

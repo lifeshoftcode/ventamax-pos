@@ -85,18 +85,27 @@ const TaxReceiptAuthorizationModal = ({ visible, onCancel, taxReceipts, onAuthor
         approvedQuantity: values.approvedQuantity,
         expirationDate: values.expirationDate.format('YYYY-MM-DD'),
         authorizationDate: dayjs().format('YYYY-MM-DD'),
-      };
-
-      // Actualizar el comprobante con la nueva autorización
+      };      // Actualizar el comprobante con la nueva autorización
       const receiptData = selectedReceipt.data;
       const authorizations = receiptData.authorizations || [];
+      
+      // PROTECCIÓN: Solo actualizar secuencia si el startSequence es mayor que la secuencia actual
+      const currentSequence = parseInt(receiptData.sequence || '0', 10);
+      const newStartSequence = parseInt(values.startSequence, 10);
+      
+      // Validar que la nueva secuencia no sea menor que la actual
+      if (newStartSequence < currentSequence) {
+        message.error(`Error: La secuencia inicial (${newStartSequence}) no puede ser menor que la secuencia actual (${currentSequence}). Esto podría causar duplicación de NCF.`);
+        setLoading(false);
+        return;
+      }
       
       const updatedReceipt = {
         ...receiptData,
         id: receiptData.id,
-        // Actualizamos la secuencia y cantidad del comprobante principal
-        sequence: values.startSequence,
-        quantity: values.approvedQuantity,
+        // Solo actualizar secuencia si es mayor que la actual para evitar retrocesos
+        sequence: newStartSequence > currentSequence ? values.startSequence : receiptData.sequence,
+        quantity: newStartSequence > currentSequence ? values.approvedQuantity : receiptData.quantity,
         sequenceLength: values.startSequence.length,
         // Agregamos la nueva autorización al historial
         authorizations: [...authorizations, authorizationData]

@@ -110,7 +110,7 @@ export const ClientControl = () => {
   return (
     <Container ref={searchClientRef}>
       <Header>
-        <InputWrapper>
+        <InputWrapper data-client-control-input="true">
           <Input
             prefix={inputIcon}
             placeholder="Buscar cliente..."
@@ -120,14 +120,15 @@ export const ClientControl = () => {
             style={{ width: '100%' }}
             allowClear
             onClear={handleDeleteData}
+            data-client-control-input="true"
           />
-
           {mode === CLIENT_MODE_BAR.SEARCH.id && (
             <ClientButton
               color='blue'
               variant="solid"
               icon={icons.operationModes.add}
               onClick={openAddClientModal}
+              data-client-control-input="true"
             >
               Cliente
             </ClientButton>
@@ -138,6 +139,7 @@ export const ClientControl = () => {
               type="primary"
               icon={icons.operationModes.edit}
               onClick={openUpdateClientModal}
+              data-client-control-input="true"
             >
               Cliente
             </ClientButton>
@@ -146,6 +148,7 @@ export const ClientControl = () => {
           {!limitByWindowWidth && (
             <ClientButton
               onClick={handleCloseCart}
+              data-client-control-input="true"
             >
               Volver
             </ClientButton>
@@ -163,12 +166,14 @@ export const ClientControl = () => {
               style={{ width: 200 }}
               value={nfcType}
               onChange={(e) => dispatch(selectTaxReceiptType(e))}
-            >              <Select.OptGroup label="Comprobantes Fiscal" >
-                {taxReceiptData.taxReceipt
-                  .filter(receipt => !receipt.data?.disabled) // Solo mostrar comprobantes activos
-                  .map(({ data }, index) => (
-                    <Select.Option value={data.name} key={index}>{data.name}</Select.Option>
-                  ))
+            >
+              <Select.OptGroup label="Comprobantes Fiscal" >
+                {
+                  taxReceiptData.taxReceipt
+                    .filter(receipt => !receipt.data?.disabled) // Solo mostrar comprobantes activos
+                    .map(({ data }, index) => (
+                      <Select.Option value={data.name} key={index}>{data.name}</Select.Option>
+                    ))
                 }
               </Select.OptGroup>
             </Select>

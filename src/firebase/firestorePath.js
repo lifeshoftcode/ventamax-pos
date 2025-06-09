@@ -1,8 +1,6 @@
 import { collection, doc } from 'firebase/firestore';
 import { db } from './firebaseconfig';
 
-
-
 const getFirestoreRef = (...pathSegments) => {
   if (!db || pathSegments.length === 0) {
     throw new Error("Debe proporcionar la base de datos y al menos un segmento de ruta.");
@@ -57,7 +55,7 @@ const accountsReceivablePaymentsData = (businessID) => getFirestoreRef('business
 const accountsReceivableInstallmentsData = (businessID, accountReceivableID) => getFirestoreRef('businesses', businessID, 'accountsReceivable', accountReceivableID, 'installments');
 
 export {
-    getFirestoreRef,
+  getFirestoreRef,
   clientsData,
   providersData,
   productCategoriesData,

@@ -8,7 +8,9 @@ export const fbUpdateUser = async (userData) => {
         ...userData,
         updatedAt: Timestamp.now()
     }
-    const userExists = await fbCheckIfUserExists(userData?.name);
+    
+    // Pasar el ID del usuario para excluirlo de la verificación
+    const userExists = await fbCheckIfUserExists(userData?.name, userData?.id);
 
     if (userExists) {
         throw new Error('Error: Ya existe un usuario con este nombre.');
