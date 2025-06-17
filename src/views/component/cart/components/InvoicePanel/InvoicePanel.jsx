@@ -140,7 +140,8 @@ export const InvoicePanel = () => {
                 message.info('Continuando con la venta', 2.5)
             },
         });
-    };    const handleInvoicePriting = async (invoice) => {
+    };
+    const handleInvoicePriting = async (invoice) => {
         if (invoiceType === 'template2') {
             try {
              

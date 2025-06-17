@@ -175,11 +175,6 @@ export const ReceivableManagementPanel = ({
       
     if (shouldAutoSet) {
       if (nextPaymentDate !== paymentDate) {
-        console.log(
-          `Auto-setting Payment Date (Forced: ${forceRecalculate}):`,
-          new Date(nextPaymentDate).toLocaleDateString(),
-          `(Base: ${new Date(baseCalculationDate).toLocaleDateString()})`
-        );
         updatePaymentDateInStore(nextPaymentDate);
         setUserModifiedDate(false);
         if (forceRecalculate) setForceRecalculate(false);
