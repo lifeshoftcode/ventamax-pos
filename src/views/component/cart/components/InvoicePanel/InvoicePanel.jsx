@@ -143,10 +143,7 @@ export const InvoicePanel = () => {
     };    const handleInvoicePriting = async (invoice) => {
         if (invoiceType === 'template2') {
             try {
-                console.log('🚀 Starting PDF generation for template2');
-                console.log('📊 Business data:', business);
-                console.log('📋 Invoice data:', invoice);
-                
+             
                 await downloadInvoiceLetterPdf(business, invoice, handleAfterPrint);
             } catch (e) {
                 notification.error({
@@ -154,8 +151,7 @@ export const InvoicePanel = () => {
                     description: `No se pudo generar el PDF: ${e.message}`,
                     duration: 4
                 });
-                console.error('❌ PDF generation failed:', e);
-                console.error('❌ Error stack:', e.stack);
+          
             }
         } else {
             setTimeout(() => handlePrint(), 1000);
