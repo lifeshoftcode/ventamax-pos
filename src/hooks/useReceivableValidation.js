@@ -25,12 +25,12 @@ export const useReceivableValidation = (creditLimit) => {
   const isGenericClient = clientId === 'GC-0000';
   const isChangeNegative = change < 0;
 
-  useEffect(() => {
-    const fetchInvoiceAvailableCount = async () => {
+  useEffect(() => {    const fetchInvoiceAvailableCount = async () => {
       if (creditLimit?.invoice?.status) {
         const invoiceAvailableCount = await fbGetActiveARCount(user.businessID, clientId);
         setActiveAccountsReceivableCount(invoiceAvailableCount);
-        setIsWithinInvoiceCount(invoiceAvailableCount <= creditLimit?.invoice?.value || 0);
+        // Corregido: usar < en lugar de <= y agregar paréntesis correctos
+        setIsWithinInvoiceCount(invoiceAvailableCount < (creditLimit?.invoice?.value || 0));
       } else {
         setIsWithinInvoiceCount(true);
       }

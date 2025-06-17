@@ -5,8 +5,8 @@ export const DetailSummary = ({ items = [] }) => {
     return (
         <AccountSection>
             {
-                items.map((item) => (
-                    <InfoRow>
+                items.map((item, index) => (
+                    <InfoRow key={index}>
                         <Label>{item?.label}</Label>
                         <Value>{item?.value}</Value>
                     </InfoRow>

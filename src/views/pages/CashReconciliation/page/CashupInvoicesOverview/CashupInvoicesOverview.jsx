@@ -1,10 +1,9 @@
 import styled from 'styled-components'
-// import { SaleReportTable } from '../../../Registro/SaleReportTable/SaleReportTable'
 import { ExportInvoice } from './components/Header/ExportInvoice'
 import { Drawer } from 'antd'
 import { Suspense, useMemo, lazy, memo } from 'react'
 
-const SaleReportTable = lazy(() => import('../../../Registro/SaleReportTable/SaleReportTable'));
+const SaleReportTable = lazy(() => import('../../../InvoicesPage/SaleReportTable/SaleReportTable'));
 
 const Spinner = () => (
     <div style={{ padding: '2em', textAlign: 'center' }}>Cargando...</div>

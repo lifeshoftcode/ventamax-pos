@@ -2,10 +2,11 @@ import { AbilityBuilder, PureAbility } from '@casl/ability';
 import { useMatch } from 'react-router-dom';
 import routesName from '../../routes/routesName';
 
-function defineBaseAbilities(can) {
+function defineBaseAbilities(can, cannot) {
   const {
     SALES_TERM,
     SETTING_TERM,
+    ACCOUNT_RECEIVABLE,
     CONTACT_TERM,
     BASIC_TERM,
     INVENTORY_TERM,
@@ -13,6 +14,8 @@ function defineBaseAbilities(can) {
   } = routesName;
 
   const { CLIENTS } = CONTACT_TERM;
+
+  const { ACCOUNT_RECEIVABLE_LIST, RECEIVABLE_PAYMENT_RECEIPTS, ACCOUNT_RECEIVABLE_INFO } = ACCOUNT_RECEIVABLE;
 
   const {
     CASH_RECONCILIATION_CLOSURE,
@@ -25,6 +28,7 @@ function defineBaseAbilities(can) {
   const { HOME } = BASIC_TERM;
   const { INVENTORY_ITEMS } = INVENTORY_TERM;
 
+  // Permisos que SÍ puede hacer
   can('manage', 'Bill');
   can('manage', 'Product');
   can(['read', 'create', 'update'], 'Client');
@@ -35,19 +39,28 @@ function defineBaseAbilities(can) {
   can('access', CASH_RECONCILIATION_OPENING);
   can('access', CASH_RECONCILIATION_CLOSURE);
   can('access', CASH_RECONCILIATION_LIST);
+  can('access', ACCOUNT_RECEIVABLE_LIST);
+  can('access', RECEIVABLE_PAYMENT_RECEIPTS);
+  can('access', ACCOUNT_RECEIVABLE_INFO);
   can('access', SALES);
   can('access', BILLS);
   can('access', CLIENTS);
   can('access', INVENTORY_ITEMS);
-  //que pueda contra esto: 'manage', 'accountReceivable'
   can('manage', 'accountReceivable');
-  // Permitir ver usuarios pero no gestionarlos
   can('read', 'User');
+
+  // Permisos que NO puede hacer por defecto (pueden ser habilitados dinámicamente)
+  cannot('read', 'PriceList');
+  cannot('modify', 'Price');
+  cannot('manage', 'users');
+  cannot('access', 'admin-panel');
+  cannot('delete', 'Product');
+  cannot('manage', 'business-settings');
 }
 
 export function defineAbilitiesForCashier(user) {
-  const { can, rules } = new AbilityBuilder(PureAbility);
-  defineBaseAbilities(can);
+  const { can, cannot, rules } = new AbilityBuilder(PureAbility);
+  defineBaseAbilities(can, cannot);
 
   // Permisos adicionales que pueden ser habilitados dinámicamente
   // Estos eran los permisos de specialCashier1 y specialCashier2

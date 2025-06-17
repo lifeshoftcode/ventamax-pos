@@ -7,16 +7,15 @@ import { resetAR, selectAR, setAR } from '../../../../../../../../../features/ac
 import styled from 'styled-components';
 import { selectUser } from '../../../../../../../../../features/auth/userSlice';
 import { fbGetActiveARCount } from '../../../../../../../../../firebase/accountsReceivable/fbGetActiveARCount';
-import { ARValidateMessage } from './components/ARValidateMessage';
 import { useQuery } from '@tanstack/react-query';
 
 
 // Hook personalizado para manejar la lógica de AR
-const useARValidation = (cartData, creditLimit) => {
+export const useARValidation = (cartData, creditLimit) => {
     const user = useSelector(selectUser);
     const change = useMemo(() => calculateInvoiceChange(cartData), [cartData]);
     const client = cartData?.client;
-    const clientId = client?.id;
+    const clientId = cartData?.client?.id;
     const { currentBalance } = useSelector(selectAR);
     
     const isGenericClient = clientId === 'GC-0000' || clientId === null;
@@ -32,10 +31,9 @@ const useARValidation = (cartData, creditLimit) => {
         staleTime: 60000,
         }
     );
-    
-    // Calcular si está dentro del límite de factura
+      // Calcular si está dentro del límite de factura
     const isWithinInvoiceCount = !creditLimit?.invoice?.status || 
-      activeAccountsReceivableCount <= (creditLimit?.invoice?.value || 0);
+      activeAccountsReceivableCount < (creditLimit?.invoice?.value || 0);
     
     // Calcular si está dentro del límite de crédito
     const creditLimitValue = creditLimit?.creditLimit?.status && currentBalance !== null ? 
@@ -55,7 +53,7 @@ const useARValidation = (cartData, creditLimit) => {
     };
   };
 
-export const MarkAsReceivableButton = ({creditLimit = null}) => {
+export const MarkAsReceivableButton = ({creditLimit = null, setIsOpen, isOpen}) => {
     const dispatch = useDispatch();
     // const [activeAccountsReceivableCount, setActiveAccountsReceivableCount] = useState(0);
     // const [isWithinCreditLimit, setIsWithinCreditLimit] = useState(null);
@@ -65,6 +63,7 @@ export const MarkAsReceivableButton = ({creditLimit = null}) => {
     const user = useSelector(selectUser);
     const change = useMemo(() => calculateInvoiceChange(cartData), [cartData]);
     const client = cartData?.client;
+    console.log('client: ', client);
 
     const {
         isGenericClient,
@@ -84,36 +83,48 @@ export const MarkAsReceivableButton = ({creditLimit = null}) => {
     const receivableStatus = isAddedToReceivables && isWithinCreditLimit;
     const { currentBalance } = useSelector(selectAR);
 
+    // Debug logs
+    console.log('MarkAsReceivableButton - Debug Info:', {
+        isOpen,
+        isChangeNegative,
+        isAddedToReceivables,
+        receivableStatus,
+        isWithinCreditLimit,
+        clientId
+    });
+
     useEffect(() => {
         if (!cartData.isAddedToReceivables || !creditLimit) {
             dispatch(resetAR())
         }
     }, [cartData?.isAddedToReceivables, creditLimit])
 
-    useEffect(() => {
-        const fetchInvoiceAvailableCount = async () => {
-            if (creditLimit?.invoice?.status) {
-                const invoiceAvailableCount = await fbGetActiveARCount(user.businessID, clientId)
-                // setActiveAccountsReceivableCount(invoiceAvailableCount);
-                // setIsWithinInvoiceCount(invoiceAvailableCount <= creditLimit?.invoice?.value || 0);
-            }else{
-                // setIsWithinInvoiceCount(true)
+    // useEffect(() => {
+    //     const fetchInvoiceAvailableCount = async () => {
+    //         if (creditLimit?.invoice?.status) {
+    //             const invoiceAvailableCount = await fbGetActiveARCount(user.businessID, clientId)
+    //             // setActiveAccountsReceivableCount(invoiceAvailableCount);
+    //             //                setIsWithinInvoiceCount(activeAccountsReceivableCount < (creditLimit?.invoice?.value || 0));
+    //         }else{
+    //             // setIsWithinInvoiceCount(true)
             
-            }
-        }
-        fetchInvoiceAvailableCount()
-    }, [clientId, user, creditLimit])
-    useEffect(() => {
-        if (creditLimit?.creditLimit?.status && currentBalance !== null) {
-            const adjustedCreditLimit = (currentBalance) + (-change);
-            // setIsWithinCreditLimit(adjustedCreditLimit <= creditLimit?.creditLimit?.value);
-            // setCreditLimitValue(adjustedCreditLimit);
-        }else {
-            // setIsWithinCreditLimit(true)
-        }
-    }, [creditLimit, currentBalance, change]);
+    //         }
+    //     }
+    //     fetchInvoiceAvailableCount()
+    // }, [clientId, user, creditLimit])
+    // useEffect(() => {
+    //     if (creditLimit?.creditLimit?.status && currentBalance !== null) {
+    //         const adjustedCreditLimit = (currentBalance) + (-change);
+    //         // setIsWithinCreditLimit(adjustedCreditLimit <= creditLimit?.creditLimit?.value);
+    //         // setCreditLimitValue(adjustedCreditLimit);
+    //     }else {
+    //         // setIsWithinCreditLimit(true)
+    //     }
+    // }, [creditLimit, currentBalance, change]);
 
-    function handleClick() {
+    const isInvoiceOrCreditLimitValid = useMemo(() => {
+        return creditLimit?.creditLimit?.status && creditLimit?.invoice?.status;
+    }, [creditLimit]);    function handleAddToReceivable() {
         if (!creditLimit?.creditLimit?.status || !creditLimit?.invoice?.status) {
             notification.error({
                 message: 'Error',
@@ -136,46 +147,53 @@ export const MarkAsReceivableButton = ({creditLimit = null}) => {
             })
             return
         }
+        
         if (isChangeNegative) {
             dispatch(toggleReceivableStatus())
         }
-        if (!receivableStatus) {
-            dispatch(setAR({ clientId, invoiceId }))
-        } else {
-            dispatch(resetAR())
-        }
-    }
-
-    return (
+        dispatch(setAR({ clientId, invoiceId }))
+        // Abrir el modal para configurar
+        setIsOpen(true);
+    }// Determinar si el botón debe estar deshabilitado y por qué
+    const isButtonDisabled = isGenericClient || !isWithinCreditLimit || !isWithinInvoiceCount || !isInvoiceOrCreditLimitValid;
+    
+    // Generar mensaje de tooltip explicando por qué está deshabilitado
+    const getDisabledReason = () => {
+        if (isGenericClient) return "Selecciona un cliente específico";
+        if (!isWithinCreditLimit) return "Límite de crédito excedido";
+        if (!isWithinInvoiceCount) return "Límite de facturas alcanzado";
+        if (!isInvoiceOrCreditLimitValid) return "Configura los límites de crédito";
+        return "";
+    };    return (
         <Fragment>
-            {
-                isChangeNegative && 
+            {/* Solo mostrar cuando hay cambio negativo Y no está agregado a receivables */}
+            {isChangeNegative && !receivableStatus && (
                 <Container>
                     <Button
                         style={{ width: '100%' }}
-                        onClick={handleClick}
+                        onClick={handleAddToReceivable}
                         spellCheck={true}
-                        disabled={isGenericClient || !isWithinCreditLimit || !isWithinInvoiceCount }
+                        disabled={isButtonDisabled}
+                        title={isButtonDisabled ? getDisabledReason() : ""}
+                        type="primary"
                     >
-                        {receivableStatus ? 'Quitar de CXC' : 'Agregar a CXC'}
+                        Agregar a CXC
                     </Button>
-                    <ARValidateMessage
-                        isGenericClient={isGenericClient}
-                        clientId={clientId}
-                        invoiceId={cartData.id}
-                        isChangeNegative={isChangeNegative}
-                        isWithinCreditLimit={isWithinCreditLimit}
-                        isWithinInvoiceCount={isWithinInvoiceCount}
-                        activeAccountsReceivableCount={activeAccountsReceivableCount}
-                        currentBalance={currentBalance}
-                        creditLimit={creditLimit}
-                        creditLimitValue={creditLimitValue}
-                    />
+                    {/* Mensaje de ayuda cuando está deshabilitado */}
+                    {isButtonDisabled && (
+                        <div style={{
+                            fontSize: '12px',
+                            color: '#8c8c8c',
+                            textAlign: 'center',
+                            marginTop: '4px',
+                            fontStyle: 'italic'
+                        }}>
+                            {getDisabledReason()}
+                        </div>
+                    )}
                 </Container>
-            }
-         
+            )}
         </Fragment>
-
     );
 
 }

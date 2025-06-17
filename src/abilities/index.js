@@ -16,18 +16,23 @@ const ROLE_ABILITIES = {
   devAbilities: defineAbilitiesForDev, //desarrollador
 };
 
-export async function defineAbilitiesFor(user) {
+export function defineAbilitiesFor(user) {
+  return getBaseAbilitiesForRole(user);
+}
+
+export async function defineAbilitiesForWithDynamic(user) {
   // Obtener permisos base del rol
   const baseAbilities = getBaseAbilitiesForRole(user);
   
-  // Si no hay user.id, solo devolver permisos base
-  if (!user?.id) {
+  // Si no hay user.uid, solo devolver permisos base
+  if (!user?.uid) {
     return baseAbilities;
   }
   
   try {
     // Obtener permisos dinámicos de Firestore
-    const dynamicPermissions = await getUserDynamicPermissions(user.id);
+    // Pasamos userId y currentUser en el orden correcto
+    const dynamicPermissions = await getUserDynamicPermissions(user.uid, user);
     
     // Combinar permisos base con dinámicos
     return combineAbilities(baseAbilities, dynamicPermissions, user);
@@ -63,30 +68,47 @@ function combineAbilities(baseAbilities, dynamicPermissions, user) {
   // Convertir abilities base a array si no lo es
   let combinedAbilities = Array.isArray(baseAbilities) ? [...baseAbilities] : baseAbilities.rules || [];
   
-  // Agregar permisos adicionales
+  // Agregar permisos adicionales (esto puede anular restricciones previas)
   if (dynamicPermissions.additionalPermissions) {
     dynamicPermissions.additionalPermissions.forEach(permission => {
-      // Verificar que no esté ya incluido
+      // Primero, remover cualquier restricción existente para este permiso
+      combinedAbilities = combinedAbilities.filter(rule => 
+        !(rule.action === permission.action && 
+          rule.subject === permission.subject && 
+          rule.inverted === true) // rule.inverted === true significa "cannot"
+      );
+      
+      // Luego, verificar que no esté ya incluido como "can"
       const exists = combinedAbilities.some(rule => 
         rule.action === permission.action && 
-        rule.subject === permission.subject
+        rule.subject === permission.subject &&
+        !rule.inverted // Solo verificar rules que son "can" (no inverted)
       );
       
       if (!exists) {
         combinedAbilities.push({
           action: permission.action,
-          subject: permission.subject
+          subject: permission.subject,
+          inverted: false // Explícitamente es un "can"
         });
       }
     });
   }
   
-  // Remover permisos restringidos
+  // Agregar permisos restringidos (esto anula permisos previos)
   if (dynamicPermissions.restrictedPermissions) {
     dynamicPermissions.restrictedPermissions.forEach(restriction => {
+      // Remover cualquier permiso existente para esta acción/subject
       combinedAbilities = combinedAbilities.filter(rule => 
         !(rule.action === restriction.action && rule.subject === restriction.subject)
       );
+      
+      // Agregar la restricción explícita
+      combinedAbilities.push({
+        action: restriction.action,
+        subject: restriction.subject,
+        inverted: true // Esto es un "cannot"
+      });
     });
   }
   

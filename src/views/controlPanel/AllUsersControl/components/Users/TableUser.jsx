@@ -1,19 +1,21 @@
-import React, { useState } from 'react';
-import * as antd from 'antd';
-import { ChangerPasswordModal } from './ChangerPasswordModal';
+import { useState } from 'react';
+import { Table, Button } from 'antd';
 import styled from 'styled-components';
-const { Table, Button } = antd;
+import { ChangerPasswordModal } from './ChangerPasswordModal';
 
-export const TableUser = ({ users }) => {
+export const TableUser = ({ users = [] }) => {
     const [isOpen, setIsOpen] = useState(false)
     const [userSelected, setUserSelected] = useState(null)
     const businessIDFilters = users.reduce((acc, current) => {
-        const businessID = current.user.businessID;
-        if (!acc.find(filter => filter.value === businessID)) {
-            acc.push({
-                text: businessID,
-                value: businessID,
-            });
+        // Check if current and current.user exist before accessing businessID
+        if (current && current.user && current.user.businessID) {
+            const businessID = current.user.businessID;
+            if (!acc.find(filter => filter.value === businessID)) {
+                acc.push({
+                    text: businessID,
+                    value: businessID,
+                });
+            }
         }
         return acc;
     }, []);
@@ -27,13 +29,12 @@ export const TableUser = ({ users }) => {
             title: 'Nombre',
             dataIndex: ['user', 'name'],
             key: 'name',
-        },
-        {
+        },        {
             title: 'businessID',
             dataIndex: ['user', 'businessID'],
             key: 'businessID',
             filters: businessIDFilters,
-            onFilter: (value, record) => record.user.businessID === value,
+            onFilter: (value, record) => record?.user?.businessID === value,
         },
         {
             title: 'Rol',

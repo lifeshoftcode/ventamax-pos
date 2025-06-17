@@ -6,7 +6,7 @@ import { getDefaultWarehouse } from "../warehouse/warehouseService";
 import { getNextID, } from "../Tools/getNextID";
 import { MovementReason, MovementType } from "../../models/Warehouse/Movement";
 
-export const fbAddProduct = (data, dispatch, user) => {
+export const fbAddProduct = (data, user) => {
     if (!user?.businessID) return;
 
     const baseFields = {

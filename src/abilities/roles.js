@@ -28,29 +28,30 @@ export const getAvailableRoles = (user) => {
     }
 
     const currentRole = user.role;
-    
+
     switch (currentRole) {
         case 'dev':
             // Los desarrolladores pueden cambiar a cualquier role
             return userRoles.filter(role => role.id !== 'dev'); // Excluir el propio dev para evitar confusión
-            
+
         case 'admin':
             // Los admins pueden cambiar a todos los roles excepto dev
             return userRoles.filter(role => role.id !== 'admin' && role.id !== 'dev');
-              case 'manager':
+            
+        case 'manager':
             // Los gerentes pueden cambiar a roles de nivel inferior
-            return userRoles.filter(role => 
+            return userRoles.filter(role =>
                 ['cashier', 'buyer'].includes(role.id)
             );
-            
+
         case 'cashier':
             // Los cajeros solo pueden ver su propio rol (no pueden cambiar)
             return userRoles.filter(role => role.id === currentRole);
-            
+
         case 'buyer':
             // Los compradores solo pueden ver su propio rol (no pueden cambiar)
             return userRoles.filter(role => role.id === currentRole);
-            
+
         default:
             // Para roles no reconocidos, no permitir acceso
             return [];
@@ -66,13 +67,13 @@ export const canChangeRoles = (user) => {
     if (!user || !user.role) {
         return false;
     }
-    
+
     const availableRoles = getAvailableRoles(user);
-      // Para cajeros y compradores que solo ven su propio rol, no pueden "cambiar"
+    // Para cajeros y compradores que solo ven su propio rol, no pueden "cambiar"
     if (['cashier', 'buyer'].includes(user.role)) {
         return availableRoles.length > 0 && availableRoles[0].id !== user.role;
     }
-    
+
     // Para otros roles, pueden cambiar si hay roles disponibles
     return availableRoles.length > 0;
 };
@@ -89,30 +90,30 @@ export const getAssignableRoles = (user) => {
 
     const currentRole = user.role;
     let assignableRoles = [];
-    
+
     switch (currentRole) {
         case 'dev':
             // Los desarrolladores pueden asignar cualquier role
             assignableRoles = userRoles.filter(role => true); // Todos los roles
             break;
-            
+
         case 'admin':
             // Los admins pueden asignar todos los roles excepto dev
             assignableRoles = userRoles.filter(role => role.id !== 'dev');
             break;
-              case 'manager':
+        case 'manager':
             // Los gerentes pueden asignar roles de nivel inferior
-            assignableRoles = userRoles.filter(role => 
+            assignableRoles = userRoles.filter(role =>
                 ['cashier', 'buyer'].includes(role.id)
             );
             break;
-            
+
         default:
             // Otros roles no pueden asignar roles a otros usuarios
             assignableRoles = [];
             break;
     }
-    
+
     // Convertir al formato esperado por Ant Design Select
     return assignableRoles.map(role => ({
         value: role.id,

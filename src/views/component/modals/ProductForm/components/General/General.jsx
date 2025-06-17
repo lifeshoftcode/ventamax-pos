@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { ChangeProductData, changeProductPrice, clearUpdateProductData, selectUpdateProductData } from '../../../../../../features/updateProduct/updateProductSlice'
-import { Form, Button, Spin, Card, Space, Row, Col, }  from 'antd';
+import { Form, Button, Spin, Card, Space, Row, Col, notification } from 'antd';
 import styled from 'styled-components';
 import { ProductInfo } from '../sections/ProductInfo';
 import { InventoryInfo } from '../sections/InventoryInfo';
@@ -16,29 +16,31 @@ import { closeModalUpdateProd } from '../../../../../../features/modals/modalSli
 import { selectUser } from '../../../../../../features/auth/userSlice';
 import { fbUpdateProduct } from '../../../../../../firebase/products/fbUpdateProduct';
 import { fbAddProduct } from '../../../../../../firebase/products/fbAddProduct';
-import * as antd from 'antd';
+import { initTaxes } from '../../../UpdateProduct/InitializeData';
 
 export const General = ({ showImageManager }) => {
     const dispatch = useDispatch();
     const user = useSelector(selectUser);
     const [submit, setSubmit] = useState(false)
-    const [form] = Form.useForm();
-    const { product, status } = useSelector(selectUpdateProductData);
+    const [form] = Form.useForm(); const { product, status } = useSelector(selectUpdateProductData);
+
     const handleChangeValues = (changeValue, allValues) => {
-        // Suponiendo que 'stock' es el nombre del campo que debe ser un número
         const key = Object.keys(changeValue)[0]; // Obtiene la clave del valor que cambió
-        // const value = changeValue[key];
-        
+        const value = changeValue[key];
+
         // Verifica si el campo que cambió es 'stock' y convierte su valor a número
         if (key === 'cost') {
             changeValue[key] = value ? { unit: value.unit, total: value.unit } : 0; // Convertir a número o cero si es vacío
-        }
-        if (key === 'tax') {
-            changeValue[key] = value ? JSON.parse(value) : initTaxes[0]?.tax; // Convertir a número o cero si es vacío
+        } if (key === 'tax') {
+            // Si el valor es un string que representa un número, parsearlo
+            if (typeof value === 'string') {
+                changeValue[key] = parseFloat(value) || initTaxes[0];
+            } else {
+                changeValue[key] = value || initTaxes[0];
+            }
         }
         if (key === 'pricing') {
-            changeValue[key] = value ? value : 0; // Convertir a número o cero si es vacío
-            dispatch(changeProductPrice({ ...changeValue }));
+            dispatch(changeProductPrice({ pricing: value }));
             return
         }
         if (key === 'weightDetail') {
@@ -49,23 +51,31 @@ export const General = ({ showImageManager }) => {
             dispatch(ChangeProductData({ product: { warranty: { ...product?.warranty, ...changeValue?.warranty } } }))
             return
         }
-        // Despacha la acción con el valor actualizado
         dispatch(ChangeProductData({ product: { ...changeValue } }));
     }
     const onFinish = async (values) => {
         setSubmit(true)
         try {
             await form.validateFields();
+
             if (status === "update") {
-                await fbUpdateProduct(product, dispatch, user)
+                await fbUpdateProduct(product, user)
+                notification.success({
+                    message: 'Producto Actualizado',
+                    description: 'El producto ha sido actualizado correctamente.',
+                });
             } else {
-                await fbAddProduct(product, dispatch, user)
+                await fbAddProduct(product, user)
+                notification.success({
+                    message: 'Producto Creado',
+                    description: 'El producto ha sido creado correctamente.',
+                });
             }
             dispatch(closeModalUpdateProd())
             dispatch(clearUpdateProductData())
-} catch (err) {
+        } catch (err) {
             err.errorFields && err.errorFields.forEach((error) => {
-                antd.notification.error({
+                notification.error({
                     message: 'Error',
                     description: error.errors[0],
                     duration: 10
@@ -183,24 +193,24 @@ export const General = ({ showImageManager }) => {
                 </Row>
                 <PriceCalculator />
                 <Footer>
-                    <Form.Item>
-                        <Button
-                            htmlType="button"
-                            onClick={handleReset}
-                        >
-                            Cancelar
-                        </Button>
-                    </Form.Item>
-                    <Form.Item>
-                        <Button
-                            type="primary"
-                            htmlType="submit"
-                            onClick={onFinish}
-                            disabled={submit}
-                        >
-                            {status === "update" ? 'Actualizar' : 'Crear'}
-                        </Button>
-                    </Form.Item>
+
+                    <Button
+                        htmlType="button"
+                        onClick={handleReset}
+                    >
+                        Cancelar
+                    </Button>
+
+
+                    <Button
+                        type="primary"
+                        htmlType="submit"
+                        onClick={onFinish}
+                        disabled={submit}
+                    >
+                        {status === "update" ? 'Actualizar' : 'Crear'}
+                    </Button>
+
                 </Footer>
             </Form>
         </Spin>
@@ -228,7 +238,7 @@ const Footer = styled.div`
     justify-content: flex-end;
     gap: 10px;
     align-items: center;
-    padding: 10px 0px 0px;
-    margin-top: 20px;
+   
+ height: min-content;
     width: 100%;
     `

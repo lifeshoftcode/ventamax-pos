@@ -13,7 +13,7 @@ import { useFullScreen } from './hooks/useFullScreen';
 import { fbAutoCreateDefaultTaxReceipt } from './firebase/taxReceipt/fbAutoCreateDefaultReceipt';
 import { useBusinessDataConfig } from './features/auth/useBusinessDataConfig';
 import { routes } from './routes/routes';
-import { useAbilities } from './hooks/abilities/useAbilities';
+import { useAbilities, useLoadUserAbilities } from './hooks/abilities/useAbilities';
 import { ModalManager } from './views';
 import { AnimatePresence } from 'framer-motion';
 import { useFbTaxReceiptToggleStatus } from './firebase/Settings/taxReceipt/fbGetTaxReceiptToggleStatus';
@@ -28,6 +28,7 @@ import NotificationCenter from './views/templates/NotificationCenter/Notificatio
 import { useInitializeBillingSettings } from './firebase/billing/useInitializeBillingSettings';
 import { useBackfillUserNumbers } from './firebase/Auth/fbBackfillUserNumbers';
 import { useDeveloperCommands } from './hooks/useDeveloperCommands';
+
 
 // Componente para rastrear la navegación dentro del Router
 const NavigationTracker = () => {
@@ -52,6 +53,8 @@ function App() {
     enabled: true,
     log: true, // logs render info to console (default: false)
   });
+
+  useLoadUserAbilities(); // Carga las habilidades del usuario actual
 
   useBackfillUserNumbers();
 

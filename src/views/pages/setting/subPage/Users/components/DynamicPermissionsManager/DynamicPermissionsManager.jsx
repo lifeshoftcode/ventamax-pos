@@ -8,6 +8,8 @@ import {
     getRolePermissionsInfo 
 } from '../../../../../../../services/dynamicPermissions';
 import { userAccess } from '../../../../../../../hooks/abilities/useAbilities';
+import { useSelector } from 'react-redux';
+import { selectUser } from '../../../../../../../features/auth/userSlice';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -20,6 +22,7 @@ const DynamicPermissionsManager = ({ userId, userName, userRole, isOpen, onClose
     // const [selectedRestricted, setSelectedRestricted] = useState(null); // TODO: Para futuro uso de permisos restringidos
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const user = useSelector(selectUser)
     
     const { abilities } = userAccess();
     
@@ -30,18 +33,17 @@ const DynamicPermissionsManager = ({ userId, userName, userRole, isOpen, onClose
         if (isOpen && userId) {
             loadUserPermissions();
         }
-    }, [isOpen, userId]);
-
-    const loadUserPermissions = async () => {
+    }, [isOpen, userId]);      const loadUserPermissions = async () => {
         setLoading(true);
         try {
-            const userPermissions = await getUserDynamicPermissions(userId);
+            const userPermissions = await getUserDynamicPermissions(userId, user);
             setPermissions(userPermissions);
         } catch (error) {
             console.error('Error loading user permissions:', error);
         }
         setLoading(false);
-    };    const handleAddPermission = (type) => {
+    };
+    const handleAddPermission = (type) => {
         const selected = type === 'additional' ? selectedAdditional : null; // selectedRestricted comentado por ahora
         if (!selected) return;
 
@@ -73,14 +75,14 @@ const DynamicPermissionsManager = ({ userId, userName, userRole, isOpen, onClose
     };    const handleSave = async () => {
         setSaving(true);
         try {
-            await setUserDynamicPermissions(userId, permissions);
+            await setUserDynamicPermissions(user, userId, permissions);
             onClose();
         } catch (error) {
             console.error('Error saving permissions:', error);
             alert('Error guardando permisos: ' + error.message);
         }
         setSaving(false);
-    };    const getAvailablePermissions = (excludeList) => {
+    };const getAvailablePermissions = (excludeList) => {
         // Obtener permisos disponibles para el rol específico del usuario
         const availableForRole = getAvailablePermissionsForRole(userRole);
         

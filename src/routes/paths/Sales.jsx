@@ -1,4 +1,4 @@
-import { Registro, Sales } from '../../views'
+import { InvoicesPage, Sales } from '../../views'
 import { CashReconciliation } from '../../views/pages/CashReconciliation/CashReconciliation';
 import { Preorder } from '../../views/pages/PreorderSale/PreorderSale';
 
@@ -15,7 +15,7 @@ const Routes = [
     },
     { 
         path: BILLS, 
-        element: <Registro />, 
+        element: <InvoicesPage />, 
         title: "Facturas de Ventas - Ventamax",
         metaDescription: "Consulta, registra y gestiona las facturas relacionadas con las ventas en Ventamax POS.",
     },

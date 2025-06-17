@@ -11,6 +11,7 @@ import { useFormatPrice } from '../../../../../hooks/useFormatPrice'
 import { setAccountPayment } from '../../../../../features/accountsReceivable/accountsReceivablePaymentSlice'
 import { useClickOutSide } from '../../../../../hooks/useClickOutSide'
 import  useInsuranceEnabled  from '../../../../../hooks/useInsuranceEnabled'
+import { setAR } from '../../../../../features/accountsReceivable/accountsReceivableSlice'
 
 export const ClientDetails = ({ mode }) => {
     const dispatch = useDispatch()
@@ -29,8 +30,14 @@ export const ClientDetails = ({ mode }) => {
       () => setIsExpanded(false),
       'mousedown'
     );
-    
-    usePendingBalance(businessID, client.id, setPendingBalance);
+
+    const changePendingBalance = (balance) => {
+      console.log('-------------------Pending balance updated:', balance)
+      setPendingBalance(balance)
+      dispatch(setAR({ currentBalance: balance }));
+    }
+
+    usePendingBalance(businessID, client.id, changePendingBalance);
   
     const handlePayment = () => {
       dispatch(setAccountPayment({

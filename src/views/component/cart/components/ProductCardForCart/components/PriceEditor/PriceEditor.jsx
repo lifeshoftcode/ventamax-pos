@@ -11,8 +11,9 @@ import { userAccess } from '../../../../../../../hooks/abilities/useAbilities';
 
 export const PriceEditor = ({ item, onModalOpen }) => {
   const dispatch = useDispatch();
-  const { abilities } = userAccess();
+  const { abilities, loading } = userAccess();
   const canModifyPrice = abilities.can('modify', 'Price');
+  const canReadPriceList = abilities.can('read', 'PriceList');
   const taxReceiptEnabled = useSelector(selectTaxReceiptEnabled);
   
   const [inputPrice, setInputPrice] = useState(getPriceTotal(item, taxReceiptEnabled));
@@ -28,7 +29,7 @@ export const PriceEditor = ({ item, onModalOpen }) => {
   };
 
   const handlePriceBlur = () => {
-    if (isEditingPrice) {
+    if (isEditingPrice && canModifyPrice) {
       // Convertir el precio con impuesto a precio sin impuesto
       const priceWithoutTax = getPriceWithoutTax(parseFloat(inputPrice), item.pricing.tax, taxReceiptEnabled);
 
@@ -48,11 +49,29 @@ export const PriceEditor = ({ item, onModalOpen }) => {
     }
   };
 
+  const handleModalOpen = () => {
+    if (canReadPriceList) {
+      onModalOpen();
+    }
+  };
+
+  // Si está cargando los permisos, mostrar estado de carga
+  if (loading) {
+    return (
+      <PriceContainer>
+        <div style={{ padding: '8px', textAlign: 'center' }}>
+          Cargando...
+        </div>
+      </PriceContainer>
+    );
+  }
+
   return (
     <PriceContainer>
       <DropdownButton 
-        onClick={onModalOpen}
-        disabled={!canModifyPrice}
+        onClick={handleModalOpen}
+        disabled={!canReadPriceList}
+        title={!canReadPriceList ? "No tienes permisos para ver la lista de precios" : "Ver lista de precios"}
       >
         <CaretIcon>{icons.arrows.caretDown}</CaretIcon>
       </DropdownButton>
@@ -64,6 +83,7 @@ export const PriceEditor = ({ item, onModalOpen }) => {
         onBlur={handlePriceBlur}
         onFocus={handlePriceFocus}
         readOnly={!canModifyPrice || item?.weightDetail?.isSoldByWeight}
+        title={!canModifyPrice ? "No tienes permisos para modificar precios" : ""}
       />
     </PriceContainer>
   );

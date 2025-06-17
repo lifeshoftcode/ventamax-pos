@@ -128,10 +128,10 @@ export const InvoicePanel = () => {
         AntdModal.confirm({ // Use AntdModal directly to avoid conflict with styled Modal
             title: '¿Cancelar Venta?',
             content: 'Si cancelas, se perderán los datos de la venta actual.',
-            okText: 'Cerrar y Volver',
+            okText: 'Cancelar',
             zIndex: 999999999999,
             okType: 'danger',
-            cancelText: 'Atrás',
+            cancelText: 'NO',
             onOk() {
                 message.success('Venta cancelada', 2.5)
                 handleCancelShipping({ dispatch, viewport })
@@ -290,22 +290,14 @@ export const InvoicePanel = () => {
             onCancel={handleInvoicePanel} // This handles closing via 'X' or outside click
             styles={modalStyles}
             footer={
-                [<Button
-                    key="cancel"
-                    type='default'
-                    danger
-                    disabled={loading.status || submitted}
-                    onClick={showCancelSaleConfirm} // Use confirmation modal
-                >
-                    Cancelar
-                </Button>,
+                [,
                 <Button
                     key="close"
                     type='default'
                     disabled={loading.status || submitted}
                     onClick={handleInvoicePanel} // Simply close the modal
                 >
-                    Cerrar
+                    Atrás
                 </Button>,
                 <Button
                     key="submit"
@@ -327,6 +319,17 @@ export const InvoicePanel = () => {
                 <Body
                     form={form}
                 />
+                <br />
+                <Button
+                    key="cancel"
+                    type='default'
+                    danger
+                    style={{ width: '100%'  }}
+                    disabled={loading.status || submitted}
+                    onClick={showCancelSaleConfirm} // Use confirmation modal
+                >
+                    Cancelar venta
+                </Button>
             </Spin>
         </Modal>
     )

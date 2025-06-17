@@ -1,11 +1,41 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Line } from 'react-chartjs-2';
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+} from 'chart.js';
 import { useFormatPrice } from '../../../../../hooks/useFormatPrice';
 import Typography from '../../../../templates/system/Typografy/Typografy';
 import styled from 'styled-components';
 import { DateTime } from 'luxon';
 
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend
+);
+
 const WeeklySalesWithAverageChart = ({ invoices }) => {
+    const chartRef = useRef(null);
+
+    useEffect(() => {
+        return () => {
+            // Cleanup chart instance on unmount
+            if (chartRef.current) {
+                chartRef.current.destroy();
+            }
+        };
+    }, []);
     const invoicesByWeek = invoices.reduce((acc, sale) => {
         const weekNumber = DateTime.fromMillis(sale.data.date.seconds * 1000).toFormat('WW/yyyy');  // Obtén el número de semana y año
         acc[weekNumber] = (acc[weekNumber] || 0) + sale.data.totalPurchase.value;
@@ -77,7 +107,7 @@ const WeeklySalesWithAverageChart = ({ invoices }) => {
             <Typography variant='h3'>
                 Ventas por Semana
             </Typography>
-            <Line data={chartData} options={options} />
+            <Line ref={chartRef} data={chartData} options={options} />
         </Container>
     );
 };

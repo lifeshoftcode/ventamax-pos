@@ -3,9 +3,11 @@ import { db } from "../firebaseconfig";
 import { useCallback, useState, useEffect } from "react";
 
 export function fbGetPendingBalance(businessID, clientId, callback) {
-    if (!businessID || !clientId || clientId === "GC-0000") {
-        callback(0);
-        return () => {};
+    const safeCb = typeof callback === 'function' ? callback : () => {}; // Define safeCb at the beginning
+
+    if (!businessID || !clientId) {
+        safeCb(0); // Use safeCb here
+        return () => { };
     }
 
     const accountsReceivableRef = collection(db, `businesses/${businessID}/accountsReceivable`);
@@ -14,54 +16,61 @@ export function fbGetPendingBalance(businessID, clientId, callback) {
     try {
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             if (querySnapshot.empty) {
-                callback(0);
+                safeCb(0);
                 return;
             }
-
+            console.log("ejecutandose")
             let totalPendingBalance = 0;
             querySnapshot.forEach(doc => {
                 const data = doc.data();
                 totalPendingBalance += Number(data.arBalance) || 0;
             });
 
-            callback(totalPendingBalance);
+            safeCb(totalPendingBalance);
         });
 
         return unsubscribe;
     } catch (error) {
         console.error('Error getting documents: ', error);
-        callback(0);
-        return () => {};
+        safeCb(0);
+        return () => { };
     }
 }
 
 function usePendingBalance(businessID, clientId, onBalanceChange = null) {
     const [pendingBalance, setPendingBalance] = useState(0);
 
-    const handleBalanceUpdate = useCallback((balance) => {
-        setPendingBalance(prevBalance => {
-            // Solo actualizar si el valor ha cambiado
-            if (prevBalance === balance) return prevBalance;
-            
-            // Si hay callback externo, solo llamar si el valor cambió
-            if (onBalanceChange && typeof onBalanceChange === 'function') {
-                onBalanceChange(balance);
-            }
-            
-            return balance;
-        });
-    }, [onBalanceChange]);
+
 
     useEffect(() => {
-        if (!businessID || !clientId || clientId === "GC-0000") {
+        if (!businessID || !clientId) {
             setPendingBalance(0);
-            if(onBalanceChange) onBalanceChange(0);
+            if (onBalanceChange) onBalanceChange(0);
             return;
         }
 
-        const unsubscribe = fbGetPendingBalance(businessID, clientId, handleBalanceUpdate);
+        const unsubscribe = fbGetPendingBalance(businessID, clientId, onBalanceChange);
         return () => unsubscribe();
-    }, [businessID, clientId, handleBalanceUpdate]);
+    }, [businessID, clientId]);
+
+    return pendingBalance;
+}
+
+export function useGetPendingBalance({ dependencies = [], onBalanceChange = null }) {
+    const [pendingBalance, setPendingBalance] = useState(0);
+
+    const updateBalance = useCallback((balance) => {
+        setPendingBalance(balance);
+        if (onBalanceChange) {
+            onBalanceChange(balance);
+
+        }
+    }, [onBalanceChange]);
+
+    useEffect(() => {
+        const unsubscribe = fbGetPendingBalance(...dependencies, updateBalance);
+        return () => unsubscribe();
+    }, [dependencies, updateBalance]);
 
     return pendingBalance;
 }

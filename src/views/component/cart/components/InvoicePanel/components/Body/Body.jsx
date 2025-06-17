@@ -8,34 +8,25 @@ import { MarkAsReceivableButton } from './components/MarkAsReceivableButton/Mark
 import { ReceivableManagementPanel } from './components/ReceivableManagementPanel/ReceivableManagementPanel'
 import { InsuranceManagementPanel } from './components/InsuranceManagementPanel/InsuranceManagementPanel'
 import { InvoiceComment } from './components/InvoiceComment/InvoiceComment'
-import { fbGetCreditLimit } from '../../../../../../../firebase/accountsReceivable/fbGetCreditLimit'
 import { selectUser } from '../../../../../../../features/auth/userSlice'
 import { useSelector } from 'react-redux'
 import { selectClient } from '../../../../../../../features/clientCart/clientCartSlice'
-import { useQuery } from '@tanstack/react-query'
 import { useCreditLimitCheck } from '../../../../../../../hooks/accountsReceivable/useCheckAccountReceivable'
+import { useCreditLimitRealtime } from '../../../../../../../hooks/accountsReceivable/useCreditLimitRealtime'
 import { SelectCartData } from '../../../../../../../features/cart/cartSlice'
 import { userAccess } from '../../../../../../../hooks/abilities/useAbilities'
 import useInsuranceEnabled from '../../../../../../../hooks/useInsuranceEnabled'
 import { Alert, Form } from 'antd'
+import AccountsReceivableManager from './components/AccountsReceivableManager/AccountsReceivableManager'
 
-export const Body = ({ form }) => {
-    const user = useSelector(selectUser);
+export const Body = ({ form }) => {    const user = useSelector(selectUser);
     const client = useSelector(selectClient);
     const cartData = useSelector(SelectCartData);
     const clientId = client.id;
-    const insuranceEnabled = useInsuranceEnabled();
+    const insuranceEnabled = useInsuranceEnabled();   
+     const { abilities, loading: abilitiesLoading } = userAccess();
 
-    const { abilities } = userAccess();
-
-    const { data: creditLimit, error, isLoading } = useQuery({
-        queryKey: ['creditLimit', user, clientId],
-        queryFn: () => fbGetCreditLimit({ user, clientId }),
-        enabled: !!user && !!clientId,
-        refetchOnWindowFocus: false,
-    });
-
-    const {
+    const { creditLimit, error, isLoading } = useCreditLimitRealtime(user, clientId);    const {
         activeAccountsReceivableCount,
         isWithinCreditLimit,
         isWithinInvoiceCount,
@@ -43,10 +34,20 @@ export const Body = ({ form }) => {
         change
     } = useCreditLimitCheck(creditLimit, cartData.change.value, clientId, user.businessID);
 
+    // Debug temporal para verificar valores desde Body.jsx
+    console.log('Body.jsx useCreditLimitCheck Debug:', {
+        activeAccountsReceivableCount,
+        invoiceLimit: creditLimit?.invoice?.value,
+        invoiceStatus: creditLimit?.invoice?.status,
+        isWithinInvoiceCount,
+        creditLimit
+    });
+
     const isAddedToReceivables = cartData?.isAddedToReceivables;
     const receivableStatus = isAddedToReceivables && isWithinCreditLimit;
 
     const isChangeNegative = cartData.change.value < 0;
+    const hasAccountReceivablePermission = abilities.can('manage', 'accountReceivable');
 
     if (isLoading) {
         return <div>Loading...</div>;
@@ -62,42 +63,23 @@ export const Body = ({ form }) => {
             layout="vertical"
         >
             <Container>
-                <ChargedSection />
+                <ChargedSection />                
                 <PaymentMethods />
                 <PaymentSummary />
-                {
-                    abilities.can('manage', 'accountReceivable') ? (
-                        <Fragment>
-                            <MarkAsReceivableButton
-                                creditLimit={creditLimit}
-                                activeAccountsReceivableCount={activeAccountsReceivableCount}
-                                isWithinCreditLimit={isWithinCreditLimit}
-                                isWithinInvoiceCount={isWithinInvoiceCount}
-                                creditLimitValue={creditLimitValue}
-                                change={change}
-                                clientId={clientId}
-                            />
-                            <ReceivableManagementPanel
-                                form={form}
-                                activeAccountsReceivableCount={activeAccountsReceivableCount}
-                                isWithinCreditLimit={isWithinCreditLimit}
-                                isWithinInvoiceCount={isWithinInvoiceCount}
-                                creditLimit={creditLimit}
-                                isChangeNegative={isChangeNegative}
-                                receivableStatus={receivableStatus}
-                            />
-                        </Fragment>
-                    ) : (
-                        isChangeNegative && (
-                            <Alert
-                                message='Acceso Restringido'
-                                description='No se puede facturar ventas con un cambio negativo a menos que se use cuentas por cobrar. No tienes permisos para usar cuentas por cobrar. Por favor, contacta al administrador para obtener los permisos necesarios.'
-                                type='error'
-                                showIcon
-                            />
-                        )
-                    )
-                }
+                <AccountsReceivableManager
+                    hasAccountReceivablePermission={hasAccountReceivablePermission}
+                    activeAccountsReceivableCount={activeAccountsReceivableCount}
+                    creditLimit={creditLimit}
+                    isWithinCreditLimit={isWithinCreditLimit}
+                    isWithinInvoiceCount={isWithinInvoiceCount}
+                    creditLimitValue={creditLimitValue}
+                    change={change}
+                    clientId={clientId}
+                    form={form}
+                    isChangeNegative={isChangeNegative}
+                    receivableStatus={receivableStatus}
+                    abilitiesLoading={abilitiesLoading}
+                />
                 {insuranceEnabled && <InsuranceManagementPanel form={form} />}
                 <InvoiceComment />
                 <PrintControl />

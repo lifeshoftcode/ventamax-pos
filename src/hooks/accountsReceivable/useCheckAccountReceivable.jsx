@@ -11,12 +11,12 @@ export const useCreditLimitCheck = (creditLimit, change, clientId, userBusinessI
   const [creditLimitValue, setCreditLimitValue] = useState(0);
   
 
-  useEffect(() => {
-    const fetchInvoiceAvailableCount = async () => {
+  useEffect(() => {    const fetchInvoiceAvailableCount = async () => {
       if (creditLimit?.invoice?.status) {
         const invoiceAvailableCount = await fbGetActiveARCount(userBusinessId, clientId);
         setActiveAccountsReceivableCount(invoiceAvailableCount);
-        setIsWithinInvoiceCount(invoiceAvailableCount <= (creditLimit?.invoice?.value || 0));
+        // Corregido: usar < en lugar de <= para la validación
+        setIsWithinInvoiceCount(invoiceAvailableCount < (creditLimit?.invoice?.value || 0));
       } else {
         setIsWithinInvoiceCount(true);
       }

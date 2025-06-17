@@ -1,16 +1,18 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useMatch } from 'react-router-dom'
 import styled from 'styled-components'
-import { notification } from 'antd'
+import { message } from 'antd'
 import routesName from '../../../../../routes/routesName'
 import exportToExcel from '../../../../../hooks/exportToExcel/useExportToExcel'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faListAlt, faTable } from '@fortawesome/free-solid-svg-icons'
+import { faListAlt, faTable, faSpinner } from '@fortawesome/free-solid-svg-icons'
 import { DropdownMenu } from '../../../system/DropdownMenu/DropdowMenu'
 import { formatBill } from '../../../../../hooks/exportToExcel/formatBill'
 import { DateTime } from 'luxon'
+import { getBillExportCallback, createProfessionalReportCallback } from '../../../../../hooks/exportToExcel/exportConfig'
 
 export const RegistroToolbar = ({ side = 'left', data, searchData, setSearchData }) => {
+  const [isExporting, setIsExporting] = useState(false)
   const { BILLS } = routesName.SALES_TERM;
   const matchWithCashReconciliation = useMatch(BILLS);
   const invoices = data;
@@ -23,39 +25,80 @@ export const RegistroToolbar = ({ side = 'left', data, searchData, setSearchData
   const transformedDetailedBillsData = () => {
     return formatBill({ data: invoices, type: 'Detailed' });
   };
-
-  const handleExportButton = (type) => {
+  const handleExportButton = async (type) => {
     if (invoices.length === 0) {
-      notification.error({
-        message: 'Error al exportar',
-        description: 'No hay Facturas para exportar'
-      });
+      message.error('No hay Facturas para exportar');
       return;
     }
-    switch (type) {
-      case 'Resumen':
-        exportToExcel(transformedResumenBillsData(), 'Registros', `resumen_facturas_${currentDate}.xlsx`);
-        break;
-      case 'Detailed':
-        exportToExcel(transformedDetailedBillsData(), 'Registros', `detalle_facturas_${currentDate}.xlsx`);
-        break;
-      default:
-        break;
-    }
-  };
 
-  const options = [
+    setIsExporting(true);
+
+    try {
+      // Delay mínimo para mostrar el loading
+      const exportPromise = (async () => {
+        switch (type) {
+          case 'Resumen':
+            const resumenCallback = createProfessionalReportCallback(
+              'Resumen', 
+              'REPORTE DE FACTURACIÓN - RESUMEN'
+            );
+            await exportToExcel(
+              transformedResumenBillsData(),
+              'Resumen de Facturas',
+              `resumen_facturas_${currentDate}.xlsx`,
+              resumenCallback
+            );
+            return 'El reporte resumen se ha generado correctamente';
+          case 'Detailed':
+            const detailedCallback = createProfessionalReportCallback(
+              'Detailed', 
+              'REPORTE DE FACTURACIÓN - DETALLE POR PRODUCTO'
+            );
+            await exportToExcel(
+              transformedDetailedBillsData(),
+              'Detalle de Facturas',
+              `detalle_facturas_${currentDate}.xlsx`,
+              detailedCallback
+            );
+            return 'El reporte detallado se ha generado correctamente';
+          default:
+            return 'Exportación completada';
+        }
+      })();      // Asegurar un delay mínimo de 1 segundo para ver el loading
+      const [result] = await Promise.all([
+        exportPromise,
+        new Promise(resolve => setTimeout(resolve, 1000))
+      ]);
+
+      message.success(result);
+    } catch (error) {
+      console.error('Error al exportar:', error);
+      message.error('Hubo un problema al generar el archivo Excel. Inténtelo nuevamente.');
+    } finally {
+      setIsExporting(false);
+    }
+  };  const options = [
     {
-      text: 'Resumen de Factura',
+      text: isExporting ? 'Generando resumen...' : 'Resumen de Factura',
       description: 'Obtén un resumen consolidado que incluye información general del cliente, totales y métodos de pago.',
-      icon: <FontAwesomeIcon icon={faListAlt} />,
-      action: () => handleExportButton('Resumen')
+      icon: isExporting ? (
+        <SpinningIcon icon={faSpinner} />
+      ) : (
+        <FontAwesomeIcon icon={faListAlt} />
+      ),
+      action: () => handleExportButton('Resumen'),
+      disabled: isExporting
     },
     {
-      text: 'Detalle de Factura',
+      text: isExporting ? 'Generando detalle...' : 'Detalle de Factura',
       description: 'Accede a un desglose detallado con información de cada producto vendido, categorías, precios y cantidades.',
-      icon: <FontAwesomeIcon icon={faTable} />,
-      action: () => handleExportButton('Detailed')
+      icon: isExporting ? (
+        <SpinningIcon icon={faSpinner} />
+      ) : (
+        <FontAwesomeIcon icon={faTable} />
+      ),
+      action: () => handleExportButton('Detailed'),
+      disabled: isExporting
     },
   ];
   return (
@@ -75,8 +118,17 @@ export const RegistroToolbar = ({ side = 'left', data, searchData, setSearchData
 }
 
 const Container = styled.div`
+  
+`;
 
-`
+const SpinningIcon = styled(FontAwesomeIcon)`
+    animation: spin 1s linear infinite;
+    
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+`;
 
 
 

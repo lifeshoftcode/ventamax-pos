@@ -30,8 +30,8 @@ export const InvoiceTemplate1 = React.forwardRef(({ data, ignoreHidden }, ref) =
         const found = code.match(pattern);
 
         const receiptTypes = {
-            B01: { type: 'Crédito Fiscal', description: 'FACTURA PARA CREDITO FISCAL' },
-            B02: { type: 'Consumidor Final', description: 'FACTURA PARA CONUMIDOR FINAL' },
+            B01: { type: 'Crédito Fiscal', description: 'FACTURA PARA CRÉDITO FISCAL' },
+            B02: { type: 'Consumidor Final', description: 'FACTURA PARA CONSUMIDOR FINAL' },
             // ... include other receipt types with their corresponding information
         };
 

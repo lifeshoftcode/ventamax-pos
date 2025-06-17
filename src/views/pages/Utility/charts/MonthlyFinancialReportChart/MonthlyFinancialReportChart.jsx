@@ -1,13 +1,43 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Line } from 'react-chartjs-2';
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+} from 'chart.js';
 import { getTotalSalesPerMonth, getTotalExpensesPerMonth } from './utils.js';
 
 import styled from 'styled-components';
 import Typography from '../../../../templates/system/Typografy/Typografy.jsx';
 import { useFormatPrice } from '../../../../../hooks/useFormatPrice.js';
 
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend
+);
+
 
 export const MonthlyFinancialReportChart = ({ expenses, invoices }) => {
+    const chartRef = useRef(null);
+
+    useEffect(() => {
+        return () => {
+            // Cleanup chart instance on unmount
+            if (chartRef.current) {
+                chartRef.current.destroy();
+            }
+        };
+    }, []);
     const salesPerMonth = getTotalSalesPerMonth(invoices);
     const expensesPerMonth = getTotalExpensesPerMonth(expenses);
     const allMonths = [...new Set([...Object.keys(salesPerMonth), ...Object.keys(expensesPerMonth)])].sort();
@@ -79,7 +109,7 @@ export const MonthlyFinancialReportChart = ({ expenses, invoices }) => {
     return (
         <Container>
             <Typography variant='h3'>Finanzas Mensuales: Ventas, Gastos, Utilidad</Typography>
-            <Line data={data} options={options} />
+            <Line ref={chartRef} data={data} options={options} />
         </Container>
     );
 }

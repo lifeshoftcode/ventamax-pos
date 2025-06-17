@@ -3,13 +3,14 @@ import styled from 'styled-components'
 import * as antd from 'antd'
 import { icons } from '../../../../../../../../../constants/icons/icons'
 import { useDispatch, useSelector } from 'react-redux'
-import { selectCart, setPaymentMethod, recalcTotals } from '../../../../../../../../../features/cart/cartSlice'
-const { Radio, Input, Form, Checkbox, InputNumber, message } = antd
+import { selectCart, setPaymentMethod, recalcTotals, SelectCxcAutoRemovalNotification, clearCxcAutoRemovalNotification } from '../../../../../../../../../features/cart/cartSlice'
+const { Radio, Input, Form, Checkbox, InputNumber, message, notification } = antd
 
 export const PaymentMethods = () => {
     const dispatch = useDispatch()
     const cashInputRef = useRef(null)
     const cart = useSelector(selectCart)
+    const showCxcAutoRemovalNotification = useSelector(SelectCxcAutoRemovalNotification)
     const cartData = cart.data;
     const paymentMethods = cartData.paymentMethod;
     const totalPurchase = cartData.totalPurchase.value;
@@ -34,25 +35,20 @@ export const PaymentMethods = () => {
             cashInputRef.current.focus();
             cashInputRef.current.select();
         }
-    }, [])    // Verifica si hay algún método de pago con valor establecido
+    }, [])
+    
     useEffect(() => {
-        // Evitamos bucles infinitos estableciendo una flag para controlar si debemos actualizar
         const totalPaymentValue = paymentMethods.reduce((total, method) => {
             return method.status ? total + (Number(method.value) || 0) : total;
         }, 0);
 
-        // Solo actualizamos si hay un método activo sin valor y totalPurchase tiene un valor válido
         if (totalPaymentValue === 0 && totalPurchase > 0) {
             const cashMethod = paymentMethods.find(method => method.method === 'cash' && method.status);
             if (cashMethod && cashMethod.value === 0) {
-                // Usamos dispatch directamente para actualizar el método sin llamar a handleValueChange
                 dispatch(setPaymentMethod({ ...cashMethod, value: totalPurchase }));
             }
         }
-    // Solo se ejecuta cuando cambia totalPurchase (no cuando paymentMethods cambia)
-    // para evitar bucles infinitos
     }, [totalPurchase]);
-    // Si es cuenta por cobrar, asegurar al menos un método activo
     useEffect(() => {
         if (cartData.isAddedToReceivables) {
             const anyEnabled = paymentMethods.some(m => m.status);
@@ -66,7 +62,6 @@ export const PaymentMethods = () => {
         }
     }, [cartData.isAddedToReceivables, paymentMethods, dispatch]);    
     const handleStatusChange = (method, status) => {
-        // Si se está habilitando un método de pago y no tiene valor establecido, establece el monto restante necesario
         let newValue = method.value;
         
         if (status && (!newValue || newValue === 0)) {
@@ -81,7 +76,6 @@ export const PaymentMethods = () => {
             newValue = remaining > 0 ? remaining : 0;
         }
         
-        // Prevent disabling last payment method for accounts receivable
         const isAddedToReceivables = cartData.isAddedToReceivables;
         if (!status && isAddedToReceivables) {
             const enabledCount = paymentMethods.filter(m => m.status).length;
@@ -90,24 +84,39 @@ export const PaymentMethods = () => {
                 return;
             }
         }
-        // Combinamos las dos operaciones en una sola actualización de estado
-        // para evitar renderizaciones múltiples y posibles bucles
+       
         dispatch(setPaymentMethod({ ...method, status, value: status ? newValue : 0 }));
-        // Recalculate totals after changing payment status
         dispatch(recalcTotals());
-    };
-
-    const handleValueChange = (method, newValue) => {
-        // No llamamos a recalcTotals después de setPaymentMethod
-        // ya que el middleware cartTotalsListener se encarga de esto
-        dispatch(setPaymentMethod({ ...method, value: Number(newValue) }));
-        // Recalculate totals after changing payment value
-        dispatch(recalcTotals(Number(newValue)));
+    };    const handleValueChange = (method, newValue) => {
+        // Validar que el valor no sea negativo
+        const validValue = Math.max(0, Number(newValue) || 0);
+        
+        // Si el usuario intentó ingresar un valor negativo, mostrar advertencia
+        if (newValue < 0) {
+            message.warning('No se permiten montos negativos en los métodos de pago');
+        }
+        
+        dispatch(setPaymentMethod({ ...method, value: validValue }));
+        dispatch(recalcTotals());
     };
 
     const handleReferenceChange = (method, newReference) => {
         dispatch(setPaymentMethod({ ...method, reference: newReference }));
     };
+
+    // Manejar notificación de auto-removal de CxC
+    useEffect(() => {
+        if (showCxcAutoRemovalNotification) {
+            notification.success({
+                message: 'Cuenta por Cobrar Actualizada',
+                description: 'La venta se removió automáticamente de Cuentas por Cobrar porque el pago cubre el total de la compra.',
+                duration: 6,
+                placement: 'topRight'
+            });
+            
+            dispatch(clearCxcAutoRemovalNotification());
+        }
+    }, [showCxcAutoRemovalNotification, dispatch]);
 
     return (
         <Container>
@@ -128,15 +137,18 @@ export const PaymentMethods = () => {
                                     <FormItem
                                         placeholder='Método de pago'
                                         label={paymentInfo[method.method].label}
-                                    >
-                                        {method.method === 'cash' ? (
+                                    >                                        {method.method === 'cash' ? (
                                             <InputNumber
                                                 addonBefore={paymentInfo[method.method].icon}
                                                 placeholder='$$$'
                                                 value={method.value}
                                                 disabled={!method.status}
                                                 onChange={(e) => handleValueChange(method, e)}
-                                                ref={cashInputRef} // Aplicar la referencia aquí
+                                                ref={cashInputRef}
+                                                min={0}
+                                                precision={2}
+                                                step={0.01}
+                                                style={{ width: '100%' }}
                                             />
                                         ) : (
                                             <InputNumber
@@ -145,6 +157,10 @@ export const PaymentMethods = () => {
                                                 value={method.value}
                                                 disabled={!method.status}
                                                 onChange={(e) => handleValueChange(method, e)}
+                                                min={0}
+                                                precision={2}
+                                                step={0.01}
+                                                style={{ width: '100%' }}
                                             />
                                         )}
                                     </FormItem>

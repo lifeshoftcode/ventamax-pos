@@ -42,8 +42,8 @@ const accountsReceivableSlice = createSlice({
     initialState,
     reducers: {
         setAR(state, action) {
-            const hasUpdated = applyUpdates(state.ar, action.payload);
-            if (!hasUpdated) state.ar.updatedAt = DateTime.now().toMillis();
+            applyUpdates(state.ar, action.payload);
+            console.log("AR updated:", action.payload);
         },
         setAccountReceivableInfo(state, action) {
             const { ar, payments, installments, paymentInstallments } = action.payload;

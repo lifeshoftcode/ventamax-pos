@@ -83,7 +83,7 @@ const BatchList = () => {
   const handleBatchSwitch = async (checked) => {
     dispatch(ChangeProductData({ product: { hasBatch: checked } }));
     try {
-      await fbUpdateProduct({ ...product, hasBatch: checked }, dispatch, user);
+      await fbUpdateProduct({ ...product, hasBatch: checked }, user);
     } catch (error) {
       console.error("Error al cambiar el estado de la fecha de expiración:", error);
     }

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { Modal } from 'antd';
+import { Modal, Button } from 'antd';
 import { useListenSaleUnits } from '../../../../firebase/products/saleUnits/fbUpdateSaleUnit';
 import { useFormatPrice } from '../../../../hooks/useFormatPrice';
 import { getListPriceTotal, getTotalPrice } from '../../../../utils/pricing';
 import { extraerPreciosConImpuesto } from './ProductCardForCart/utils/priceUtils';
+import { useNavigate } from 'react-router-dom';
 
 // Estilos
 const ModalContainer = styled.div`
@@ -74,12 +75,33 @@ const PriceOptions = styled.div`
   gap: 0.6em;
 `;
 
+const InfoMessage = styled.div`
+  padding: 12px;
+  background-color: #f0f8ff;
+  border: 1px solid #d4edda;
+  border-radius: 8px;
+  color: #155724;
+  font-size: 0.9rem;
+  text-align: center;
+  margin-bottom: 10px;
+
+  .info-button {
+    margin-top: 10px;
+  }
+`;
+
 const PriceAndSaleUnitsModal = ({ isVisible, onClose, item, onSelectPrice, onSelectDefaultUnit, onSelectUnit }) => {
   const productId = item.id;
   const [selectedUnitId, setSelectedUnitId] = useState(item.defaultSaleUnitId || 'default');
   const [combinedPrices, setCombinedPrices] = useState([]);
   const [selectedPrice, setSelectedPrice] = useState(null);
   const { data: saleUnits } = useListenSaleUnits(productId);
+  const navigate = useNavigate();
+
+  // Función para navegar a la configuración del producto
+  const handleGoToInventory = () => {
+    navigate('/inventory/items');
+  };
 
   // Función helper para determinar qué precio es el actual del producto en el carrito
   const getCurrentProductPrice = () => {
@@ -130,12 +152,16 @@ const PriceAndSaleUnitsModal = ({ isVisible, onClose, item, onSelectPrice, onSel
   
   const handleSelectUnit = (unit) => {
     setSelectedUnitId(unit.id);
-    onSelectUnit(unit);
-
-    const selectedItemPricing = unit.pricing;
+    onSelectUnit(unit);    const selectedItemPricing = unit.pricing;
     if (selectedItemPricing) {
       const prices = extraerPreciosConImpuesto(selectedItemPricing);
-      const enabledPrices = prices.filter(price => price.enabled);
+      // Filtrar precios habilitados y con valores válidos (mayor que 0)
+      const enabledPrices = prices.filter(price => 
+        price.enabled && 
+        price.valueWithTax && 
+        !isNaN(price.valueWithTax) && 
+        price.valueWithTax > 0
+      );
       
       // Obtener el precio por defecto
       const defaultPrice = getDefaultPrice(enabledPrices);
@@ -150,12 +176,16 @@ const PriceAndSaleUnitsModal = ({ isVisible, onClose, item, onSelectPrice, onSel
 
   const handleSelectDefaultUnit = () => {
     setSelectedUnitId('default');
-    onSelectDefaultUnit(item);
-
-    const selectedItemPricing = item.pricing;
+    onSelectDefaultUnit(item);    const selectedItemPricing = item.pricing;
     if (selectedItemPricing) {
       const prices = extraerPreciosConImpuesto(selectedItemPricing);
-      const enabledPrices = prices.filter(price => price.enabled);
+      // Filtrar precios habilitados y con valores válidos (mayor que 0)
+      const enabledPrices = prices.filter(price => 
+        price.enabled && 
+        price.valueWithTax && 
+        !isNaN(price.valueWithTax) && 
+        price.valueWithTax > 0
+      );
       
       // Obtener el precio por defecto
       const defaultPrice = getDefaultPrice(enabledPrices);
@@ -173,14 +203,19 @@ const PriceAndSaleUnitsModal = ({ isVisible, onClose, item, onSelectPrice, onSel
     // Pasamos todo el objeto de precio para que ProductCardForCart pueda extraer los valores correctos
     onSelectPrice(price);
   };
-
   useEffect(() => {
     if (!isVisible) return; // No hacer nada si el modal no está visible
     
     const selectedItemPricing = selectedUnitId === 'default' ? item.pricing : saleUnits?.find(unit => unit.id === selectedUnitId)?.pricing;
     if (selectedItemPricing) {
       const prices = extraerPreciosConImpuesto(selectedItemPricing);
-      const enabledPrices = prices.filter(price => price.enabled);
+      // Filtrar precios habilitados y con valores válidos (mayor que 0)
+      const enabledPrices = prices.filter(price => 
+        price.enabled && 
+        price.valueWithTax && 
+        !isNaN(price.valueWithTax) && 
+        price.valueWithTax > 0
+      );
       setCombinedPrices(enabledPrices);
 
       // Determinar el precio a seleccionar basado en el precio actual del producto
@@ -242,23 +277,40 @@ const PriceAndSaleUnitsModal = ({ isVisible, onClose, item, onSelectPrice, onSel
               No hay unidades de venta configuradas.
             </EmptySaleUnitsMessage>
           )}
+        </div>        {/* Precios */}        <div>
+          <SectionTitle>Selecciona un Precio</SectionTitle>          {combinedPrices.length === 0 ? (
+            <InfoMessage>
+              📋 No hay precios configurados para esta unidad. Ve a la configuración del producto para establecer los precios.
+              <div className="info-button">
+                <Button 
+                  type="primary" 
+                  size="small" 
+                  onClick={handleGoToInventory}
+                >
+                  Ir a Inventario
+                </Button>
+              </div>
+            </InfoMessage>
+          ) : combinedPrices.length === 1 ? (
+            <InfoMessage>
+               Solo hay un precio disponible para esta unidad. Para más opciones de precios, ve a la configuración del producto.
+      
+            </InfoMessage>
+          ) : (
+            <PriceOptions>
+              {combinedPrices.map((price, index) => (
+                <PriceOption
+                  key={index}
+                  selected={isPriceSelected(price)}
+                  onClick={() => handleSelectPrice(price)}
+                >
+                  <span>{price.label}: {useFormatPrice(price.valueWithTax)}</span>
+                </PriceOption>
+              ))}
+            </PriceOptions>
+          )}
         </div>
-
-        {/* Precios */}
-        <div>
-          <SectionTitle>Selecciona un Precio</SectionTitle>
-          <PriceOptions>
-            {combinedPrices.map((price, index) => (
-              <PriceOption
-                key={index}
-                selected={isPriceSelected(price)}
-                onClick={() => handleSelectPrice(price)}
-              >
-                <span>{price.label}: {useFormatPrice(price.valueWithTax)}</span>
-              </PriceOption>
-            ))}
-          </PriceOptions>
-        </div>
+   
       </ModalContainer>
     </Modal>
   );

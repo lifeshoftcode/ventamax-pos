@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import styled from 'styled-components'
 import { useDispatch, useSelector } from 'react-redux'
-import { setClient as setClientInClientCart, setChange, toggleCart, totalPurchase, updateInsuranceStatus, selectInsuranceEnabled } from '../../../../features/cart/cartSlice'
+import { setClient as setClientInClientCart, setChange, toggleCart, totalPurchase, updateInsuranceStatus, selectInsuranceEnabled, setDefaultClient } from '../../../../features/cart/cartSlice'
 import { ClientDetails } from './ClientDetails/ClientDetails.jsx'
 import { updateObject } from '../../../../utils/object/updateObject'
 import { deleteClient, selectClient, selectClientMode, selectClientSearchTerm, selectIsOpen, selectLabelClientMode, setClient, setClientMode, setClientSearchTerm, setIsOpen } from '../../../../features/clientCart/clientCartSlice'
@@ -35,9 +35,10 @@ export const ClientControl = () => {
   const openUpdateClientModal = () => dispatch(toggleClientModal({ mode: OPERATION_MODES.UPDATE.id, data: client, addClientToCart: true }))
 
   const handleDeleteData = () => {
-    dispatch(deleteClient())
+    dispatch(deleteClient());
     dispatch(clearAuthData());
-    dispatch(updateInsuranceStatus(false))
+    dispatch(setDefaultClient());
+    dispatch(updateInsuranceStatus(false));
   }
 
   const handleChangeClient = (e) => {

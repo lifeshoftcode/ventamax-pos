@@ -38,7 +38,7 @@ import { FileListModal } from "./FileListModal/FileListModal"
 import { BarcodePrintModal } from "./BarcodePrintModal/BarcodePrintModal"
 import { selectCurrentNotification } from "../../../features/notification/notificationSlice"
 import { SignUpModal } from "../../pages/setting/subPage/Users/components/UserForm"
-import { InvoicePreview } from "../../pages/Registro/InvoicePreview/InvoicePreview"
+import { InvoicePreview } from "../../pages/InvoicesPage/InvoicePreview/InvoicePreview"
 import { PaymentForm } from "../forms/PaymentForm/PaymentForm"
 import ARInfoModal from "./ARInfoModal/ARSummaryModal"
 import { ProductStockForm } from "../../pages/Inventory/components/Warehouse/forms/ProductStockForm/ProductStockForm"
@@ -179,8 +179,6 @@ export const ModalManager = () => {
       <RowShelfForm />      
       <SegmentForm />
       <WarehouseForm />
-
-
       <ImageViewer />
       <TestModeIndicator />
       <ConfirmationDialog />

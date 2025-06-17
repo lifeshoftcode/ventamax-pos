@@ -1,14 +1,49 @@
-import { useFormatPrice } from "../useFormatPrice";
 import useFormatTimestamp from "../useFormatTimeStamp";
 
 const unwrapInvoice = (raw) => raw?.data ?? raw?.ver?.data ?? raw ?? {};
 
-const getPrimaryPaymentMethod = (paymentMethod = []) => (paymentMethod.find((pm) => pm.status) || {}).method ?? "N/A";
+const ensureNumber = (value) => {
+  const num = Number(value);
+  return isNaN(num) ? 0 : num;
+};
+
+const translatePaymentMethod = (method) => {
+  if (!method || method === "N/A") return "N/A";
+  
+  const translations = {
+    'cash': 'Efectivo',
+    'card': 'Tarjeta',
+    'transfer': 'Transferencia',
+    'efectivo': 'Efectivo',
+    'tarjeta': 'Tarjeta',
+    'transferencia': 'Transferencia',
+    'credit': 'Crédito',
+    'debit': 'Débito',
+    'credito': 'Crédito',
+    'debito': 'Débito'
+  };
+  
+  // Convertir a minúsculas para buscar
+  const methodLower = method.toLowerCase().trim();
+  
+  // Buscar traducción exacta
+  if (translations[methodLower]) {
+    return translations[methodLower];
+  }
+  
+  // Si no encuentra traducción, capitalizar la primera letra
+  return method.charAt(0).toUpperCase() + method.slice(1).toLowerCase();
+};
+
+const getPrimaryPaymentMethod = (paymentMethod = []) => {
+  const method = (paymentMethod.find((pm) => pm.status) || {}).method ?? "N/A";
+  return translatePaymentMethod(method);
+};
 
 const getPrimaryPaymentValue = (paymentMethod = [], fallbackPayment) => {
-  if (fallbackPayment?.value != null) return fallbackPayment.value;
+  if (fallbackPayment?.value != null) return ensureNumber(fallbackPayment.value);
   const pm = paymentMethod.find((pm) => pm.status);
-  return pm ? pm.value : 0;
+  return pm ? ensureNumber(pm.value) : 0;
 }
 const formatBillResumen = (data) => {
   const {
@@ -24,26 +59,24 @@ const formatBillResumen = (data) => {
     delivery = {},
     totalPurchase = {}
   } = data;
-
   return {
     ['Fecha']: useFormatTimestamp(date),
-    ['ID']: id ?? 'N/A',
     ['Comprobante']: NCF ?? 'N/A',
     ['Nombre Cliente']: client.name || 'Cliente Genérico',
     ['Teléfono Cliente']: client.tel || 'N/A',
     ['Dirección Cliente']: client.address || 'N/A',
     ['RNC/Cédula']: client.personalID || 'N/A',
-    ['Cantidad de Productos']: totalShoppingItems.value ?? 0,
-    ['Total ITBIS']: useFormatPrice(totalTaxes.value ?? 0),
+    ['Cantidad de Productos']: ensureNumber(totalShoppingItems.value),
+    ['Total ITBIS']: ensureNumber(totalTaxes.value),
     ['Método de Pago']: getPrimaryPaymentMethod(paymentMethod),
-    ['Pagado']: useFormatPrice(getPrimaryPaymentValue(paymentMethod, payment)),
-    ['Delivery']: useFormatPrice(delivery.value ?? 0),
-    ['Cambio']: useFormatPrice(change.value ?? 0),
-    ['Total']: useFormatPrice(totalPurchase.value ?? 0),
+    ['Pagado']: getPrimaryPaymentValue(paymentMethod, payment),
+    ['Delivery']: ensureNumber(delivery.value),
+    ['Cambio']: ensureNumber(change.value),
+    ['Total']: ensureNumber(totalPurchase.value),
   }
 }
 const formatBillDetailed = (facturas) => {
-   const resultados = [];
+  const resultados = [];
 
   facturas.forEach((raw) => {
     const factura = unwrapInvoice(raw);
@@ -56,21 +89,16 @@ const formatBillDetailed = (facturas) => {
       totalPurchase = {},
     } = factura;
 
-    products.forEach((product) => {
-      resultados.push({
+    products.forEach((product) => {      resultados.push({
         Fecha: useFormatTimestamp(date),
-        "Id Factura": id,
         Comprobante: NCF,
         Cliente: client.name || "Cliente Genérico",
-        "ID Producto": product.id,
         Producto: product.name,
         Categoría: product.category,
         Tipo: product.type,
-        Precio: useFormatPrice(
-          product.pricing?.price ?? product.price?.unit ?? 0
-        ),
-        "Cantidad Facturada": product.amountToBuy,
-        Total: useFormatPrice(totalPurchase.value ?? 0),
+        Precio: ensureNumber(product.pricing?.price),
+        "Cantidad Facturada": ensureNumber(product.amountToBuy),
+        Total: ensureNumber(totalPurchase.value),
       });
     });
   });

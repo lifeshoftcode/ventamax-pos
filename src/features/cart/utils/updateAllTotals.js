@@ -1,6 +1,6 @@
 import { getProductsInsuranceExtra, getProductsPrice, getProductsTax, getProductsTotalPrice, getTotalItems } from "../../../utils/pricing";
 
-export const updateAllTotals = (state, paymentValue = null) => {
+export const updateAllTotals = (state, paymentValue = undefined) => {
     try {
         // Verificamos que el estado tenga la estructura correcta para evitar errores
         if (!state || !state.data || !state.settings || !state.settings.taxReceipt) {
@@ -37,20 +37,16 @@ export const updateAllTotals = (state, paymentValue = null) => {
         );
         const insurance = getProductsInsuranceExtra(products);
         const purchaseValue = totalPrice - insurance;
-        
-        // Calcula el total de pagos de manera segura
+          // Calcula el total de pagos de manera segura
         const totalPaymentFromMethods = paymentMethod.reduce((total, method) => {
             if (!method) return total;
             return method.status ? total + (Number(method.value) || 0) : total;
         }, 0);
-        
-        // Determina el valor de pago a utilizar
-        // Si se proporciona paymentValue, se usa. Si no, utiliza la suma de métodos de pago habilitados si es mayor que 0, sino cero.
-        const pay = paymentValue !== null 
+          // Determina el valor de pago a utilizar
+        // Si se proporciona paymentValue específico, se usa. Si no, siempre utiliza la suma de métodos de pago habilitados.
+        const pay = paymentValue !== undefined
             ? Number(paymentValue) 
-            : totalPaymentFromMethods > 0 
-                ? totalPaymentFromMethods 
-                : 0;
+            : totalPaymentFromMethods;
 
         // Actualiza los totales de forma segura
         if (totalPurchase) totalPurchase.value = purchaseValue;

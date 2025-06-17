@@ -35,7 +35,9 @@ export const cartSlice = createSlice({
 
         },
         setDefaultClient: (state) => {
-            state.data.client = GenericClient
+            state.data.client = GenericClient;
+            state.data.delivery = defaultDelivery;
+            state.data.isAddedToReceivables = false;
         },
         setPaymentAmount: (state, actions) => {
             const paymentValue = actions.payload
@@ -88,9 +90,9 @@ export const cartSlice = createSlice({
         },        setPaymentMethod: (state, actions) => {
             try {
                 const paymentMethod = actions.payload;
-                // Asegurarse de que paymentMethod tenga un value numérico
+                // Asegurarse de que paymentMethod tenga un value numérico y no negativo
                 if (paymentMethod.value !== undefined) {
-                    paymentMethod.value = Number(paymentMethod.value) || 0;
+                    paymentMethod.value = Math.max(0, Number(paymentMethod.value) || 0);
                 }
                 
                 const index = state.data.paymentMethod.findIndex(
@@ -286,20 +288,34 @@ export const cartSlice = createSlice({
                 });
             }
         },        recalcTotals: (state, action) => {
-            const paymentValue = action.payload !== undefined ? Number(action.payload) : null;
+            const paymentValue = action.payload !== undefined && action.payload !== null ? Number(action.payload) : undefined;
             updateAllTotals(state, paymentValue);
-        },        addInvoiceComment: (state, action) => {
-            state.data.invoiceComment = action.payload;
+            
+            // Auto-remove from CxC if payment covers total purchase
+            if (state.data.isAddedToReceivables) {
+                const totalPurchase = state.data.totalPurchase?.value || 0;
+                const totalPayment = state.data.payment?.value || 0;
+                
+                // If payment is greater than or equal to total purchase, remove from CxC
+                if (totalPayment >= totalPurchase && totalPurchase > 0) {
+                    state.data.isAddedToReceivables = false;
+                    // Set a flag to show notification after this reducer completes
+                    state.showCxcAutoRemovalNotification = true;
+                }
+            }
         },
-        deleteInvoiceComment: (state) => {
+        addInvoiceComment: (state, action) => {
+            state.data.invoiceComment = action.payload;
+        },        deleteInvoiceComment: (state) => {
             state.data.invoiceComment = '';
+        },        clearCxcAutoRemovalNotification: (state) => {
+            state.showCxcAutoRemovalNotification = false;
         },
         updateProductDiscount: (state, action) => {
             const { id, discount } = action.payload;
             const product = state.data.products.find(p => p.id === id || p.cid === id);
             if (product) {
                 product.discount = discount;
-                // Recalcular totales
                 updateAllTotals(state);
             }
         },
@@ -347,10 +363,10 @@ export const {
     setBillingSettings,
     updateProductInsurance,
     recalcTotals,
-    updateInsuranceStatus,
-    addInvoiceComment,
+    updateInsuranceStatus,    addInvoiceComment,
     deleteInvoiceComment,
-    updateProductDiscount
+    updateProductDiscount,
+    clearCxcAutoRemovalNotification
 } = cartSlice.actions
 
 export const SelectProduct = (state) => state.cart.data.products;
@@ -371,6 +387,7 @@ export const SelectCartIsOpen = (state) => state.cart.isOpen
 export const SelectCartData = (state) => state.cart.data
 export const SelectInvoiceComment = (state) => state.cart.data.invoiceComment
 export const SelectSettingCart = (state) => state.cart.settings
+export const SelectCxcAutoRemovalNotification = (state) => state.cart.showCxcAutoRemovalNotification
 export const selectCart = (state) => state.cart
 export const selectInsuranceEnabled = (state) => state.cart.data.insuranceEnabled;
 export const selectProductsWithIndividualDiscounts = (state) => 

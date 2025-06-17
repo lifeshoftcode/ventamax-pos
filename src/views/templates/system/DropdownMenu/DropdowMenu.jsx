@@ -68,6 +68,6 @@ const Container = styled.div`
   border-radius: 5px;
   box-shadow: 0 0 5px rgba(0, 0, 0, .3);
 
-  z-index: 555555;
+  z-index: 555;
   overflow: hidden;
 `;

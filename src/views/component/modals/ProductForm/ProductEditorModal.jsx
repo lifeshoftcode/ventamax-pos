@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Modal } from 'antd';
 import { ProductForm } from './ProductForm';
 import ImageManager from './ImageManager/ImageManager';
@@ -32,13 +32,15 @@ export const ProductEditorModal = ({ isOpen }) => {
 
         return () => unsubscribe();
     }, [user])
-    return (
+   
+    
+     return (
         <Modal
             centered={true}
             open={isOpen}
             width={1000}
             style={{ top: 5 }}
-            title={status === "update" ? `Editar ${product.name} ${product.id}` : "Nuevo Producto"}
+            title={status === "update" ? `Editar: ${product.name}` : "Nuevo Producto"}
             onCancel={handleCloseModal}
             footer={null}
         >

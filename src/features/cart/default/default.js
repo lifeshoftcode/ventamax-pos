@@ -45,9 +45,9 @@ const initialState = {
             billingMode: 'direct',
             isLoading: false,
             isError: null
-        }
-    },
+        }    },
     isOpen: false,
+    showCxcAutoRemovalNotification: false,
     data: {
         isAddedToReceivables: false,
         id: '',

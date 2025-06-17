@@ -1,12 +1,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { defineAbilitiesFor } from '../../abilities';
+import { defineAbilitiesFor, defineAbilitiesForWithDynamic } from '../../abilities';
 
 // Acción asíncrona para cargar abilities con permisos dinámicos
 export const loadUserAbilities = createAsyncThunk(
   'abilities/loadUserAbilities',
   async (user, { rejectWithValue }) => {
     try {
-      const abilities = await defineAbilitiesFor(user);
+        
+      const abilities = await defineAbilitiesForWithDynamic(user);
       return abilities;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -25,8 +26,7 @@ const abilitiesSlice = createSlice({
     initialState,
     reducers: {
         setAbilities: (state, action) => {
-            // Mantener compatibilidad para casos síncronos
-            state.abilities = action.payload;
+            state.abilities = defineAbilitiesFor(action.payload);
             state.loading = false;
             state.error = null;
         },

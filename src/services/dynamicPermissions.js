@@ -7,7 +7,8 @@ import {
   deleteDoc,
   query,
   where,
-  getDocs
+  getDocs,
+  serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../firebase/firebaseconfig';
 
@@ -69,25 +70,27 @@ export const getAvailablePermissionsForRole = (role) => {
 };
 
 /**
- * Obtiene permisos dinámicos de un usuario (versión simplificada que usa el businessID del usuario actual)
- * @param {string} userID - ID del usuario
+ * Obtiene permisos dinámicos de un usuario
+ * @param {string} userId - ID del usuario del cual obtener permisos
+ * @param {Object} currentUser - Usuario actual para obtener businessID (opcional, si no se pasa usa auth actual)
  * @returns {Promise<Object>} Permisos del usuario
  */
-export const getUserDynamicPermissions = async (userID) => {
+export const getUserDynamicPermissions = async (userId, currentUser = null) => {
+  // Si no se pasa currentUser, obtenerlo del contexto de auth actual
+  if (!currentUser) {
+    // Por ahora, esto requerirá que siempre se pase currentUser
+    throw new Error('currentUser es requerido para obtener permisos dinámicos');
+  }
   try {
-    // TODO: Obtener businessID del usuario actual del store/context
-    const businessID = 'default'; // Por ahora usar un valor por defecto
-    
-    const docRef = doc(db, 'businesses', businessID, 'userPermissions', userID);
+    const docRef = doc(db, 'businesses', currentUser.businessID, 'userPermissions', userId);
     const docSnap = await getDoc(docRef);
     
     if (docSnap.exists()) {
       return docSnap.data();
     } else {
-      // Retornar estructura por defecto
       return {
-        userId: userID,
-        businessId: businessID,
+        userId: userId,
+        businessID: currentUser.businessID,
         additionalPermissions: [],
         restrictedPermissions: [],
         createdAt: null,
@@ -98,8 +101,8 @@ export const getUserDynamicPermissions = async (userID) => {
   } catch (error) {
     console.error('Error al obtener permisos dinámicos:', error);
     return {
-      userId: userID,
-      businessId: businessID,
+      userId: userId,
+      businessID: currentUser.businessID,
       additionalPermissions: [],
       restrictedPermissions: [],
       createdAt: null,
@@ -115,25 +118,22 @@ export const getUserDynamicPermissions = async (userID) => {
  * @param {Object} permissions - Objeto con additionalPermissions y restrictedPermissions
  * @returns {Promise<boolean>} Éxito de la operación
  */
-export const setUserDynamicPermissions = async (userID, permissions) => {
+export const setUserDynamicPermissions = async (currentUser, userId, permissions) => {
   try {
-    // TODO: Obtener businessID y currentUserID del usuario actual del store/context
-    const businessID = 'default'; // Por ahora usar un valor por defecto
-    const currentUserID = 'current-user'; // Por ahora usar un valor por defecto
-    
-    const docRef = doc(db, 'businesses', businessID, 'userPermissions', userID);
+
+    const docRef = doc(db, 'businesses', currentUser.businessID, 'userPermissions', userId);
     const now = new Date();
     
     // Verificar si el documento existe
     const existingDoc = await getDoc(docRef);
     
     const permissionData = {
-      userId: userID,
-      businessId: businessID,
+      userId: userId,
+      businessID: currentUser.businessID,
       additionalPermissions: permissions.additionalPermissions || [],
       restrictedPermissions: permissions.restrictedPermissions || [],
-      updatedAt: now,
-      updatedBy: currentUserID
+      updatedAt: serverTimestamp(),
+      updatedBy: currentUser.uid
     };
     
     if (existingDoc.exists()) {
@@ -144,7 +144,7 @@ export const setUserDynamicPermissions = async (userID, permissions) => {
       await setDoc(docRef, {
         ...permissionData,
         createdAt: now,
-        createdBy: currentUserID
+        createdBy: currentUser.uid
       });
     }
     
