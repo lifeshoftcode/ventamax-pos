@@ -1,4 +1,3 @@
-
 //Todo **************Pages*************************************************
 
 export { Orders } from './pages/OrderAndPurchase/Order/Orders'
@@ -21,6 +20,7 @@ export { CategoryAdmin } from './pages/Category/CategoryAdmin'
 export { ProviderAdmin } from './pages/Contact/Provider/ProviderAdmin'
 export { ClientAdmin } from './pages/Contact/Client/ClientAdmin'
 export { UserAdmin } from './pages/setting/subPage/Users/UserAdmin'
+export { CreditNoteList } from './pages/CreditNote'
 
 //Todo ***********Components*************************************************
 export { ControlSearchProduct } from './component/ControlSearchProduct/ControlSearchProduct'

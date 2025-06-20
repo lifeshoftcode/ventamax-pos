@@ -120,6 +120,10 @@ const ACCOUNT_RECEIVABLE_TERM = {
     RECEIVABLE_PAYMENT_RECEIPTS: '/account-receivable/receipts',
 }
 
+const CREDIT_NOTE_TERM = {
+    CREDIT_NOTE_LIST: '/credit-note',
+}
+
 const INSURANCE_TERM = {
     INSURANCE_CONFIG: '/insurance/config',
     INSURANCE_LIST: '/insurance/list',
@@ -143,6 +147,7 @@ const ROUTES_PATH = {
     ORDER_TERM,
     DEV_VIEW_TERM,
     CHANGELOG_TERM,
+    CREDIT_NOTE_TERM,
     INSURANCE_TERM
 }
 export const ROUTES = {

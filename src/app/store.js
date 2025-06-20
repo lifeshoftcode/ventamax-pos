@@ -58,6 +58,7 @@ import insuranceConfigModalReducer from '../features/insurance/insuranceConfigMo
 import insuranceAuthReducer from '../features/insurance/insuranceAuthSlice';
 import insuranceAccountsReceivableReducer from '../features/insurance/insuranceAccountsReceivableSlice';
 import navigationReducer from '../features/navigation/navigationSlice'
+import creditNoteModalReducer from "../features/creditNote/creditNoteModalSlice";
 
 export const store = configureStore({
   reducer: {
@@ -106,6 +107,7 @@ export const store = configureStore({
     accountsReceivable: accountsReceivableReducer,
     accountsReceivablePayment: accountsReceivablePaymentReducer,
     insuranceAccountsReceivable: insuranceAccountsReceivableReducer,
+    creditNoteModal: creditNoteModalReducer,
     ...expenseSlices,
     ...purchaseSlices,
     

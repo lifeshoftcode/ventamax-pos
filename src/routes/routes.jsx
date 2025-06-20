@@ -14,6 +14,7 @@ import changelogs from "./paths/Changelogs"
 import utility from "./paths/Utility";
 import accountReceivable from './paths/AccountReceivable'
 import insurance from './paths/Insurance'
+import creditNote from './paths/CreditNote';
 import { processRoute } from "./requiereAuthProvider";
 
 // Procesa recursivamente las rutas y sus hijos para aplicar la protección
@@ -51,6 +52,7 @@ const rawRoutes = [
     ...utility,
     ...accountReceivable,
     ...insurance,
+    ...creditNote,
     {
         path: "*",
         element: <NotFound />,
