@@ -17,15 +17,29 @@ export async function createPendingInvoice({ businessId, userId, payload, idempo
 
   const idempotencyRef = getIdempotencyRef(businessId, idempotencyKey);
 
+  let invoiceStatus = null;
+
   const { invoiceId, alreadyExists } = await db.runTransaction(async (tx) => {
     const idemSnap = await tx.get(idempotencyRef);
     if (idemSnap.exists) {
       const data = idemSnap.data();
-      return { invoiceId: data.invoiceId, alreadyExists: true };
+      const existingInvoiceId = data.invoiceId;
+      if (existingInvoiceId) {
+        try {
+          const existingInvoiceRef = db.doc(`businesses/${businessId}/invoicesV2/${existingInvoiceId}`);
+          const existingInvoiceSnap = await tx.get(existingInvoiceRef);
+          if (existingInvoiceSnap.exists) {
+            invoiceStatus = existingInvoiceSnap.data()?.status || null;
+          }
+        } catch {}
+      }
+      return { invoiceId: existingInvoiceId, alreadyExists: true };
     }
 
     const newInvoiceId = nanoid();
     const invoiceRef = db.doc(`businesses/${businessId}/invoicesV2/${newInvoiceId}`);
+
+    invoiceStatus = 'pending';
 
     // Derivar dueDate si no llega y hay configuración en billing
     const billing = payload?.cart?.billing || {};
@@ -326,7 +340,7 @@ export async function createPendingInvoice({ businessId, userId, payload, idempo
     return { invoiceId: newInvoiceId, alreadyExists: false };
   });
 
-  return { invoiceId, status: 'pending', alreadyExists };
+  return { invoiceId, status: 'pending', alreadyExists, invoiceStatus };
 }
 
 

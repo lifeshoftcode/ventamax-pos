@@ -6,6 +6,8 @@ import { GenericClient } from "../../features/clientCart/clientCartSlice";
 
 const simulateDelay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+export const DUPLICATE_INVOICE_ERROR_CODE = "invoice-duplicate";
+
 const buildTestModeInvoice = async ({
   cart,
   client,
@@ -116,6 +118,18 @@ export default function useInvoice() {
         const { signal, ...submissionPayload } = params || {};
         
         submission = await submitInvoice(submissionPayload);
+
+        if (submission?.reused) {
+          const duplicateError = new Error(
+            "La factura ya fue generada previamente para este comprobante."
+          );
+          duplicateError.code = DUPLICATE_INVOICE_ERROR_CODE;
+          duplicateError.invoiceId = submission.invoiceId;
+          duplicateError.idempotencyKey = submission.idempotencyKey;
+          duplicateError.invoiceStatus = submission.invoiceStatus || submission.status || null;
+          duplicateError.reused = true;
+          throw duplicateError;
+        }
 
         const result = await waitForInvoiceResult({
           businessId: submission.businessId,

@@ -121,11 +121,17 @@ export const createInvoiceV2 = onCall(async ({data}, context) => {
       idempotencyKey,
     });
 
-    logger.info('createInvoiceV2 completed', { traceId, invoiceId: result.invoiceId, reused: result.alreadyExists });
+    logger.info('createInvoiceV2 completed', {
+      traceId,
+      invoiceId: result.invoiceId,
+      reused: result.alreadyExists,
+      invoiceStatus: result.invoiceStatus ?? null,
+    });
     return {
       status: 'pending',
       invoiceId: result.invoiceId,
       reused: result.alreadyExists,
+      invoiceStatus: result.invoiceStatus ?? null,
     };
   } catch (err) {
     if (err instanceof https.HttpsError) throw err;

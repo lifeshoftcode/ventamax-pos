@@ -16,7 +16,7 @@ import dayjs from 'dayjs'
 import useInsuranceEnabled from '../../../../../hooks/useInsuranceEnabled'
 import { selectInsuranceAR } from '../../../../../features/insurance/insuranceAccountsReceivableSlice'
 import { selectInsuranceAuthData, clearAuthData } from '../../../../../features/insurance/insuranceAuthSlice'
-import useInvoice from '../../../../../services/invoice/useInvoice'
+import useInvoice, { DUPLICATE_INVOICE_ERROR_CODE } from '../../../../../services/invoice/useInvoice'
 import { selectBusinessData } from '../../../../../features/auth/businessSlice'
 import { downloadInvoiceLetterPdf } from '../../../../../firebase/quotation/downloadQuotationPDF'
 import { selectAppMode } from '../../../../../features/appModes/appModeSlice'
@@ -277,20 +277,47 @@ export const InvoicePanel = () => {
                 }
 
             } catch (error) {
-                notification.error({
-                    message: 'Error de Proceso',
-                    description: error.message,
-                    duration: 4
-                })
+                const isDuplicate = error?.code === DUPLICATE_INVOICE_ERROR_CODE || error?.reused;
+                const invoiceStatus = (error?.invoiceStatus || error?.invoice?.status || '').toLowerCase();
+
+                if (isDuplicate) {
+                    let duplicateDescription = 'Se detectó que este comprobante ya tiene una factura asociada.';
+                    if (invoiceStatus === 'committed') {
+                        duplicateDescription = 'El comprobante ya fue facturado y se encuentra disponible en el historial.';
+                    } else if (invoiceStatus === 'pending' || invoiceStatus === 'committing') {
+                        duplicateDescription = 'Ya hay un proceso de facturación en curso para este comprobante. Espera a que finalice antes de intentar nuevamente.';
+                    } else if (invoiceStatus === 'failed') {
+                        duplicateDescription = 'El intento previo de facturación fue marcado como fallido. Revisa el historial y genera una nueva factura si es necesario.';
+                    }
+
+                    notification.warning({
+                        message: 'Factura duplicada detectada',
+                        description: duplicateDescription,
+                        duration: 5,
+                    });
+                    console.warn('[InvoicePanel] processInvoice -> duplicate detected', {
+                        message: error?.message,
+                        invoiceId: error?.invoiceId ?? null,
+                        idempotencyKey: error?.idempotencyKey ?? null,
+                        invoiceStatus,
+                    });
+                    setInvoice({});
+                } else {
+                    notification.error({
+                        message: 'Error de Proceso',
+                        description: error.message,
+                        duration: 4
+                    })
+                    console.error('[InvoicePanel] processInvoice -> failed', {
+                        message: error?.message,
+                        code: error?.code,
+                        invoiceId: error?.invoiceId ?? error?.invoice?.id ?? null,
+                        idempotencyKey: error?.idempotencyKey ?? null,
+                        reused: error?.reused ?? null,
+                    }, error)
+                }
                 setLoading({ status: false, message: '' })
                 setSubmitted(false)
-                console.error('[InvoicePanel] processInvoice -> failed', {
-                    message: error?.message,
-                    code: error?.code,
-                    invoiceId: error?.invoiceId ?? error?.invoice?.id ?? null,
-                    idempotencyKey: error?.idempotencyKey ?? null,
-                    reused: error?.reused ?? null,
-                }, error)
                 // En caso de error liberamos el bloqueo para que el usuario pueda cambiar el comprobante
                 dispatch(unlockTaxReceiptType());
             }

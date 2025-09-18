@@ -99,11 +99,17 @@ export const createInvoiceV2Http = https.onRequest(async (req, res) => {
       idempotencyKey,
     });
 
-    logger.info('createInvoiceV2Http completed', { traceId, invoiceId: result.invoiceId, reused: result.alreadyExists });
+    logger.info('createInvoiceV2Http completed', {
+      traceId,
+      invoiceId: result.invoiceId,
+      reused: result.alreadyExists,
+      invoiceStatus: result.invoiceStatus ?? null,
+    });
     return res.status(200).json({
       status: 'pending',
       invoiceId: result.invoiceId,
       reused: result.alreadyExists,
+      invoiceStatus: result.invoiceStatus ?? null,
     });
   } catch (err) {
     logger.error('Unhandled error in createInvoiceV2Http', { traceId, err });
